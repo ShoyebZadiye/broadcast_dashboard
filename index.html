@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Broadcast Tracking Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #f8fafc;
+    --border: #e2e8f0;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent2: #10b981;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --text: #1e293b;
+    --muted: #64748b;
+    --light: #f1f5f9;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.04);
+  }
+
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: stretch;
+  }
+  .login-left {
+    flex: 1; background: linear-gradient(145deg, #3730a3 0%, #4f46e5 45%, #7c3aed 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 60px 48px; position: relative; overflow: hidden;
+  }
+  .login-left::before {
+    content: ''; position: absolute; width: 420px; height: 420px; border-radius: 50%;
+    background: rgba(255,255,255,.05); top: -80px; right: -100px;
+  }
+  .login-left::after {
+    content: ''; position: absolute; width: 280px; height: 280px; border-radius: 50%;
+    background: rgba(255,255,255,.06); bottom: -60px; left: -60px;
+  }
+  .login-left-content { position: relative; z-index: 1; text-align: center; color: #fff; max-width: 380px; }
+  .login-left-content .app-icon {
+    width: 72px; height: 72px; border-radius: 20px;
+    background: rgba(255,255,255,.15); backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; margin: 0 auto 24px; border: 1.5px solid rgba(255,255,255,.2);
+  }
+  .login-left-content h1 { font-size: 2rem; font-weight: 800; margin-bottom: 12px; line-height: 1.2; }
+  .login-left-content p  { font-size: 0.95rem; opacity: .75; line-height: 1.6; margin-bottom: 36px; }
+  .login-features { display: flex; flex-direction: column; gap: 14px; text-align: left; }
+  .login-feature  { display: flex; align-items: center; gap: 12px; font-size: 0.875rem; opacity: .85; }
+  .login-feature .dot {
+    width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;
+  }
+
+  .login-right {
+    width: 460px; background: #fff; display: flex; align-items: center; justify-content: center;
+    padding: 48px 40px;
+  }
+  .login-form-wrap { width: 100%; max-width: 360px; }
+  .login-form-wrap .welcome { margin-bottom: 36px; }
+  .login-form-wrap .welcome h2 { font-size: 1.6rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  .login-form-wrap .welcome p  { color: var(--muted); font-size: 0.875rem; }
+
+  .login-group { margin-bottom: 18px; }
+  .login-group label {
+    display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted);
+    margin-bottom: 7px; text-transform: uppercase; letter-spacing: .05em;
+  }
+  .login-input-wrap { position: relative; }
+  .login-input-wrap .input-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 1rem; pointer-events: none;
+  }
+  .login-group input {
+    width: 100%; padding: 12px 14px 12px 40px; border: 1.5px solid var(--border); border-radius: 10px;
+    font-size: 0.9rem; outline: none; transition: all .2s; color: var(--text); background: var(--light);
+  }
+  .login-group input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+  .login-err {
+    display: none; background: #fee2e2; color: var(--danger); font-size: 0.8rem;
+    font-weight: 600; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px;
+  }
+  .btn-login {
+    width: 100%; padding: 13px; border-radius: 10px; font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; border: none; margin-top: 4px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff; transition: opacity .2s, transform .1s;
+    box-shadow: 0 4px 14px rgba(79,70,229,.35);
+  }
+  .btn-login:hover { opacity: .92; }
+  .btn-login:active { transform: scale(.98); }
+
+  @media(max-width: 768px) {
+    .login-left { display: none; }
+    .login-right { width: 100%; }
+  }
+
+  /* ── APP ── */
+  #app { display: none; }
+
+  /* Sidebar */
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 240px; background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50;
+  }
+  .sidebar-brand {
+    padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-brand .logo {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), #7c3aed);
+    display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+  }
+  .sidebar-brand span { font-weight: 800; font-size: 0.95rem; color: var(--text); }
+
+  .sidebar-nav { padding: 12px 10px; flex: 1; }
+  .nav-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 8px 10px 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px;
+    cursor: pointer; font-size: 0.875rem; font-weight: 500; color: var(--muted);
+    transition: all .15s; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--light); color: var(--text); }
+  .nav-item.active { background: #eef2ff; color: var(--accent); font-weight: 600; }
+  .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+
+  .sidebar-footer { padding: 12px 10px; border-top: 1px solid var(--border); }
+  .user-info { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #7c3aed);
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.8rem; font-weight: 700;
+  }
+  .user-email { font-size: 0.78rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn-logout { background: none; border: none; color: var(--danger); font-size: 0.78rem; cursor: pointer; margin-left: auto; }
+
+  /* Main */
+  .main { margin-left: 240px; flex: 1; }
+  .topbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 14px 28px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 40;
+  }
+  .topbar h2 { font-size: 1.1rem; font-weight: 700; }
+  .topbar .date { font-size: 0.82rem; color: var(--muted); }
+
+  .content { padding: 28px; }
+
+  /* Panel */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-header h3 { font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card-body { padding: 20px; }
+
+  /* KPIs */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
+  .kpi .label { font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
+  .kpi .val { font-size: 1.8rem; font-weight: 800; color: var(--text); }
+  .kpi.blue .val { color: var(--accent); }
+  .kpi.green .val { color: var(--accent2); }
+  .kpi.red .val { color: var(--danger); }
+  .kpi.yellow .val { color: var(--warn); }
+  .kpi-sub { font-size: .72rem; color: var(--muted); margin-top: 4px; }
+  .kpi-bar-wrap { height: 5px; background: var(--border); border-radius: 3px; margin: 10px 0 5px; overflow: hidden; }
+  .kpi-bar-fill { height: 100%; border-radius: 3px; background: var(--accent2); transition: width .4s ease; }
+
+  /* Forms */
+  .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .fg { display: flex; flex-direction: column; gap: 5px; }
+  .fg label { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+  .fg input, .fg select, .fg textarea {
+    padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 0.875rem; color: var(--text); outline: none; transition: border-color .2s;
+    font-family: inherit; background: var(--surface);
+  }
+  .fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--accent); }
+  .fg textarea { resize: vertical; min-height: 80px; }
+  .fg input[readonly] { background: var(--light); color: var(--muted); cursor: default; }
+
+  /* Buttons */
+  .btn { padding: 9px 20px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-success { background: var(--accent2); color: #fff; }
+  .btn-ghost { background: var(--light); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+  .btn-danger { background: #fee2e2; color: var(--danger); }
+
+  /* Category tabs */
+  .cat-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .cat-tab {
+    padding: 8px 20px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; border: 1.5px solid var(--border); background: var(--surface); color: var(--muted);
+    transition: all .15s;
+  }
+  .cat-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Sub-filter & broadcast buttons */
+  .sub-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .sub-btn {
+    padding: 10px 28px; border-radius: 10px; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; border: 2px solid var(--border); background: var(--surface); color: var(--muted);
+    transition: all .15s;
+  }
+  .sub-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .sub-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .sub-btn.green.active { background: var(--accent2); border-color: var(--accent2); }
+
+  .bc-btn-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .bc-btn {
+    padding: 8px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; border: 1.5px solid var(--border); background: var(--surface); color: var(--text);
+    transition: all .15s; text-align: left;
+  }
+  .bc-btn:hover { border-color: var(--accent); background: #eef2ff; }
+  .bc-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .bc-btn .bc-time { font-size: 0.74rem; color: inherit; opacity: .75; display: block; margin-bottom: 2px; }
+
+  .step-label {
+    font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--muted); margin-bottom: 10px;
+  }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { background: var(--light); padding: 10px 14px; text-align: left; font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); white-space: nowrap; }
+  td { padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: middle; }
+  tr:hover td { background: var(--surface2); }
+  .empty { padding: 40px; text-align: center; color: var(--muted); font-size: 0.875rem; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; }
+  .badge-blue { background: #eef2ff; color: var(--accent); }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-red { background: #fee2e2; color: var(--danger); }
+  .badge-yellow { background: #fef3c7; color: #92400e; }
+  .badge-gray { background: var(--light); color: var(--muted); }
+  .badge-upcoming { background: #fef3c7; color: #92400e; }
+  .badge-done { background: #d1fae5; color: #065f46; }
+
+  /* Days picker */
+  .days-picker { display: flex; flex-direction: column; gap: 8px; }
+  .days-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .preset-btn {
+    padding: 4px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; border: 1.5px solid var(--border); background: var(--surface); color: var(--muted);
+    transition: all .15s;
+  }
+  .preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .preset-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .days-checkboxes { display: flex; gap: 6px; flex-wrap: wrap; }
+  .day-cb { display: flex; align-items: center; gap: 0; }
+  .day-cb input[type=checkbox] { display: none; }
+  .day-cb label {
+    padding: 5px 11px; border-radius: 7px; font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; border: 1.5px solid var(--border); color: var(--muted); background: var(--surface);
+    transition: all .15s; user-select: none;
+  }
+  .day-cb input:checked + label { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Message box */
+  .msg-box {
+    background: var(--light); border: 1.5px dashed var(--border); border-radius: 10px;
+    padding: 18px 20px; font-size: 0.95rem; min-height: 100px; word-break: break-word;
+  }
+  .msg-box p { margin: 0 0 10px 0; line-height: 1.6; }
+  .msg-box p:last-child { margin-bottom: 0; }
+
+  /* Edit modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal {
+    background: var(--surface); border-radius: var(--radius); box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    width: 100%; max-width: 560px; overflow: hidden;
+  }
+  .modal-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-header h3 { font-size: 0.95rem; font-weight: 700; }
+  .modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--muted); }
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* Del btn */
+  .del-btn { background: none; border: none; color: var(--danger); cursor: pointer; opacity: .5; transition: opacity .2s; font-size: 0.9rem; }
+  .del-btn:hover { opacity: 1; }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff;
+    padding: 12px 20px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+    transform: translateY(60px); opacity: 0; transition: all .3s; z-index: 9999;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* Total row in table */
+  .total-row td { background: #eef2ff; font-weight: 700; color: var(--accent); border-top: 2px solid var(--accent); }
+
+  /* Request access screen */
+  #request-screen {
+    min-height:100vh; display:none; align-items:center; justify-content:center;
+    background: linear-gradient(145deg, #3730a3 0%, #4f46e5 45%, #7c3aed 100%);
+  }
+  .req-card {
+    background:#fff; border-radius:20px; padding:44px 40px; width:100%; max-width:420px;
+    box-shadow:0 24px 64px rgba(0,0,0,.25); text-align:center;
+  }
+  .req-card .icon {
+    width:64px; height:64px; border-radius:18px; margin:0 auto 20px;
+    background:linear-gradient(135deg,#eef2ff,#e0e7ff);
+    display:flex; align-items:center; justify-content:center; font-size:1.8rem;
+  }
+  .req-card h2 { font-size:1.35rem; font-weight:800; margin-bottom:8px; color:var(--text); }
+  .req-card p  { color:var(--muted); font-size:0.875rem; margin-bottom:20px; line-height:1.6; }
+  .req-status  { padding:14px; border-radius:10px; font-size:0.875rem; font-weight:600; margin-bottom:16px; }
+  .req-status.pending  { background:#fef3c7; color:#92400e; }
+  .req-status.approved { background:#d1fae5; color:#065f46; }
+  .req-status.denied   { background:#fee2e2; color:#991b1b; }
+
+  /* Admin badge in sidebar */
+  .admin-badge {
+    display:inline-block; background:linear-gradient(135deg,#f59e0b,#ef4444);
+    color:#fff; font-size:0.62rem; font-weight:800; padding:2px 6px;
+    border-radius:999px; text-transform:uppercase; letter-spacing:.05em; margin-left:6px; vertical-align:middle;
+  }
+
+  /* User list in admin panel */
+  .user-row {
+    display:flex; align-items:center; gap:12px; padding:12px 16px;
+    border-bottom:1px solid var(--border);
+  }
+  .user-row:last-child { border-bottom:none; }
+  .user-row .u-avatar {
+    width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#7c3aed);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:0.85rem; flex-shrink:0;
+  }
+  .user-row .u-email { flex:1; font-size:0.875rem; font-weight:500; }
+  .user-row .u-time  { font-size:0.75rem; color:var(--muted); }
+
+  @media(max-width:768px) {
+    .sidebar { width: 0; overflow: hidden; }
+    .main { margin-left: 0; }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ════════ LOGIN ════════ -->
+<div id="login-screen">
+
+  <!-- Left panel -->
+  <div class="login-left">
+    <div class="login-left-content">
+      <img src="data:image/webp;base64,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" alt="Habuild" style="height:36px;margin:0 auto 20px;display:block;filter:brightness(0) invert(1);opacity:.9" />
+      <h1>Broadcast Tracking Dashboard</h1>
+      <p>Manage daily broadcast counts, track delivery rates, and generate update messages — all in one place.</p>
+      <div class="login-features">
+        <div class="login-feature"><div class="dot">📊</div><span>Track Sent &amp; Expected counts daily</span></div>
+        <div class="login-feature"><div class="dot">✅</div><span>Auto-generate WhatsApp update messages</span></div>
+        <div class="login-feature"><div class="dot">🗂</div><span>Manage PAID, FREE &amp; Other broadcasts</span></div>
+        <div class="login-feature"><div class="dot">🛡</div><span>Admin-controlled access management</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="login-right">
+    <div class="login-form-wrap">
+      <div style="margin-bottom:28px"><img src="data:image/webp;base64,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" alt="Habuild" style="height:30px" /></div><div class="welcome">
+        <h2>Welcome back 👋</h2>
+        <p>Sign in with your registered email to continue.</p>
+      </div>
+      <div class="login-group">
+        <label>Email Address</label>
+        <div class="login-input-wrap">
+          <span class="input-icon">✉️</span>
+          <input type="email" id="login-email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()" />
+        </div>
+      </div>
+      <div class="login-err" id="login-err">Email not recognised. Please request access.</div>
+      <button class="btn-login" onclick="doLogin()">Sign In →</button>
+      <p style="text-align:center;margin-top:20px;font-size:0.78rem;color:var(--muted)">
+        Don't have access? Sign in with your email to request it.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════ REQUEST ACCESS ════════ -->
+<div id="request-screen">
+  <div class="req-card">
+    <div class="icon">🔐</div>
+    <h2>Access Required</h2>
+    <p id="req-msg">Your email is not registered. Request access from the admin.</p>
+    <div class="req-status pending" id="req-status-box" style="display:none"></div>
+    <button class="btn-login" id="req-btn" onclick="submitAccessRequest()">Request Access</button>
+    <button class="btn-login" style="background:var(--light);color:var(--muted);margin-top:10px" onclick="backToLogin()">← Back</button>
+  </div>
+</div>
+
+<!-- ════════ APP ════════ -->
+<div id="app">
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo">📡</div>
+        <span>Broadcast</span>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-label">Main</div>
+        <button class="nav-item active" onclick="goTo('dashboard',this)"><span class="icon">🏠</span> Dashboard</button>
+        <button class="nav-item" onclick="goTo('tracking',this)"><span class="icon">📊</span> Daily Tracking</button>
+        <div class="nav-label" style="margin-top:8px">Manage</div>
+        <button class="nav-item" onclick="goTo('add-broadcast',this)"><span class="icon">➕</span> Add Broadcast</button>
+        <button class="nav-item" onclick="goTo('broadcasts',this)"><span class="icon">📋</span> All Broadcasts</button>
+        <button class="nav-item" onclick="goTo('records',this)"><span class="icon">🗂</span> Records</button>
+        <div id="admin-nav-section" style="display:none">
+          <div class="nav-label" style="margin-top:8px">Admin</div>
+          <button class="nav-item" onclick="goTo('admin',this)" id="admin-nav-btn">
+            <span class="icon">🛡</span> Access Control <span class="admin-badge">Admin</span>
+            <span id="pending-badge" style="display:none;background:var(--danger);color:#fff;font-size:.65rem;font-weight:800;padding:1px 6px;border-radius:999px;margin-left:4px">0</span>
+          </button>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar" id="user-avatar">U</div>
+          <div class="user-email" id="user-email-display">user@example.com</div>
+          <button class="btn-logout" onclick="logout()">↩</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+      <div class="topbar">
+        <h2 id="page-title">Dashboard</h2>
+        <span class="date" id="topbar-date"></span>
+      </div>
+
+      <div class="content">
+
+        <!-- ── DASHBOARD ── -->
+        <div class="panel active" id="panel-dashboard">
+
+          <!-- Date + Search bar -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+            <input type="date" id="dash-date" oninput="renderDashboard()"
+              style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.875rem;outline:none;color:var(--text)" />
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('dash-date').value=today();renderDashboard()">Today</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('dash-date').value=yesterday();renderDashboard()">Yesterday</button>
+            <input type="text" id="dash-search" placeholder="🔍 Search broadcasts..." oninput="renderDashboard()"
+              style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.875rem;outline:none;width:200px;color:var(--text)" />
+          </div>
+
+          <!-- KPIs -->
+          <div class="kpi-row">
+            <div class="kpi">
+              <div class="label">📡 Scheduled Today</div>
+              <div class="val" id="kpi-total">0</div>
+              <div class="kpi-sub" id="kpi-total-sub">—</div>
+            </div>
+            <div class="kpi green">
+              <div class="label">✅ Completed</div>
+              <div class="val" id="kpi-completed">0</div>
+              <div class="kpi-bar-wrap"><div class="kpi-bar-fill" id="kpi-prog-fill" style="width:0%"></div></div>
+              <div class="kpi-sub" id="kpi-prog-sub">0% · 0 pending</div>
+            </div>
+            <div class="kpi blue">
+              <div class="label">📤 Total Sent</div>
+              <div class="val" id="kpi-today-sent">0</div>
+              <div class="kpi-sub" id="kpi-sent-sub">—</div>
+            </div>
+            <div class="kpi" id="kpi-rate-card">
+              <div class="label">🎯 Delivery Rate</div>
+              <div class="val" id="kpi-rate">—</div>
+              <div class="kpi-sub">sent vs expected</div>
+            </div>
+            <div class="kpi" id="kpi-diff-card">
+              <div class="label">⚡ Difference</div>
+              <div class="val" id="kpi-today-diff">0</div>
+              <div class="kpi-sub" id="kpi-diff-sub">—</div>
+            </div>
+          </div>
+
+          <!-- PAID Broadcasts -->
+          <div class="card">
+            <div class="card-header">
+              <h3>💳 PAID Broadcasts</h3>
+              <span id="dash-paid-count" class="badge badge-blue" style="margin-left:8px">0</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Time</th><th>Program</th><th>Broadcast Name</th><th>Status</th><th>Sent</th><th>Expected</th><th>Difference</th></tr></thead>
+                <tbody id="dash-paid-tbody"></tbody>
+              </table>
+              <div class="empty" id="dash-paid-empty">No PAID broadcasts scheduled.</div>
+            </div>
+          </div>
+
+          <!-- FREE Broadcasts -->
+          <div class="card">
+            <div class="card-header">
+              <h3>🆓 FREE Broadcasts</h3>
+              <span id="dash-free-count" class="badge badge-green" style="margin-left:8px">0</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Time</th><th>CID</th><th>Type</th><th>Broadcast Name</th><th>Status</th><th>Sent</th><th>Expected</th><th>Difference</th></tr></thead>
+                <tbody id="dash-free-tbody"></tbody>
+              </table>
+              <div class="empty" id="dash-free-empty">No FREE broadcasts scheduled.</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── DAILY TRACKING ── -->
+        <div class="panel" id="panel-tracking">
+
+          <!-- Category selector -->
+          <div class="cat-tabs">
+            <div class="cat-tab active" onclick="selectCategory('PAID',this)">💳 PAID</div>
+            <div class="cat-tab" onclick="selectCategory('FREE',this)">🆓 FREE</div>
+            <div class="cat-tab" onclick="selectCategory('OTHER',this)">📌 Other</div>
+          </div>
+
+          <!-- Broadcast picker -->
+          <div class="card">
+            <div class="card-header"><h3>📨 Log Broadcast Count</h3></div>
+            <div class="card-body">
+              <div class="form-row" id="track-form-fields">
+                <!-- fields injected by JS -->
+              </div>
+              <hr class="divider" />
+
+              <!-- Message Generator -->
+              <div style="margin-bottom:16px">
+                <div style="font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Generated Update Message</div>
+                <div class="msg-box" id="generated-msg">Fill in the form above to generate the update message.</div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-success" onclick="copyMsg()">📋 Copy Message</button>
+                <button class="btn" style="background:#25D366;color:#fff;" onclick="sendWhatsApp()">
+                  <svg style="width:16px;height:16px;vertical-align:middle;margin-right:6px;fill:#fff" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  Send on WhatsApp
+                </button>
+                <button class="btn btn-primary" onclick="logEntry()">✅ Log & Save</button>
+                <button class="btn btn-ghost" onclick="clearTrackForm()">Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Today's log table -->
+          <div class="card">
+            <div class="card-header">
+              <h3>📋 Today's Log</h3>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span class="badge badge-blue" id="track-total-sent-badge">Sent: 0</span>
+                <span class="badge badge-green" id="track-total-exp-badge">Expected: 0</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Time</th><th>Program / CID</th><th>Broadcast</th><th>Sent</th><th>Expected</th><th>Diff</th><th>Update Message</th><th></th></tr></thead>
+                <tbody id="log-tbody"></tbody>
+              </table>
+              <div class="empty" id="log-empty">No entries logged today.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ADD BROADCAST ── -->
+        <div class="panel" id="panel-add-broadcast">
+          <div class="cat-tabs">
+            <div class="cat-tab active" onclick="selectAddCat('PAID',this)">💳 PAID</div>
+            <div class="cat-tab" onclick="selectAddCat('FREE',this)">🆓 FREE</div>
+            <div class="cat-tab" onclick="selectAddCat('OTHER',this)">📌 Other</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3 id="add-bc-title">➕ Add PAID Broadcast</h3></div>
+            <div class="card-body">
+              <div class="form-row" id="add-bc-fields">
+                <!-- injected by JS -->
+              </div>
+              <div style="margin-top:20px;display:flex;gap:10px">
+                <button class="btn btn-primary" onclick="saveBroadcast()">Add Broadcast</button>
+                <button class="btn btn-ghost" onclick="clearAddBcForm()">Clear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ALL BROADCASTS ── -->
+        <div class="panel" id="panel-broadcasts">
+          <div class="cat-tabs">
+            <div class="cat-tab active" onclick="filterBcList('ALL',this)">All</div>
+            <div class="cat-tab" onclick="filterBcList('PAID',this)">💳 PAID</div>
+            <div class="cat-tab" onclick="filterBcList('FREE',this)">🆓 FREE</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+            <span style="font-size:.78rem;font-weight:600;color:var(--muted)">Filter by day:</span>
+            <button class="preset-btn active" id="bc-day-all" onclick="setBcDayFilter('',this)">All</button>
+            <button class="preset-btn" id="bc-day-Mon" onclick="setBcDayFilter('Mon',this)">Mon</button>
+            <button class="preset-btn" id="bc-day-Tue" onclick="setBcDayFilter('Tue',this)">Tue</button>
+            <button class="preset-btn" id="bc-day-Wed" onclick="setBcDayFilter('Wed',this)">Wed</button>
+            <button class="preset-btn" id="bc-day-Thu" onclick="setBcDayFilter('Thu',this)">Thu</button>
+            <button class="preset-btn" id="bc-day-Fri" onclick="setBcDayFilter('Fri',this)">Fri</button>
+            <button class="preset-btn" id="bc-day-Sat" onclick="setBcDayFilter('Sat',this)">Sat</button>
+            <button class="preset-btn" id="bc-day-Sun" onclick="setBcDayFilter('Sun',this)">Sun</button>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>📋 Broadcasts</h3>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span id="bc-count" class="badge badge-gray">0</span>
+                <button class="btn btn-danger btn-sm" onclick="deleteAllBroadcasts()">🗑 Delete All</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>#</th><th>Category</th><th>Program / CID</th><th>Time</th><th>Days</th><th>Message Name</th><th>Message Content</th><th></th></tr></thead>
+                <tbody id="bc-tbody"></tbody>
+              </table>
+              <div class="empty" id="bc-empty">No broadcasts added yet.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── RECORDS ── -->
+        <div class="panel" id="panel-records">
+          <div class="kpi-row">
+            <div class="kpi blue"><div class="label">Total Sent</div><div class="val" id="rec-kpi-sent">0</div></div>
+            <div class="kpi green"><div class="label">Total Expected</div><div class="val" id="rec-kpi-exp">0</div></div>
+            <div class="kpi red"><div class="label">Total Difference</div><div class="val" id="rec-kpi-diff">0</div></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>🗂 All Records</h3>
+              <div style="display:flex;gap:8px">
+                <input type="date" id="rec-filter-date" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none" />
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rec-filter-date').value='';renderRecords()">Clear</button>
+                <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Export</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Date</th><th>Time</th><th>Category</th><th>Program / CID</th><th>Broadcast</th><th>Sent</th><th>Expected</th><th>Difference</th><th></th></tr></thead>
+                <tbody id="rec-tbody"></tbody>
+              </table>
+              <div class="empty" id="rec-empty">No records found.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ADMIN ── -->
+        <div class="panel" id="panel-admin">
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-header"><h3>⏳ Pending Requests</h3><span id="admin-pending-count" class="badge badge-yellow">0</span></div>
+            <div id="admin-pending-list"><div class="empty">No pending requests.</div></div>
+          </div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-header"><h3>✅ Approved Users</h3><span id="admin-approved-count" class="badge badge-green">0</span></div>
+            <div id="admin-approved-list"><div class="empty">No approved users yet.</div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>➕ Add User Manually</h3></div>
+            <div class="card-body" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+              <div class="fg" style="flex:1;min-width:220px">
+                <label>Email ID</label>
+                <input type="email" id="admin-add-email" placeholder="user@example.com" />
+              </div>
+              <button class="btn btn-primary" onclick="adminAddUser()">Add & Approve</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /main -->
+  </div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal" style="display:none" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>✏️ Edit Broadcast</h3>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body" id="edit-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let S = { broadcasts: [], records: [], seeded: false };
+let currentUser = null;
+
+const DEFAULT_PAID_BROADCASTS = [
+  { id:1000001, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'16:20', msgname:'Paid_YE_Reminder',          content:'', days:[] },
+  { id:1000002, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'17:20', msgname:'Paid_YE_Reminder',          content:'', days:[] },
+  { id:1000003, category:'PAID', program:'Strong', identifier:'Strong', time:'17:40', msgname:'Paid_SE_Reminder',          content:'', days:[] },
+  { id:1000004, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'18:20', msgname:'Paid_YE_Reminder',          content:'', days:[] },
+  { id:1000005, category:'PAID', program:'Strong', identifier:'Strong', time:'18:40', msgname:'Paid_SE_Reminder',          content:'', days:[] },
+  { id:1000006, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'18:50', msgname:'Paid_YE_Milestone_Evening', content:'', days:[] },
+  { id:1000007, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'19:00', msgname:'Paid_Pause_Reminder',       content:'', days:[] },
+  { id:1000008, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'19:00', msgname:'Paid_Unpause_Reminder',     content:'', days:[] },
+  { id:1000009, category:'PAID', program:'Strong', identifier:'Strong', time:'19:40', msgname:'Paid_SE_Reminder',          content:'', days:[] },
+  { id:1000010, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'19:50', msgname:'Paid_YE_Milestone_Evening', content:'', days:[] },
+  { id:1000011, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'21:00', msgname:'Paid_Night_Reminder',       content:'', days:[] },
+  { id:1000012, category:'PAID', program:'Strong', identifier:'Strong', time:'21:00', msgname:'Paid_Night_Reminder',       content:'', days:[] },
+];
+let addBcCat = 'PAID';
+let trackCat = 'PAID';
+let trackSubFilter = '';   // program (Yoga/Strong) or CID
+let trackBcId = null;      // selected broadcast id
+let bcListFilter = 'ALL';
+let bcDayFilter = '';
+
+function loadS() {
+  try { const d = localStorage.getItem('bcast_db_v1'); if(d) S = JSON.parse(d); } catch(e){}
+  if (!S.seeded) {
+    S.broadcasts = [...DEFAULT_PAID_BROADCASTS, ...S.broadcasts];
+    S.seeded = true;
+    saveS();
+  }
+}
+function saveS() { localStorage.setItem('bcast_db_v1', JSON.stringify(S)); }
+
+// ══════════════════════════════════════════════
+// AUTH (simple)
+// ══════════════════════════════════════════════
+const ADMIN_EMAIL = 'shoyebzadiye.habuild@gmail.com';
+
+function getRequests() {
+  try { return JSON.parse(localStorage.getItem('bcast_requests')||'[]'); } catch(e){ return []; }
+}
+function saveRequests(reqs) { localStorage.setItem('bcast_requests', JSON.stringify(reqs)); }
+
+function isApproved(email) {
+  if (email === ADMIN_EMAIL) return true;
+  return getRequests().some(r => r.email === email && r.status === 'approved');
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  if (!email) return;
+  document.getElementById('login-err').style.display = 'none';
+
+  if (isApproved(email)) {
+    currentUser = email;
+    localStorage.setItem('bcast_user', email);
+    startApp();
+    return;
+  }
+
+  // Not approved — show request screen
+  const reqs = getRequests();
+  const existing = reqs.find(r => r.email === email);
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('request-screen').style.display = 'flex';
+  // Store the attempted email so we can submit request
+  document.getElementById('request-screen').dataset.email = email;
+
+  const statusBox = document.getElementById('req-status-box');
+  const reqBtn    = document.getElementById('req-btn');
+  const reqMsg    = document.getElementById('req-msg');
+
+  if (existing && existing.status === 'pending') {
+    statusBox.style.display = 'block';
+    statusBox.className = 'req-status pending';
+    statusBox.textContent = '⏳ Your request is pending admin approval.';
+    reqBtn.style.display = 'none';
+    reqMsg.textContent = `Access request sent for ${email}`;
+  } else if (existing && existing.status === 'revoked') {
+    statusBox.style.display = 'block';
+    statusBox.className = 'req-status denied';
+    statusBox.textContent = '🚫 Your access has been revoked. Contact the admin.';
+    reqBtn.style.display = 'none';
+    reqMsg.textContent = `Access revoked for ${email}`;
+  } else {
+    statusBox.style.display = 'none';
+    reqBtn.style.display = 'block';
+    reqMsg.textContent = `"${email}" is not registered. Request access from the admin.`;
+  }
+}
+
+function submitAccessRequest() {
+  const email = document.getElementById('request-screen').dataset.email;
+  if (!email) return;
+  const reqs = getRequests();
+  if (!reqs.find(r => r.email === email)) {
+    reqs.push({ email, requestedAt: new Date().toISOString(), status: 'pending' });
+    saveRequests(reqs);
+  }
+  const statusBox = document.getElementById('req-status-box');
+  statusBox.style.display = 'block';
+  statusBox.className = 'req-status pending';
+  statusBox.textContent = '⏳ Request sent! Waiting for admin approval.';
+  document.getElementById('req-btn').style.display = 'none';
+  document.getElementById('req-msg').textContent = `Access request sent for ${email}`;
+}
+
+function backToLogin() {
+  document.getElementById('request-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function logout() {
+  localStorage.removeItem('bcast_user');
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+}
+
+function startApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('request-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-email-display').textContent = currentUser;
+  document.getElementById('user-avatar').textContent = currentUser[0].toUpperCase();
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('dash-date').value = today();
+  // Show admin nav only for admin
+  document.getElementById('admin-nav-section').style.display =
+    currentUser === ADMIN_EMAIL ? 'block' : 'none';
+  renderAddBcFields();
+  renderTrackForm();
+  renderDashboard();
+  renderBroadcastList();
+  renderRecords();
+  renderTodayLog();
+  if (currentUser === ADMIN_EMAIL) renderAdminPanel();
+
+}
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+const pageTitles = {
+  'dashboard': 'Dashboard',
+  'tracking': 'Daily Tracking',
+  'add-broadcast': 'Add Broadcast',
+  'broadcasts': 'All Broadcasts',
+  'records': 'Records',
+  'admin': '🛡 Access Control'
+};
+
+function goTo(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[name];
+  if (name==='dashboard') renderDashboard();
+  if (name==='broadcasts') renderBroadcastList();
+  if (name==='records') renderRecords();
+  if (name==='admin') { if(currentUser!==ADMIN_EMAIL){return;} renderAdminPanel(); }
+  if (name==='tracking') { renderTrackForm(); renderTodayLog(); }
+}
+
+// ══════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════
+function today() { return new Date().toISOString().slice(0,10); }
+function yesterday() {
+  const d = new Date(); d.setDate(d.getDate()-1);
+  return d.toISOString().slice(0,10);
+}
+function toast(msg, type='default') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type==='success' ? '#065f46' : type==='error' ? '#991b1b' : '#1e293b';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+function unique(arr, key) { return [...new Set(arr.map(r=>r[key]).filter(Boolean))]; }
+function fmt12(t) {
+  if (!t) return '—';
+  const [hStr, mStr] = t.split(':');
+  let h = parseInt(hStr, 10), m = mStr || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${m} ${ampm}`;
+}
+function nl2br(text) {
+  if (!text) return '—';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>');
+}
+
+// ══════════════════════════════════════════════
+// DAYS PICKER HELPER
+// ══════════════════════════════════════════════
+const ALL_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+function dayPickerHTML(prefix, selected=[]) {
+  const sel = selected.length ? selected : [];
+  const chk = d => sel.includes(d) ? 'checked' : '';
+  return `
+    <div class="days-picker">
+      <div class="days-presets">
+        <button type="button" class="preset-btn" onclick="setDays('${prefix}',['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])">All Days</button>
+        <button type="button" class="preset-btn" onclick="setDays('${prefix}',['Mon','Tue','Wed','Thu','Fri','Sat'])">Mon – Sat</button>
+        <button type="button" class="preset-btn" onclick="setDays('${prefix}',['Mon','Tue','Wed','Thu','Fri'])">Mon – Fri</button>
+        <button type="button" class="preset-btn" onclick="setDays('${prefix}',['Sat'])">Only Sat</button>
+        <button type="button" class="preset-btn" onclick="setDays('${prefix}',['Sun'])">Only Sun</button>
+        <button type="button" class="preset-btn" onclick="setDays('${prefix}',['Sat','Sun'])">Weekends</button>
+      </div>
+      <div class="days-checkboxes">
+        ${ALL_DAYS.map(d=>`
+          <div class="day-cb">
+            <input type="checkbox" id="${prefix}-day-${d}" value="${d}" ${chk(d)} />
+            <label for="${prefix}-day-${d}">${d}</label>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function setDays(prefix, days) {
+  ALL_DAYS.forEach(d => {
+    const el = document.getElementById(`${prefix}-day-${d}`);
+    if (el) el.checked = days.includes(d);
+  });
+}
+
+function getDays(prefix) {
+  return ALL_DAYS.filter(d => {
+    const el = document.getElementById(`${prefix}-day-${d}`);
+    return el && el.checked;
+  });
+}
+
+// ══════════════════════════════════════════════
+// ADD BROADCAST
+// ══════════════════════════════════════════════
+function selectAddCat(cat, btn) {
+  addBcCat = cat;
+  document.querySelectorAll('#panel-add-broadcast .cat-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('add-bc-title').textContent = `➕ Add ${cat} Broadcast`;
+  renderAddBcFields();
+}
+
+const TIME_SLOTS_HTML = `
+  <div class="fg" style="grid-column:1/-1">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <label style="margin:0">Time Slots <span style="font-weight:400;color:var(--muted);font-size:.78rem">(up to 4)</span></label>
+      <button type="button" onclick="addTimeSlot()" class="btn btn-ghost btn-sm">+ Add Slot</button>
+    </div>
+    <div id="abc-times-wrap" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>`;
+
+function renderAddBcFields() {
+  const el = document.getElementById('add-bc-fields');
+  if (addBcCat === 'PAID') {
+    el.innerHTML = `
+      <div class="fg"><label>Program</label>
+        <select id="abc-program"><option value="">Select</option><option>Yoga</option><option>Strong</option></select></div>
+      <div class="fg"><label>Message Name</label><input type="text" id="abc-msgname" placeholder="e.g. Day 1 Welcome" /></div>
+      ${TIME_SLOTS_HTML}
+      <div class="fg" style="grid-column:1/-1"><label>Days</label>${dayPickerHTML('abc')}</div>
+      <div class="fg" style="grid-column:1/-1"><label>Message Content</label>
+        <textarea id="abc-content" placeholder="Full broadcast message text..."></textarea></div>`;
+  } else if (addBcCat === 'FREE') {
+    el.innerHTML = `
+      <div class="fg"><label>CID</label><input type="text" id="abc-cid" placeholder="e.g. CID 01" /></div>
+      <div class="fg"><label>Type</label>
+        <select id="abc-type"><option value="">Select</option><option>Yoga</option><option>Bonus</option><option>Orientation</option><option>Attendance</option><option>Payment</option></select></div>
+      <div class="fg"><label>Message Name</label><input type="text" id="abc-msgname" placeholder="e.g. Free Orientation" /></div>
+      ${TIME_SLOTS_HTML}
+      <div class="fg" style="grid-column:1/-1"><label>Days</label>${dayPickerHTML('abc')}</div>
+      <div class="fg" style="grid-column:1/-1"><label>Message Content</label>
+        <textarea id="abc-content" placeholder="Full broadcast message text..."></textarea></div>`;
+  } else {
+    el.innerHTML = `
+      <div class="fg"><label>Session Name</label><input type="text" id="abc-session" placeholder="e.g. Trial Session" /></div>
+      <div class="fg"><label>Message Name</label><input type="text" id="abc-msgname" placeholder="e.g. Trial Reminder" /></div>
+      ${TIME_SLOTS_HTML}
+      <div class="fg" style="grid-column:1/-1"><label>Days</label>${dayPickerHTML('abc')}</div>
+      <div class="fg" style="grid-column:1/-1"><label>Message Content</label>
+        <textarea id="abc-content" placeholder="Full broadcast message text..."></textarea></div>`;
+  }
+  addTimeSlot(); // add first slot automatically
+}
+
+function addTimeSlot() {
+  const wrap = document.getElementById('abc-times-wrap');
+  if (!wrap) return;
+  const count = wrap.querySelectorAll('.abc-slot').length;
+  if (count >= 4) { toast('Maximum 4 time slots allowed', 'error'); return; }
+  const div = document.createElement('div');
+  div.className = 'abc-slot';
+  div.style.cssText = 'display:flex;align-items:center;gap:8px';
+  div.innerHTML = `<input type="time" class="abc-time-input" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;color:var(--text);background:var(--light)" />
+    ${count > 0 ? `<button type="button" onclick="this.closest('.abc-slot').remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;padding:4px" title="Remove slot">✕</button>` : ''}`;
+  wrap.appendChild(div);
+}
+
+function saveBroadcast() {
+  const msgname = document.getElementById('abc-msgname').value.trim();
+  const content = document.getElementById('abc-content').value.trim();
+  if (!msgname) { toast('Message Name is required', 'error'); return; }
+
+  const times = [...document.querySelectorAll('.abc-time-input')].map(i => i.value).filter(Boolean);
+  const finalTimes = times.length ? times : [''];
+  const days = getDays('abc');
+  const baseId = Date.now();
+
+  finalTimes.forEach((time, i) => {
+    const entry = { id: baseId + i, category: addBcCat, time, msgname, content, days };
+    if (addBcCat === 'PAID') {
+      entry.program = document.getElementById('abc-program').value;
+      entry.identifier = entry.program;
+    } else if (addBcCat === 'FREE') {
+      entry.cid = document.getElementById('abc-cid').value.trim();
+      entry.type = document.getElementById('abc-type').value;
+      entry.identifier = entry.cid + (entry.type ? ' · '+entry.type : '');
+    } else {
+      entry.session = document.getElementById('abc-session').value.trim();
+      entry.identifier = entry.session;
+    }
+    S.broadcasts.push(entry);
+  });
+
+  saveS();
+  renderBroadcastList();
+  renderTrackForm();
+  clearAddBcForm();
+  toast(finalTimes.length > 1 ? `${finalTimes.length} broadcasts added!` : 'Broadcast added!', 'success');
+}
+
+function cloneBroadcast(id) {
+  const bc = S.broadcasts.find(b => String(b.id) === String(id));
+  if (!bc) return;
+  const clone = { ...bc, id: Date.now() };
+  S.broadcasts.push(clone);
+  saveS();
+  renderBroadcastList();
+  renderTrackForm();
+  toast('Broadcast cloned!', 'success');
+}
+
+function deleteBroadcast(id) {
+  S.broadcasts = S.broadcasts.filter(b => String(b.id) !== String(id));
+  saveS();
+  renderBroadcastList();
+  renderTrackForm();
+  toast('Deleted');
+}
+
+function deleteAllBroadcasts() {
+  if (!confirm('Delete ALL broadcasts? This cannot be undone.')) return;
+  S.broadcasts = [];
+  saveS();
+  renderBroadcastList();
+  renderTrackForm();
+  renderDashboard();
+  toast('All broadcasts deleted');
+}
+
+function clearAddBcForm() {
+  ['abc-program','abc-msgname','abc-content','abc-cid','abc-type']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  const wrap = document.getElementById('abc-times-wrap');
+  if (wrap) { wrap.innerHTML = ''; addTimeSlot(); }
+}
+
+// ══════════════════════════════════════════════
+// BROADCASTS LIST
+// ══════════════════════════════════════════════
+function filterBcList(f, btn) {
+  bcListFilter = f;
+  document.querySelectorAll('#panel-broadcasts .cat-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBroadcastList();
+}
+
+function setBcDayFilter(day, btn) {
+  bcDayFilter = day;
+  document.querySelectorAll('#panel-broadcasts .preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBroadcastList();
+}
+
+function renderBroadcastList() {
+  let data = bcListFilter==='ALL' ? S.broadcasts : S.broadcasts.filter(b=>b.category===bcListFilter);
+  if (bcDayFilter) data = data.filter(b=> b.days && b.days.includes(bcDayFilter));
+  const sorted = [...data].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  document.getElementById('bc-count').textContent = sorted.length;
+  const tbody = document.getElementById('bc-tbody');
+  const empty = document.getElementById('bc-empty');
+  if (!sorted.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML = sorted.map((r,i) => `<tr>
+    <td style="color:var(--muted)">${i+1}</td>
+    <td><span class="badge ${r.category==='PAID'?'badge-blue':r.category==='FREE'?'badge-green':'badge-yellow'}">${r.category}</span></td>
+    <td>${r.identifier||'—'}</td>
+    <td>${fmt12(r.time)}</td>
+    <td style="font-size:.78rem">${r.days&&r.days.length ? r.days.join(', ') : '—'}</td>
+    <td><strong>${r.msgname}</strong></td>
+    <td style="max-width:260px;font-size:.78rem;color:var(--muted)">${nl2br(r.content)}</td>
+    <td style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-ghost btn-sm" onclick="openEditModal(${r.id})">✏️ Edit</button>
+      <button class="btn btn-ghost btn-sm" onclick="cloneBroadcast('${r.id}')" title="Clone">⧉ Clone</button>
+      <button class="del-btn" onclick="deleteBroadcast('${r.id}')">🗑</button>
+    </td>
+  </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// TRACKING FORM
+// ══════════════════════════════════════════════
+function selectCategory(cat, btn) {
+  trackCat = cat;
+  trackSubFilter = '';
+  trackBcId = null;
+  document.querySelectorAll('#panel-tracking .cat-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTrackForm();
+}
+
+function selectSubFilter(val) {
+  trackSubFilter = val;
+  trackBcId = null;
+  renderTrackForm();
+}
+
+function selectTrackBc(id) {
+  trackBcId = id;
+  renderTrackForm();
+  // focus sent input
+  setTimeout(()=>{ const el=document.getElementById('trk-sent'); if(el) el.focus(); }, 50);
+}
+
+function renderTrackForm() {
+  const el = document.getElementById('track-form-fields');
+  let html = '';
+
+  if (trackCat === 'PAID') {
+    // Step 1 — Program buttons: Yoga / Strong
+    const programs = ['Yoga', 'Strong'];
+    html += `<div style="grid-column:1/-1">
+      <div class="step-label">Step 1 — Select Program</div>
+      <div class="sub-btns">
+        ${programs.map(p => `
+          <button class="sub-btn ${p==='Yoga'?'':'green'} ${trackSubFilter===p?'active':''}"
+            onclick="selectSubFilter('${p}')">
+            ${p==='Yoga'?'🧘':'💪'} ${p}
+          </button>`).join('')}
+      </div>
+    </div>`;
+
+    // Step 2 — Broadcasts for selected program
+    if (trackSubFilter) {
+      const bcs = S.broadcasts.filter(b=>b.category==='PAID' && b.program===trackSubFilter)
+        .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+      html += `<div style="grid-column:1/-1">
+        <div class="step-label">Step 2 — Select Broadcast</div>
+        <div class="bc-btn-grid">
+          ${bcs.length ? bcs.map(b=>`
+            <button class="bc-btn ${String(trackBcId)===String(b.id)?'active':''}" onclick="selectTrackBc('${b.id}')">
+              <span class="bc-time">${fmt12(b.time)}</span>${b.msgname}
+            </button>`).join('')
+          : '<span style="color:var(--muted);font-size:.85rem">No broadcasts added for '+trackSubFilter+'</span>'}
+        </div>
+      </div>`;
+    }
+
+  } else if (trackCat === 'OTHER') {
+    // OTHER — show all OTHER broadcasts directly as buttons (no sub-filter needed)
+    const bcs = S.broadcasts.filter(b=>b.category==='OTHER')
+      .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+
+    html += `<div style="grid-column:1/-1">
+      <div class="step-label">Step 1 — Select Broadcast</div>
+      <div class="bc-btn-grid">
+        ${bcs.length ? bcs.map(b=>`
+          <button class="bc-btn ${String(trackBcId)===String(b.id)?'active':''}" onclick="selectTrackBc('${b.id}')">
+            <span class="bc-time">${fmt12(b.time)}${b.identifier?' · '+b.identifier:''}</span>${b.msgname}
+          </button>`).join('')
+        : '<span style="color:var(--muted);font-size:.85rem">No Other broadcasts added yet</span>'}
+      </div>
+    </div>`;
+
+  } else {
+    // FREE — Step 1: CID buttons (max 2 real CIDs + Others)
+    const allFreeBcs = S.broadcasts.filter(b=>b.category==='FREE');
+    const allCids = [...new Set(allFreeBcs.map(b=>b.cid).filter(Boolean))];
+    const mainCids = allCids.slice(0, 2);
+    const otherCids = allCids.slice(2);
+
+    const cidBtns = mainCids.map(cid => `
+      <button class="sub-btn ${trackSubFilter===cid?'active':''}" onclick="selectSubFilter('${cid}')">
+        📋 ${cid}
+      </button>`).join('');
+
+    const othersBtn = otherCids.length || allFreeBcs.filter(b=>!b.cid).length ? `
+      <button class="sub-btn ${trackSubFilter==='__others__'?'active':''}" onclick="selectSubFilter('__others__')">
+        📂 Others
+      </button>` : '';
+
+    html += `<div style="grid-column:1/-1">
+      <div class="step-label">Step 1 — Select CID</div>
+      <div class="sub-btns">
+        ${cidBtns || '<span style="color:var(--muted);font-size:.85rem">No FREE broadcasts added yet</span>'}
+        ${othersBtn}
+      </div>
+    </div>`;
+
+    // Step 2 — Broadcasts for selected CID
+    if (trackSubFilter) {
+      let bcs;
+      if (trackSubFilter === '__others__') {
+        bcs = allFreeBcs.filter(b=> !b.cid || otherCids.includes(b.cid));
+      } else {
+        bcs = allFreeBcs.filter(b=>b.cid===trackSubFilter);
+      }
+      bcs = bcs.sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+
+      html += `<div style="grid-column:1/-1">
+        <div class="step-label">Step 2 — Select Broadcast</div>
+        <div class="bc-btn-grid">
+          ${bcs.length ? bcs.map(b=>`
+            <button class="bc-btn ${String(trackBcId)===String(b.id)?'active':''}" onclick="selectTrackBc('${b.id}')">
+              <span class="bc-time">${fmt12(b.time)} ${b.type?'· '+b.type:''}</span>${b.msgname}
+            </button>`).join('')
+          : '<span style="color:var(--muted);font-size:.85rem">No broadcasts for this selection</span>'}
+        </div>
+      </div>`;
+    }
+  }
+
+  // Step 3 — Count inputs (shown only after broadcast selected)
+  if (trackBcId) {
+    const bc = S.broadcasts.find(b=>String(b.id)===String(trackBcId));
+    html += `
+      <div style="grid-column:1/-1;padding:14px 0 4px;border-top:1px solid var(--border)">
+        <div class="step-label">Step 3 — Enter Counts</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+          <div class="fg">
+            <label>Message Name</label>
+            <input type="text" id="trk-msgname" value="${bc?bc.msgname:''}" readonly />
+          </div>
+          <div class="fg">
+            <label>Time</label>
+            <input type="text" id="trk-time" value="${bc?fmt12(bc.time):''}" readonly style="width:100px"/>
+          </div>
+          <div class="fg">
+            <label>Sent Count</label>
+            <input type="number" id="trk-sent" placeholder="0" min="0" oninput="generateMsg()" style="width:120px"/>
+          </div>
+          <div class="fg">
+            <label>Expected Count</label>
+            <input type="number" id="trk-expected" placeholder="0" min="0" oninput="generateMsg()" style="width:120px"/>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  el.innerHTML = html;
+  if (trackBcId) generateMsg();
+}
+
+function onBroadcastSelect() {
+  // kept for compatibility — selection now via selectTrackBc()
+}
+
+function generateMsg() {
+  const msgname = document.getElementById('trk-msgname').value || '[Broadcast Name]';
+  const sent    = parseInt(document.getElementById('trk-sent').value)||0;
+  const expected = parseInt(document.getElementById('trk-expected').value)||0;
+  const diff    = expected - sent;
+
+  // Visual preview — each line is its own <p> for consistent spacing
+  document.getElementById('generated-msg').innerHTML =
+    `<p><strong>UPDATE :</strong>✅</p>` +
+    `<p><strong>${msgname}</strong> message sent to <strong>${sent}</strong> users on all WATIs.</p>` +
+    `<p><strong>Expected:</strong> ${expected}</p>` +
+    `<p><strong>Difference:</strong> ${diff}</p>`;
+
+  // Copy text — WhatsApp bold (*text*) with correct line breaks
+  document.getElementById('generated-msg').dataset.plain =
+    `*UPDATE :*✅\n*${msgname}* message sent to *${sent}* users on all WATIs.\n*Expected:* ${expected}\n*Difference:* ${diff}`;
+}
+
+function copyMsg() {
+  const el = document.getElementById('generated-msg');
+  if (el.dataset.plain) {
+    navigator.clipboard.writeText(el.dataset.plain).then(()=>toast('Copied!','success')).catch(()=>toast('Copy failed','error'));
+  } else {
+    toast('Generate a message first', 'error');
+  }
+}
+
+function sendWhatsApp() {
+  const el = document.getElementById('generated-msg');
+  if (!el.dataset.plain) { toast('Generate a message first', 'error'); return; }
+  const text = encodeURIComponent(el.dataset.plain);
+  window.open('https://wa.me/?text=' + text, '_blank');
+}
+
+function logEntry() {
+  const bc = S.broadcasts.find(b=>String(b.id)===String(trackBcId));
+  if (!bc) { toast('Select a broadcast first', 'error'); return; }
+  const sent = parseInt(document.getElementById('trk-sent').value)||0;
+  const expected = parseInt(document.getElementById('trk-expected').value)||0;
+  const diff = expected - sent;
+  const el = document.getElementById('generated-msg');
+  const msg = el.dataset.plain || el.textContent;
+
+  const record = {
+    id: Date.now(),
+    date: today(),
+    category: bc.category,
+    identifier: bc.identifier||'',
+    msgname: bc.msgname,
+    time: bc.time||'',
+    sent, expected, diff,
+    message: msg
+  };
+  S.records.push(record);
+  saveS();
+  renderTodayLog();
+  renderDashboard();
+  clearTrackForm();
+  toast('Entry logged!', 'success');
+}
+
+function clearTrackForm() {
+  trackSubFilter = '';
+  trackBcId = null;
+  renderTrackForm();
+  const gm = document.getElementById('generated-msg');
+  gm.innerHTML = 'Fill in the form above to generate the update message.';
+  delete gm.dataset.plain;
+}
+
+function renderTodayLog() {
+  const all = S.records.filter(r=>r.date===today()).sort((a,b)=>a.time.localeCompare(b.time));
+  const data = all.filter(r=>r.category===trackCat);
+
+  const totalSent = data.reduce((s,r)=>s+r.sent,0);
+  const totalExp  = data.reduce((s,r)=>s+r.expected,0);
+  document.getElementById('track-total-sent-badge').textContent = 'Sent: '+totalSent.toLocaleString();
+  document.getElementById('track-total-exp-badge').textContent  = 'Expected: '+totalExp.toLocaleString();
+
+  // Update log header label
+  const logHeader = document.getElementById('log-header-label');
+  if (logHeader) logHeader.textContent = `📋 ${trackCat} — Today's Log`;
+
+  const tbody = document.getElementById('log-tbody');
+  const empty = document.getElementById('log-empty');
+  if (!data.length) {
+    tbody.innerHTML='';
+    empty.style.display='block';
+    empty.textContent = `No ${trackCat} entries logged today.`;
+    return;
+  }
+  empty.style.display='none';
+  tbody.innerHTML = data.map(r=>`<tr>
+    <td>${fmt12(r.time)}</td>
+    <td>${r.identifier||'—'}</td>
+    <td><strong>${r.msgname}</strong></td>
+    <td>${r.sent.toLocaleString()}</td>
+    <td>${r.expected.toLocaleString()}</td>
+    <td><span class="badge ${r.diff>0?'badge-red':'badge-green'}">${r.diff}</span></td>
+    <td style="max-width:240px;font-size:.75rem;color:var(--muted);word-break:break-word;font-family:'Courier New',monospace">${nl2br(r.message)}</td>
+    <td><button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button></td>
+  </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+function renderDashboard() {
+  const selDate = document.getElementById('dash-date')?.value || today();
+  const q = (document.getElementById('dash-search')?.value||'').toLowerCase();
+
+  // Day-of-week for filtering broadcasts by their scheduled days
+  const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(selDate+'T00:00:00').getDay()];
+
+  // Records logged for selected date
+  const records = S.records.filter(r => r.date === selDate);
+
+  let broadcasts = S.broadcasts.filter(b =>
+    !b.days || b.days.length === 0 || b.days.includes(dow)
+  );
+  if (q) broadcasts = broadcasts.filter(b =>
+    b.msgname.toLowerCase().includes(q) ||
+    (b.identifier||'').toLowerCase().includes(q) ||
+    (b.category||'').toLowerCase().includes(q) ||
+    (b.time||'').includes(q)
+  );
+
+  // Helper: find matching record for a broadcast
+  function findRecord(bc) {
+    return records.find(r => r.category === bc.category && r.msgname === bc.msgname);
+  }
+
+  // KPIs from records
+  const tSent = records.reduce((s,r)=>s+r.sent,0);
+  const tExp  = records.reduce((s,r)=>s+r.expected,0);
+  const tDiff = records.reduce((s,r)=>s+r.diff,0);
+  const completed = broadcasts.filter(b=>findRecord(b)).length;
+  const upcoming  = broadcasts.filter(b=>!findRecord(b)).length;
+  const total     = completed + upcoming;
+  const progPct   = total > 0 ? Math.round(completed / total * 100) : 0;
+  const deliveryRate = tExp > 0 ? ((tSent / tExp) * 100).toFixed(1) : null;
+
+  // Scheduled Today
+  document.getElementById('kpi-total').textContent = total;
+  const paidCnt = broadcasts.filter(b=>b.category==='PAID').length;
+  const freeCnt = broadcasts.filter(b=>b.category==='FREE').length;
+  const othCnt  = broadcasts.filter(b=>b.category==='OTHER').length;
+  document.getElementById('kpi-total-sub').textContent =
+    [paidCnt?paidCnt+' Paid':'', freeCnt?freeCnt+' Free':'', othCnt?othCnt+' Other':'']
+    .filter(Boolean).join(' · ') || '—';
+
+  // Completed + progress bar
+  document.getElementById('kpi-completed').textContent = completed;
+  document.getElementById('kpi-prog-fill').style.width = progPct + '%';
+  document.getElementById('kpi-prog-sub').textContent  = `${progPct}% done · ${upcoming} pending`;
+
+  // Sent
+  document.getElementById('kpi-today-sent').textContent = tSent.toLocaleString();
+  document.getElementById('kpi-sent-sub').textContent   = tExp > 0 ? `Expected: ${tExp.toLocaleString()}` : 'No records yet';
+
+  // Delivery Rate
+  const rateCard = document.getElementById('kpi-rate-card');
+  const rateVal  = document.getElementById('kpi-rate');
+  if (deliveryRate !== null) {
+    const rate = parseFloat(deliveryRate);
+    rateVal.textContent  = deliveryRate + '%';
+    rateCard.className   = `kpi ${rate >= 95 ? 'green' : rate >= 80 ? 'yellow' : 'red'}`;
+  } else {
+    rateVal.textContent = '—';
+    rateCard.className  = 'kpi';
+  }
+
+  // Difference
+  document.getElementById('kpi-today-diff').textContent = tDiff.toLocaleString();
+  const diffCard = document.getElementById('kpi-diff-card');
+  const diffSub  = document.getElementById('kpi-diff-sub');
+  if (records.length === 0) {
+    diffCard.className = 'kpi'; diffSub.textContent = '—';
+  } else if (tDiff > 0) {
+    diffCard.className = 'kpi red';    diffSub.textContent = 'under-delivered';
+  } else if (tDiff < 0) {
+    diffCard.className = 'kpi yellow'; diffSub.textContent = 'over-delivered';
+  } else {
+    diffCard.className = 'kpi green';  diffSub.textContent = 'on target ✓';
+  }
+
+  // PAID
+  const paid = broadcasts.filter(b=>b.category==='PAID').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const paidTbody = document.getElementById('dash-paid-tbody');
+  const paidEmpty = document.getElementById('dash-paid-empty');
+  document.getElementById('dash-paid-count').textContent = paid.length;
+  if (!paid.length) { paidTbody.innerHTML=''; paidEmpty.style.display='block'; }
+  else {
+    paidEmpty.style.display='none';
+    paidTbody.innerHTML = paid.map(bc => {
+      const rec = findRecord(bc);
+      const statusBadge = rec
+        ? `<span class="badge badge-done">✅ Done</span>`
+        : `<span class="badge badge-upcoming">⏳ Upcoming</span>`;
+      return `<tr>
+        <td>${fmt12(bc.time)}</td>
+        <td>${bc.program||'—'}</td>
+        <td><strong>${bc.msgname}</strong></td>
+        <td>${statusBadge}</td>
+        <td>${rec ? rec.sent.toLocaleString() : '—'}</td>
+        <td>${rec ? rec.expected.toLocaleString() : '—'}</td>
+        <td>${rec ? `<span class="badge ${rec.diff>0?'badge-red':'badge-green'}">${rec.diff}</span>` : '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // FREE — group by active CIDs
+  const free = broadcasts.filter(b=>b.category==='FREE').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const freeTbody = document.getElementById('dash-free-tbody');
+  const freeEmpty = document.getElementById('dash-free-empty');
+  document.getElementById('dash-free-count').textContent = free.length;
+  if (!free.length) { freeTbody.innerHTML=''; freeEmpty.style.display='block'; }
+  else {
+    freeEmpty.style.display='none';
+    // Group by CID
+    const cidGroups = {};
+    free.forEach(bc => {
+      const cid = bc.cid || '—';
+      if (!cidGroups[cid]) cidGroups[cid] = [];
+      cidGroups[cid].push(bc);
+    });
+    let html = '';
+    Object.keys(cidGroups).sort().forEach(cid => {
+      const rows = cidGroups[cid];
+      rows.forEach((bc, idx) => {
+        const rec = findRecord(bc);
+        const statusBadge = rec
+          ? `<span class="badge badge-done">✅ Done</span>`
+          : `<span class="badge badge-upcoming">⏳ Upcoming</span>`;
+        html += `<tr ${idx===0?'style="border-top:2px solid var(--border)"':''}>
+          <td>${fmt12(bc.time)}</td>
+          <td>${idx===0?`<strong>${cid}</strong>`:'↳'}</td>
+          <td>${bc.type||'—'}</td>
+          <td><strong>${bc.msgname}</strong></td>
+          <td>${statusBadge}</td>
+          <td>${rec ? rec.sent.toLocaleString() : '—'}</td>
+          <td>${rec ? rec.expected.toLocaleString() : '—'}</td>
+          <td>${rec ? `<span class="badge ${rec.diff>0?'badge-red':'badge-green'}">${rec.diff}</span>` : '—'}</td>
+        </tr>`;
+      });
+    });
+    freeTbody.innerHTML = html;
+  }
+}
+
+
+// ══════════════════════════════════════════════
+// RECORDS
+// ══════════════════════════════════════════════
+function renderRecords() {
+  const filter = document.getElementById('rec-filter-date').value;
+  const data = filter ? S.records.filter(r=>r.date===filter) : S.records;
+  const sorted = [...data].sort((a,b)=>b.date.localeCompare(a.date)||a.time.localeCompare(b.time));
+
+  const ts = data.reduce((s,r)=>s+r.sent,0);
+  const te = data.reduce((s,r)=>s+r.expected,0);
+  document.getElementById('rec-kpi-sent').textContent = ts.toLocaleString();
+  document.getElementById('rec-kpi-exp').textContent  = te.toLocaleString();
+  document.getElementById('rec-kpi-diff').textContent = (te-ts).toLocaleString();
+
+  const tbody = document.getElementById('rec-tbody');
+  const empty = document.getElementById('rec-empty');
+  if (!sorted.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML = sorted.map(r=>`<tr>
+    <td>${r.date}</td>
+    <td>${fmt12(r.time)}</td>
+    <td><span class="badge ${r.category==='PAID'?'badge-blue':r.category==='FREE'?'badge-green':'badge-yellow'}">${r.category}</span></td>
+    <td>${r.identifier||'—'}</td>
+    <td><strong>${r.msgname}</strong></td>
+    <td>${r.sent.toLocaleString()}</td>
+    <td>${r.expected.toLocaleString()}</td>
+    <td><span class="badge ${r.diff>0?'badge-red':'badge-green'}">${r.diff}</span></td>
+    <td><button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button></td>
+  </tr>`).join('');
+}
+
+function deleteRecord(id) {
+  S.records = S.records.filter(r=>r.id!==id);
+  saveS();
+  renderRecords();
+  renderTodayLog();
+  renderDashboard();
+  toast('Record deleted');
+}
+
+function exportCSV() {
+  const filter = document.getElementById('rec-filter-date').value;
+  const data = filter ? S.records.filter(r=>r.date===filter) : S.records;
+  const headers = ['Date','Category','Program/CID','Broadcast','Time','Sent','Expected','Difference'];
+  const rows = data.map(r=>[r.date,r.category,r.identifier,r.msgname,r.time,r.sent,r.expected,r.diff]);
+  const csv = [headers.join(','),...rows.map(r=>r.join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = 'broadcast_records_'+(filter||today())+'.csv';
+  a.click();
+  toast('CSV exported!','success');
+}
+
+// ══════════════════════════════════════════════
+// EDIT BROADCAST MODAL
+// ══════════════════════════════════════════════
+let editingId = null;
+
+function openEditModal(id) {
+  const bc = S.broadcasts.find(b=>b.id===id);
+  if (!bc) return;
+  editingId = id;
+
+  const body = document.getElementById('edit-modal-body');
+  if (bc.category === 'PAID') {
+    body.innerHTML = `
+      <div class="fg"><label>Program</label>
+        <select id="edit-program">
+          <option ${bc.program==='Yoga'?'selected':''}>Yoga</option>
+          <option ${bc.program==='Strong'?'selected':''}>Strong</option>
+        </select>
+      </div>
+      <div class="fg"><label>Time</label><input type="time" id="edit-time" value="${bc.time||''}" /></div>
+      <div class="fg" style="grid-column:1/-1"><label>Message Name</label><input type="text" id="edit-msgname" value="${bc.msgname||''}" /></div>
+      <div class="fg" style="grid-column:1/-1"><label>Days</label>${dayPickerHTML('edit', bc.days||[])}</div>
+      <div class="fg" style="grid-column:1/-1"><label>Message Content</label>
+        <textarea id="edit-content">${bc.content||''}</textarea></div>`;
+  } else if (bc.category === 'FREE') {
+    body.innerHTML = `
+      <div class="fg"><label>CID</label><input type="text" id="edit-cid" value="${bc.cid||''}" /></div>
+      <div class="fg"><label>Type</label>
+        <select id="edit-type">
+          <option ${bc.type==='Yoga'?'selected':''}>Yoga</option>
+          <option ${bc.type==='Bonus'?'selected':''}>Bonus</option>
+          <option ${bc.type==='Orientation'?'selected':''}>Orientation</option>
+          <option ${bc.type==='Attendance'?'selected':''}>Attendance</option>
+          <option ${bc.type==='Payment'?'selected':''}>Payment</option>
+        </select>
+      </div>
+      <div class="fg"><label>Time</label><input type="time" id="edit-time" value="${bc.time||''}" /></div>
+      <div class="fg" style="grid-column:1/-1"><label>Message Name</label><input type="text" id="edit-msgname" value="${bc.msgname||''}" /></div>
+      <div class="fg" style="grid-column:1/-1"><label>Days</label>${dayPickerHTML('edit', bc.days||[])}</div>
+      <div class="fg" style="grid-column:1/-1"><label>Message Content</label>
+        <textarea id="edit-content">${bc.content||''}</textarea></div>`;
+  } else {
+    body.innerHTML = `
+      <div class="fg"><label>Session Name</label><input type="text" id="edit-session" value="${bc.session||''}" /></div>
+      <div class="fg"><label>Time</label><input type="time" id="edit-time" value="${bc.time||''}" /></div>
+      <div class="fg" style="grid-column:1/-1"><label>Message Name</label><input type="text" id="edit-msgname" value="${bc.msgname||''}" /></div>
+      <div class="fg" style="grid-column:1/-1"><label>Days</label>${dayPickerHTML('edit', bc.days||[])}</div>
+      <div class="fg" style="grid-column:1/-1"><label>Message Content</label>
+        <textarea id="edit-content">${bc.content||''}</textarea></div>`;
+  }
+  body.style.display = 'grid';
+  body.style.gridTemplateColumns = 'repeat(2, 1fr)';
+  body.style.gap = '14px';
+
+  document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').style.display = 'none';
+  editingId = null;
+}
+
+function saveEdit() {
+  const bc = S.broadcasts.find(b=>b.id===editingId);
+  if (!bc) return;
+
+  bc.time    = document.getElementById('edit-time').value;
+  bc.msgname = document.getElementById('edit-msgname').value.trim();
+  bc.content = document.getElementById('edit-content').value.trim();
+  bc.days    = getDays('edit');
+
+  if (bc.category === 'PAID') {
+    bc.program    = document.getElementById('edit-program').value;
+    bc.identifier = bc.program;
+  } else if (bc.category === 'FREE') {
+    bc.cid        = document.getElementById('edit-cid').value.trim();
+    bc.type       = document.getElementById('edit-type').value;
+    bc.identifier = bc.cid + (bc.type ? ' · '+bc.type : '');
+  } else {
+    bc.session    = document.getElementById('edit-session').value.trim();
+    bc.identifier = bc.session;
+  }
+
+  saveS();
+  renderBroadcastList();
+  renderTrackForm();
+  closeEditModal();
+  toast('Broadcast updated!', 'success');
+}
+
+// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// ADMIN PANEL
+// ══════════════════════════════════════════════
+function renderAdminPanel() {
+  const reqs = getRequests();
+  const pending  = reqs.filter(r => r.status === 'pending');
+  const approved = reqs.filter(r => r.status === 'approved');
+
+  // Pending badge in sidebar
+  const pb = document.getElementById('pending-badge');
+  pb.style.display = pending.length ? 'inline' : 'none';
+  pb.textContent = pending.length;
+
+  document.getElementById('admin-pending-count').textContent = pending.length;
+  document.getElementById('admin-approved-count').textContent = approved.length;
+
+  // Pending list
+  const pendingEl = document.getElementById('admin-pending-list');
+  if (!pending.length) {
+    pendingEl.innerHTML = '<div class="empty">No pending requests.</div>';
+  } else {
+    pendingEl.innerHTML = pending.map(r => `
+      <div class="user-row">
+        <div class="u-avatar">${r.email[0].toUpperCase()}</div>
+        <div style="flex:1">
+          <div class="u-email">${r.email}</div>
+          <div class="u-time">Requested: ${new Date(r.requestedAt).toLocaleString()}</div>
+        </div>
+        <button class="btn btn-success btn-sm" onclick="adminApprove('${r.email}')">✅ Approve</button>
+        <button class="btn btn-danger btn-sm" onclick="adminRevoke('${r.email}')">🚫 Deny</button>
+      </div>`).join('');
+  }
+
+  // Approved list
+  const approvedEl = document.getElementById('admin-approved-list');
+  if (!approved.length) {
+    approvedEl.innerHTML = '<div class="empty">No approved users yet.</div>';
+  } else {
+    approvedEl.innerHTML = approved.map(r => `
+      <div class="user-row">
+        <div class="u-avatar" style="background:linear-gradient(135deg,var(--accent2),#059669)">${r.email[0].toUpperCase()}</div>
+        <div style="flex:1">
+          <div class="u-email">${r.email}</div>
+          <div class="u-time">Approved: ${r.approvedAt ? new Date(r.approvedAt).toLocaleString() : '—'}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="adminRevoke('${r.email}')">🚫 Revoke</button>
+      </div>`).join('');
+  }
+}
+
+function adminApprove(email) {
+  const reqs = getRequests();
+  const r = reqs.find(r => r.email === email);
+  if (r) { r.status = 'approved'; r.approvedAt = new Date().toISOString(); }
+  else reqs.push({ email, requestedAt: new Date().toISOString(), status: 'approved', approvedAt: new Date().toISOString() });
+  saveRequests(reqs);
+  renderAdminPanel();
+  toast(`✅ ${email} approved`, 'success');
+}
+
+function adminRevoke(email) {
+  const reqs = getRequests();
+  const r = reqs.find(r => r.email === email);
+  if (r) r.status = 'revoked';
+  saveRequests(reqs);
+  renderAdminPanel();
+  toast(`🚫 ${email} revoked`, 'error');
+}
+
+function adminAddUser() {
+  const email = document.getElementById('admin-add-email').value.trim().toLowerCase();
+  if (!email) { toast('Enter an email', 'error'); return; }
+  adminApprove(email);
+  document.getElementById('admin-add-email').value = '';
+}
+
+// INIT
+// ══════════════════════════════════════════════
+loadS();
+const savedUser = localStorage.getItem('bcast_user');
+if (savedUser) { currentUser = savedUser; startApp(); }
+</script>
+</body>
+</html>

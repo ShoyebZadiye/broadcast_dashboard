@@ -365,6 +365,8 @@
   }
 
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -726,10 +728,24 @@
 <div id="toast"></div>
 
 <script>
+// ── FIREBASE ──────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAj5m1-NUOhaptk4Q26dqPKr537MFFobmk",
+  authDomain: "dashbordpublic.firebaseapp.com",
+  projectId: "dashbordpublic",
+  storageBucket: "dashbordpublic.firebasestorage.app",
+  messagingSenderId: "598628789070",
+  appId: "1:598628789070:web:705722d8f7b376c6308c1f"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// ─────────────────────────────────────────────
+
 // ══════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════
 let S = { broadcasts: [], records: [], seeded: false };
+let requestsCache = [];
 let currentUser = null;
 
 const DEFAULT_PAID_BROADCASTS = [
@@ -753,25 +769,45 @@ let trackBcId = null;      // selected broadcast id
 let bcListFilter = 'ALL';
 let bcDayFilter = '';
 
-function loadS() {
-  try { const d = localStorage.getItem('bcast_db_v1'); if(d) S = JSON.parse(d); } catch(e){}
+async function loadS() {
+  try {
+    const doc = await db.collection('appData').doc('main').get();
+    if (doc.exists) S = doc.data();
+  } catch(e) { console.warn('Firestore load failed', e); }
   if (!S.seeded) {
-    S.broadcasts = [...DEFAULT_PAID_BROADCASTS, ...S.broadcasts];
+    S.broadcasts = [...DEFAULT_PAID_BROADCASTS, ...(S.broadcasts||[])];
     S.seeded = true;
     saveS();
   }
 }
-function saveS() { localStorage.setItem('bcast_db_v1', JSON.stringify(S)); }
+function saveS() {
+  const clean = JSON.parse(JSON.stringify(S));
+  db.collection('appData').doc('main').set(clean).catch(console.error);
+}
+
+async function loadRequests() {
+  try {
+    const snap = await db.collection('accessRequests').get();
+    requestsCache = snap.docs.map(d => d.data());
+  } catch(e) { console.warn('Requests load failed', e); }
+}
 
 // ══════════════════════════════════════════════
 // AUTH (simple)
 // ══════════════════════════════════════════════
 const ADMIN_EMAIL = 'shoyebzadiye.habuild@gmail.com';
 
-function getRequests() {
-  try { return JSON.parse(localStorage.getItem('bcast_requests')||'[]'); } catch(e){ return []; }
+function getRequests() { return requestsCache; }
+
+function saveRequests(reqs) {
+  requestsCache = reqs;
+  const batch = db.batch();
+  reqs.forEach(r => {
+    const id = r.email.replace(/\./g,'_').replace(/@/g,'_at_');
+    batch.set(db.collection('accessRequests').doc(id), r);
+  });
+  batch.commit().catch(console.error);
 }
-function saveRequests(reqs) { localStorage.setItem('bcast_requests', JSON.stringify(reqs)); }
 
 function isApproved(email) {
   if (email === ADMIN_EMAIL) return true;
@@ -1777,9 +1813,13 @@ function adminAddUser() {
 
 // INIT
 // ══════════════════════════════════════════════
-loadS();
-const savedUser = localStorage.getItem('bcast_user');
-if (savedUser) { currentUser = savedUser; startApp(); }
+async function initApp() {
+  await loadS();
+  await loadRequests();
+  const savedUser = localStorage.getItem('bcast_user');
+  if (savedUser) { currentUser = savedUser; startApp(); }
+}
+initApp();
 </script>
 </body>
 </html>

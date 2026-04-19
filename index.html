@@ -797,6 +797,29 @@ async function loadS() {
   }
 }
 
+function toggleStatus(bcId) {
+  const selDate = document.getElementById('dash-date')?.value || today();
+  const bc = S.broadcasts.find(b => b.id === bcId);
+  if (!bc) return;
+
+  const toMins = t => { if (!t) return -1; const [h,m] = t.split(':').map(Number); return h*60+(m||0); };
+  const todayRecs = S.records.filter(r => r.date === selDate);
+  const dups = S.broadcasts.filter(b => b.category === bc.category && b.msgname === bc.msgname);
+
+  const rec = dups.length > 1 && bc.time
+    ? todayRecs.find(r => r.category === bc.category && r.msgname === bc.msgname && r.time && Math.abs(toMins(r.time) - toMins(bc.time)) <= 15)
+    : todayRecs.find(r => r.category === bc.category && r.msgname === bc.msgname);
+
+  if (rec) {
+    S.records = S.records.filter(r => r.id !== rec.id);
+  } else {
+    S.records.push({ id: Date.now(), date: selDate, time: bc.time, category: bc.category, msgname: bc.msgname, sent: 0, expected: 0, diff: 0, manual: true });
+  }
+  saveS();
+  renderDashboard();
+  renderRecords();
+}
+
 function startRealtime() {
   db.collection('appData').doc('main').onSnapshot(doc => {
     if (!doc.exists) return;
@@ -1602,16 +1625,16 @@ function renderDashboard() {
     paidTbody.innerHTML = paid.map(bc => {
       const rec = findRecord(bc);
       const statusBadge = rec
-        ? `<span class="badge badge-done">✅ Done</span>`
-        : `<span class="badge badge-upcoming">⏳ Upcoming</span>`;
+        ? `<button class="badge badge-done" style="cursor:pointer;border:none" onclick="toggleStatus(${bc.id})">✅ Done</button>`
+        : `<button class="badge badge-upcoming" style="cursor:pointer;border:none" onclick="toggleStatus(${bc.id})">⏳ Upcoming</button>`;
       return `<tr>
         <td>${fmt12(bc.time)}</td>
         <td>${bc.program||'—'}</td>
         <td><strong>${bc.msgname}</strong></td>
         <td>${statusBadge}</td>
-        <td>${rec ? rec.sent.toLocaleString() : '—'}</td>
-        <td>${rec ? rec.expected.toLocaleString() : '—'}</td>
-        <td>${rec ? `<span class="badge ${rec.diff>0?'badge-red':'badge-green'}">${rec.diff}</span>` : '—'}</td>
+        <td>${rec ? (rec.sent||0).toLocaleString() : '—'}</td>
+        <td>${rec ? (rec.expected||0).toLocaleString() : '—'}</td>
+        <td>${rec ? `<span class="badge ${(rec.diff||0)>0?'badge-red':'badge-green'}">${rec.diff??0}</span>` : '—'}</td>
       </tr>`;
     }).join('');
   }

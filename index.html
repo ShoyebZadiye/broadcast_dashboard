@@ -796,6 +796,16 @@ async function loadS() {
     saveS();
   }
 }
+
+function startRealtime() {
+  db.collection('appData').doc('main').onSnapshot(doc => {
+    if (!doc.exists) return;
+    S = doc.data();
+    renderRecords();
+    renderDashboard();
+    renderTodayLog();
+  }, e => console.warn('Realtime error', e));
+}
 function saveS() {
   const clean = JSON.parse(JSON.stringify(S));
   db.collection('appData').doc('main').set(clean).catch(console.error);
@@ -922,6 +932,7 @@ function startApp() {
   renderRecords();
   renderTodayLog();
   if (currentUser === ADMIN_EMAIL) renderAdminPanel();
+  startRealtime();
 
 }
 

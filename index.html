@@ -1489,14 +1489,17 @@ function renderDashboard() {
 
   // Helper: find matching record for a broadcast (time-aware)
   function findRecord(bc) {
-    if (bc.time) {
+    const duplicates = broadcasts.filter(b => b.category === bc.category && b.msgname === bc.msgname);
+    if (duplicates.length > 1 && bc.time) {
+      // Same name appears multiple times today — must match by time
       return records.find(r =>
         r.category === bc.category &&
         r.msgname  === bc.msgname  &&
         r.time     &&
-        Math.abs(toMins(r.time) - toMins(bc.time)) <= 10
+        Math.abs(toMins(r.time) - toMins(bc.time)) <= 15
       );
     }
+    // Unique name — match by name only
     return records.find(r => r.category === bc.category && r.msgname === bc.msgname);
   }
 

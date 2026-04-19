@@ -1487,18 +1487,17 @@ function renderDashboard() {
 
   function toMins(t) { if (!t) return -1; const [h,m] = t.split(':').map(Number); return h*60+(m||0); }
 
-  // Helper: find matching record for a broadcast
+  // Helper: find matching record for a broadcast (time-aware)
   function findRecord(bc) {
     if (bc.time) {
-      const byTime = records.find(r =>
+      return records.find(r =>
         r.category === bc.category &&
         r.msgname  === bc.msgname  &&
         r.time     &&
         Math.abs(toMins(r.time) - toMins(bc.time)) <= 10
       );
-      if (byTime) return byTime;
     }
-    return records.find(r => r.category === bc.category && r.msgname === bc.msgname && !r.time);
+    return records.find(r => r.category === bc.category && r.msgname === bc.msgname);
   }
 
   // KPIs from records

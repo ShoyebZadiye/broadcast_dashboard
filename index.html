@@ -1711,13 +1711,25 @@ function renderRecords() {
     <td>${r.time ? fmt12(r.time) : '—'}</td>
     <td><span class="badge ${r.category==='PAID'?'badge-blue':r.category==='FREE'?'badge-green':'badge-yellow'}">${r.category||'—'}</span></td>
     <td><strong>${r.msgname||'—'}</strong></td>
-    <td>${(r.sent||0).toLocaleString()}</td>
+    <td style="cursor:pointer;text-decoration:underline dotted" onclick="editSent(${r.id})" title="Click to edit">${(r.sent||0).toLocaleString()}</td>
     <td style="color:#f59e0b;font-weight:600">${yc !== null ? yc.toLocaleString() : '—'}</td>
     <td>${(r.expected||0).toLocaleString()}</td>
     <td><span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span></td>
     <td><button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button></td>
   </tr>`;
   }).join('');
+}
+
+function editSent(id) {
+  const r = S.records.find(x => x.id === id);
+  if (!r) return;
+  const val = prompt(`"${r.msgname}" ka sent count:`, r.sent||0);
+  if (val === null) return;
+  r.sent = parseInt(val) || 0;
+  r.diff = (r.expected||0) - r.sent;
+  saveS();
+  renderRecords();
+  renderDashboard();
 }
 
 function deleteRecord(id) {

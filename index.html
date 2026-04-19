@@ -436,12 +436,11 @@
       </div>
       <nav class="sidebar-nav">
         <div class="nav-label">Main</div>
-        <button class="nav-item active" onclick="goTo('dashboard',this)"><span class="icon">🏠</span> Dashboard</button>
-        <button class="nav-item" onclick="goTo('tracking',this)"><span class="icon">📊</span> Daily Tracking</button>
+        <button class="nav-item" onclick="goTo('dashboard',this)"><span class="icon">🏠</span> Dashboard</button>
+        <button class="nav-item active" onclick="goTo('records',this)"><span class="icon">🗂</span> Records</button>
         <div class="nav-label" style="margin-top:8px">Manage</div>
         <button class="nav-item" onclick="goTo('add-broadcast',this)"><span class="icon">➕</span> Add Broadcast</button>
         <button class="nav-item" onclick="goTo('broadcasts',this)"><span class="icon">📋</span> All Broadcasts</button>
-        <button class="nav-item" onclick="goTo('records',this)"><span class="icon">🗂</span> Records</button>
         <div id="admin-nav-section" style="display:none">
           <div class="nav-label" style="margin-top:8px">Admin</div>
           <button class="nav-item" onclick="goTo('admin',this)" id="admin-nav-btn">
@@ -469,7 +468,7 @@
       <div class="content">
 
         <!-- ── DASHBOARD ── -->
-        <div class="panel active" id="panel-dashboard">
+        <div class="panel" id="panel-dashboard">
 
           <!-- Date + Search bar -->
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
@@ -511,10 +510,25 @@
             </div>
           </div>
 
+          <!-- Today's Records (from Extension) -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Today's Broadcasts</h3>
+              <span id="dash-today-count" class="badge badge-blue" style="margin-left:8px">0</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Time</th><th>Type</th><th>Campaign</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Diff</th></tr></thead>
+                <tbody id="dash-today-tbody"></tbody>
+              </table>
+              <div class="empty" id="dash-today-empty">Koi record nahi — extension se Copy & Save karo.</div>
+            </div>
+          </div>
+
           <!-- PAID Broadcasts -->
           <div class="card">
             <div class="card-header">
-              <h3>💳 PAID Broadcasts</h3>
+              <h3>PAID Schedule</h3>
               <span id="dash-paid-count" class="badge badge-blue" style="margin-left:8px">0</span>
             </div>
             <div class="table-wrap">
@@ -529,7 +543,7 @@
           <!-- FREE Broadcasts -->
           <div class="card">
             <div class="card-header">
-              <h3>🆓 FREE Broadcasts</h3>
+              <h3>FREE Schedule</h3>
               <span id="dash-free-count" class="badge badge-green" style="margin-left:8px">0</span>
             </div>
             <div class="table-wrap">
@@ -657,7 +671,7 @@
         </div>
 
         <!-- ── RECORDS ── -->
-        <div class="panel" id="panel-records">
+        <div class="panel active" id="panel-records">
           <div class="kpi-row">
             <div class="kpi blue"><div class="label">Total Sent</div><div class="val" id="rec-kpi-sent">0</div></div>
             <div class="kpi green"><div class="label">Total Expected</div><div class="val" id="rec-kpi-exp">0</div></div>
@@ -665,16 +679,18 @@
           </div>
           <div class="card">
             <div class="card-header">
-              <h3>🗂 All Records</h3>
-              <div style="display:flex;gap:8px">
+              <h3>Records</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rec-filter-date').value=today();renderRecords()">Today</button>
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rec-filter-date').value=yesterday();renderRecords()">Yesterday</button>
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rec-filter-date').value='';renderRecords()">All</button>
                 <input type="date" id="rec-filter-date" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none" />
-                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rec-filter-date').value='';renderRecords()">Clear</button>
                 <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Export</button>
               </div>
             </div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Date</th><th>Time</th><th>Category</th><th>Program / CID</th><th>Broadcast</th><th>Sent</th><th>Expected</th><th>Difference</th><th></th></tr></thead>
+                <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Campaign</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Diff</th><th></th></tr></thead>
                 <tbody id="rec-tbody"></tbody>
               </table>
               <div class="empty" id="rec-empty">No records found.</div>
@@ -894,6 +910,8 @@ function startApp() {
   document.getElementById('user-avatar').textContent = currentUser[0].toUpperCase();
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   document.getElementById('dash-date').value = today();
+  document.getElementById('rec-filter-date').value = today();
+  document.getElementById('page-title').textContent = 'Records';
   // Show admin nav only for admin
   document.getElementById('admin-nav-section').style.display =
     currentUser === ADMIN_EMAIL ? 'block' : 'none';
@@ -916,7 +934,7 @@ const pageTitles = {
   'add-broadcast': 'Add Broadcast',
   'broadcasts': 'All Broadcasts',
   'records': 'Records',
-  'admin': '🛡 Access Control'
+  'admin': 'Access Control'
 };
 
 function goTo(name, btn) {
@@ -1473,9 +1491,9 @@ function renderDashboard() {
   }
 
   // KPIs from records
-  const tSent = records.reduce((s,r)=>s+r.sent,0);
-  const tExp  = records.reduce((s,r)=>s+r.expected,0);
-  const tDiff = records.reduce((s,r)=>s+r.diff,0);
+  const tSent = records.reduce((s,r)=>s+(r.sent||0),0);
+  const tExp  = records.reduce((s,r)=>s+(r.expected||0),0);
+  const tDiff = records.reduce((s,r)=>s+(r.diff ?? ((r.expected||0)-(r.sent||0))),0);
   const completed = broadcasts.filter(b=>findRecord(b)).length;
   const upcoming  = broadcasts.filter(b=>!findRecord(b)).length;
   const total     = completed + upcoming;
@@ -1524,6 +1542,29 @@ function renderDashboard() {
     diffCard.className = 'kpi yellow'; diffSub.textContent = 'over-delivered';
   } else {
     diffCard.className = 'kpi green';  diffSub.textContent = 'on target ✓';
+  }
+
+  // Today's Records (from extension)
+  const todayTbody = document.getElementById('dash-today-tbody');
+  const todayEmpty = document.getElementById('dash-today-empty');
+  const todaySorted = [...records].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  document.getElementById('dash-today-count').textContent = todaySorted.length;
+  if (!todaySorted.length) { todayTbody.innerHTML=''; todayEmpty.style.display='block'; }
+  else {
+    todayEmpty.style.display='none';
+    todayTbody.innerHTML = todaySorted.map(r => {
+      const yc = getYesterdayCount(r);
+      const diff = r.diff ?? ((r.expected||0)-(r.sent||0));
+      return `<tr>
+        <td>${r.time ? fmt12(r.time) : '—'}</td>
+        <td><span class="badge ${r.category==='PAID'?'badge-blue':'badge-green'}">${r.category||'—'}</span></td>
+        <td><strong>${r.msgname||'—'}</strong></td>
+        <td>${(r.sent||0).toLocaleString()}</td>
+        <td style="color:#f59e0b;font-weight:600">${yc !== null ? yc.toLocaleString() : '—'}</td>
+        <td>${(r.expected||0).toLocaleString()}</td>
+        <td><span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span></td>
+      </tr>`;
+    }).join('');
   }
 
   // PAID
@@ -1594,13 +1635,21 @@ function renderDashboard() {
 // ══════════════════════════════════════════════
 // RECORDS
 // ══════════════════════════════════════════════
+function getYesterdayCount(r) {
+  const d = new Date(r.date + 'T00:00:00');
+  d.setDate(d.getDate() - 1);
+  const yDate = d.toISOString().slice(0, 10);
+  const m = S.records.find(x => x.date === yDate && x.msgname === r.msgname);
+  return m != null ? m.sent : null;
+}
+
 function renderRecords() {
   const filter = document.getElementById('rec-filter-date').value;
   const data = filter ? S.records.filter(r=>r.date===filter) : S.records;
-  const sorted = [...data].sort((a,b)=>b.date.localeCompare(a.date)||a.time.localeCompare(b.time));
+  const sorted = [...data].sort((a,b)=>b.date.localeCompare(a.date)||(a.time||'').localeCompare(b.time||''));
 
-  const ts = data.reduce((s,r)=>s+r.sent,0);
-  const te = data.reduce((s,r)=>s+r.expected,0);
+  const ts = data.reduce((s,r)=>s+(r.sent||0),0);
+  const te = data.reduce((s,r)=>s+(r.expected||0),0);
   document.getElementById('rec-kpi-sent').textContent = ts.toLocaleString();
   document.getElementById('rec-kpi-exp').textContent  = te.toLocaleString();
   document.getElementById('rec-kpi-diff').textContent = (te-ts).toLocaleString();
@@ -1609,17 +1658,21 @@ function renderRecords() {
   const empty = document.getElementById('rec-empty');
   if (!sorted.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  tbody.innerHTML = sorted.map(r=>`<tr>
+  tbody.innerHTML = sorted.map(r=>{
+    const yc = getYesterdayCount(r);
+    const diff = r.diff ?? ((r.expected||0) - (r.sent||0));
+    return `<tr>
     <td>${r.date}</td>
-    <td>${fmt12(r.time)}</td>
-    <td><span class="badge ${r.category==='PAID'?'badge-blue':r.category==='FREE'?'badge-green':'badge-yellow'}">${r.category}</span></td>
-    <td>${r.identifier||'—'}</td>
-    <td><strong>${r.msgname}</strong></td>
-    <td>${r.sent.toLocaleString()}</td>
-    <td>${r.expected.toLocaleString()}</td>
-    <td><span class="badge ${r.diff>0?'badge-red':'badge-green'}">${r.diff}</span></td>
+    <td>${r.time ? fmt12(r.time) : '—'}</td>
+    <td><span class="badge ${r.category==='PAID'?'badge-blue':r.category==='FREE'?'badge-green':'badge-yellow'}">${r.category||'—'}</span></td>
+    <td><strong>${r.msgname||'—'}</strong></td>
+    <td>${(r.sent||0).toLocaleString()}</td>
+    <td style="color:#f59e0b;font-weight:600">${yc !== null ? yc.toLocaleString() : '—'}</td>
+    <td>${(r.expected||0).toLocaleString()}</td>
+    <td><span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span></td>
     <td><button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button></td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 }
 
 function deleteRecord(id) {

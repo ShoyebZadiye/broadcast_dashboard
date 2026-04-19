@@ -1485,9 +1485,20 @@ function renderDashboard() {
     (b.time||'').includes(q)
   );
 
+  function toMins(t) { if (!t) return -1; const [h,m] = t.split(':').map(Number); return h*60+(m||0); }
+
   // Helper: find matching record for a broadcast
   function findRecord(bc) {
-    return records.find(r => r.category === bc.category && r.msgname === bc.msgname);
+    if (bc.time) {
+      const byTime = records.find(r =>
+        r.category === bc.category &&
+        r.msgname  === bc.msgname  &&
+        r.time     &&
+        Math.abs(toMins(r.time) - toMins(bc.time)) <= 10
+      );
+      if (byTime) return byTime;
+    }
+    return records.find(r => r.category === bc.category && r.msgname === bc.msgname && !r.time);
   }
 
   // KPIs from records

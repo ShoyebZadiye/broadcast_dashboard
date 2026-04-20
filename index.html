@@ -413,7 +413,53 @@
   body.dark .bottom-nav { background: #1e293b; border-top-color: #334155; box-shadow: 0 -4px 20px rgba(0,0,0,.5); }
 
   /* ── CHART ── */
-  .chart-container { position: relative; height: 220px; }
+  .chart-container { position: relative; height: 240px; }
+
+  .chart-controls { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .chart-range-btn {
+    padding: 4px 13px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+    cursor: pointer; border: 1.5px solid var(--border); background: var(--surface); color: var(--muted);
+    transition: all .15s;
+  }
+  .chart-range-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 8px rgba(79,70,229,.3); }
+  .chart-type-toggle { display:flex; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .chart-type-btn {
+    padding: 4px 10px; font-size: 0.85rem; cursor: pointer; border: none;
+    background: var(--surface); color: var(--muted); transition: all .15s; line-height: 1;
+  }
+  .chart-type-btn.active { background: var(--accent); color: #fff; }
+
+  .chart-bc-wrap {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    padding: 10px 14px; background: var(--light); border-radius: 10px;
+  }
+  .chart-bc-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+  #chart-bc-filter {
+    flex: 1; padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 0.82rem; outline: none; color: var(--text); background: var(--surface);
+    cursor: pointer; transition: border-color .2s;
+  }
+  #chart-bc-filter:focus { border-color: var(--accent); }
+
+  .chart-stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px;
+  }
+  .chart-stat {
+    background: var(--light); border-radius: 10px; padding: 10px 12px;
+    border-left: 3px solid var(--border);
+  }
+  .chart-stat:nth-child(1) { border-left-color: var(--accent); }
+  .chart-stat:nth-child(2) { border-left-color: var(--accent2); }
+  .chart-stat:nth-child(3) { border-left-color: var(--warn); }
+  .chart-stat:nth-child(4) { border-left-color: #8b5cf6; }
+  .chart-stat-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+  .chart-stat-val { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+
+  @media(max-width:768px) {
+    .chart-stats-row { grid-template-columns: 1fr 1fr; }
+    .chart-controls { gap: 5px; }
+    .chart-container { height: 200px; }
+  }
 
   /* ── DELIVERY RATE BADGE ── */
   .rate-badge { display:inline-flex; align-items:center; gap:3px; padding:3px 9px; border-radius:999px; font-size:0.72rem; font-weight:700; white-space:nowrap; }
@@ -701,13 +747,45 @@
             </div>
           </div>
 
-          <!-- 7-Day Performance Chart -->
-          <div class="card">
-            <div class="card-header">
-              <h3>📈 7-Day Performance</h3>
-              <span class="badge badge-gray">Sent vs Expected</span>
+          <!-- Performance Chart -->
+          <div class="card" id="chart-card">
+            <div class="card-header" style="flex-wrap:wrap;gap:10px">
+              <h3>📈 Performance</h3>
+              <div class="chart-controls">
+                <button class="chart-range-btn active" onclick="setChartRange(7,this)">7D</button>
+                <button class="chart-range-btn" onclick="setChartRange(14,this)">14D</button>
+                <button class="chart-range-btn" onclick="setChartRange(30,this)">30D</button>
+                <div class="chart-type-toggle">
+                  <button class="chart-type-btn active" id="ctype-line" onclick="setChartType('line',this)" title="Line">📈</button>
+                  <button class="chart-type-btn" id="ctype-bar" onclick="setChartType('bar',this)" title="Bar">📊</button>
+                </div>
+              </div>
             </div>
             <div class="card-body">
+              <div class="chart-bc-wrap">
+                <span class="chart-bc-label">Broadcast</span>
+                <select id="chart-bc-filter" onchange="setChartBc(this.value)">
+                  <option value="">All Broadcasts</option>
+                </select>
+              </div>
+              <div class="chart-stats-row">
+                <div class="chart-stat">
+                  <div class="chart-stat-label">Total Sent</div>
+                  <div class="chart-stat-val" id="cstat-total">—</div>
+                </div>
+                <div class="chart-stat">
+                  <div class="chart-stat-label">Avg / Day</div>
+                  <div class="chart-stat-val" id="cstat-avg">—</div>
+                </div>
+                <div class="chart-stat">
+                  <div class="chart-stat-label">Best Day</div>
+                  <div class="chart-stat-val" id="cstat-best">—</div>
+                </div>
+                <div class="chart-stat">
+                  <div class="chart-stat-label">Avg Rate</div>
+                  <div class="chart-stat-val" id="cstat-rate">—</div>
+                </div>
+              </div>
               <div class="chart-container"><canvas id="chart-7day"></canvas></div>
             </div>
           </div>
@@ -985,6 +1063,26 @@ const DEFAULT_PAID_BROADCASTS = [
 ];
 let addBcCat = 'PAID';
 let trackCat = 'PAID';
+window._chartRange    = 7;
+window._chartBcFilter = '';
+window._chartType     = 'line';
+
+function setChartRange(n, btn) {
+  window._chartRange = n;
+  document.querySelectorAll('.chart-range-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCharts();
+}
+function setChartType(t, btn) {
+  window._chartType = t;
+  document.querySelectorAll('.chart-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCharts();
+}
+function setChartBc(val) {
+  window._chartBcFilter = val;
+  renderCharts();
+}
 let trackSubFilter = '';   // program (Yoga/Strong) or CID
 let trackBcId = null;      // selected broadcast id
 let bcListFilter = 'ALL';
@@ -2317,77 +2415,137 @@ function closeSidebar() {
 // ══════════════════════════════════════════════
 function renderCharts() {
   if (typeof Chart === 'undefined') return;
+  const range    = window._chartRange    || 7;
+  const bcFilter = window._chartBcFilter || '';
+  const cType    = window._chartType     || 'line';
+
+  // Build day array
   const days = [];
-  for (let i = 6; i >= 0; i--) {
+  for (let i = range - 1; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
     days.push(d.toISOString().slice(0, 10));
   }
-  const labels = days.map(d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
-  const sent     = days.map(d => (S.records||[]).filter(r => r.date === d).reduce((s, r) => s + (r.sent||0), 0));
-  const expected = days.map(d => (S.records||[]).filter(r => r.date === d).reduce((s, r) => s + (r.expected||0), 0));
+  const labels = days.map(d => {
+    const dt = new Date(d + 'T00:00:00');
+    return range <= 14
+      ? dt.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+      : dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  });
+
+  // Populate broadcast dropdown
+  const bcSel = document.getElementById('chart-bc-filter');
+  if (bcSel) {
+    const allNames = [...new Set((S.records||[]).map(r => r.msgname).filter(Boolean))].sort();
+    const cur = bcSel.value;
+    bcSel.innerHTML = '<option value="">All Broadcasts</option>' +
+      allNames.map(n => `<option value="${n}"${n===cur||n===bcFilter?' selected':''}>${n}</option>`).join('');
+    if (bcFilter && bcSel.value !== bcFilter) bcSel.value = bcFilter;
+  }
+
+  // Filter records
+  const filterRecs = arr => bcFilter ? arr.filter(r => r.msgname === bcFilter) : arr;
+  const sent     = days.map(d => filterRecs((S.records||[]).filter(r => r.date === d)).reduce((s,r) => s+(parseInt(r.sent)||0), 0));
+  const expected = days.map(d => filterRecs((S.records||[]).filter(r => r.date === d)).reduce((s,r) => s+(parseInt(r.expected)||0), 0));
+
+  // Update stats
+  const totalSent   = sent.reduce((a,b)=>a+b,0);
+  const daysWithData = sent.filter(v=>v>0).length;
+  const avgDay      = daysWithData ? Math.round(totalSent / daysWithData) : 0;
+  const maxSent     = Math.max(...sent);
+  const bestIdx     = sent.indexOf(maxSent);
+  const totalExp    = expected.reduce((a,b)=>a+b,0);
+  const avgRate     = totalExp > 0 ? Math.round(totalSent / totalExp * 100) : null;
+
+  const el = id => document.getElementById(id);
+  if (el('cstat-total')) el('cstat-total').textContent = totalSent > 0 ? totalSent.toLocaleString() : '—';
+  if (el('cstat-avg'))   el('cstat-avg').textContent   = avgDay > 0 ? avgDay.toLocaleString() : '—';
+  if (el('cstat-best'))  el('cstat-best').textContent  = maxSent > 0 ? new Date(days[bestIdx]+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+  if (el('cstat-rate'))  el('cstat-rate').textContent  = avgRate !== null ? avgRate + '%' : '—';
 
   const ctx = document.getElementById('chart-7day');
   if (!ctx) return;
   if (window._chart7day) window._chart7day.destroy();
 
-  const isDark = document.body.classList.contains('dark');
-  const gridColor = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.05)';
+  const isDark    = document.body.classList.contains('dark');
+  const gridColor = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.04)';
   const textColor = isDark ? '#94a3b8' : '#64748b';
 
-  // Gradient fill for sent line
-  const gradSent = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
-  gradSent.addColorStop(0, 'rgba(79,70,229,.25)');
-  gradSent.addColorStop(1, 'rgba(79,70,229,.02)');
-  const gradExp = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
-  gradExp.addColorStop(0, isDark ? 'rgba(99,102,241,.15)' : 'rgba(99,102,241,.08)');
-  gradExp.addColorStop(1, 'rgba(99,102,241,.01)');
+  // Point colors: best = green, rest = accent
+  const pointColors = sent.map((v,i) => i === bestIdx && maxSent > 0 ? '#10b981' : '#4f46e5');
+  const pointSizes  = sent.map((v,i) => i === bestIdx && maxSent > 0 ? 7 : cType==='line' ? 3 : 0);
 
-  // Find best day for annotation
-  const maxSent = Math.max(...sent);
-  const pointColors = sent.map(v => v === maxSent && maxSent > 0 ? '#10b981' : '#4f46e5');
-  const pointRadius = sent.map(v => v === maxSent && maxSent > 0 ? 6 : 3);
+  let datasets;
+  if (cType === 'bar') {
+    datasets = [
+      {
+        label: 'Sent',     data: sent,
+        backgroundColor: sent.map((v,i) => i===bestIdx&&maxSent>0 ? 'rgba(16,185,129,.85)' : 'rgba(79,70,229,.8)'),
+        borderRadius: 6, borderSkipped: false, order: 2
+      },
+      {
+        label: 'Expected', data: expected,
+        backgroundColor: isDark ? 'rgba(71,85,105,.5)' : 'rgba(199,210,254,.8)',
+        borderRadius: 6, borderSkipped: false, order: 1
+      }
+    ];
+  } else {
+    const gradSent = ctx.getContext('2d').createLinearGradient(0, 0, 0, 240);
+    gradSent.addColorStop(0, 'rgba(79,70,229,.3)');
+    gradSent.addColorStop(1, 'rgba(79,70,229,0)');
+    const gradExp = ctx.getContext('2d').createLinearGradient(0, 0, 0, 240);
+    gradExp.addColorStop(0, isDark ? 'rgba(71,85,105,.2)' : 'rgba(199,210,254,.4)');
+    gradExp.addColorStop(1, 'rgba(199,210,254,0)');
+    datasets = [
+      {
+        label: 'Sent', data: sent,
+        borderColor: '#4f46e5', backgroundColor: gradSent,
+        borderWidth: 2.5, fill: true, tension: 0.4,
+        pointBackgroundColor: pointColors, pointRadius: pointSizes, pointHoverRadius: 7,
+        order: 1
+      },
+      {
+        label: 'Expected', data: expected,
+        borderColor: isDark ? '#475569' : '#c7d2fe', backgroundColor: gradExp,
+        borderWidth: 2, fill: true, tension: 0.4, borderDash: [5,4],
+        pointRadius: 2, pointBackgroundColor: isDark ? '#475569' : '#c7d2fe',
+        order: 2
+      }
+    ];
+  }
 
   window._chart7day = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Sent', data: sent,
-          borderColor: '#4f46e5', backgroundColor: gradSent,
-          borderWidth: 2.5, fill: true, tension: 0.4,
-          pointBackgroundColor: pointColors, pointRadius, pointHoverRadius: 7,
-          order: 1
-        },
-        {
-          label: 'Expected', data: expected,
-          borderColor: isDark ? '#475569' : '#c7d2fe',
-          backgroundColor: gradExp,
-          borderWidth: 2, fill: true, tension: 0.4,
-          borderDash: [5, 4],
-          pointRadius: 3, pointBackgroundColor: isDark ? '#475569' : '#c7d2fe',
-          order: 2
-        }
-      ]
-    },
+    type: cType === 'bar' ? 'bar' : 'line',
+    data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
+      animation: { duration: 400, easing: 'easeInOutQuart' },
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'top', labels: { color: textColor, font: { size: 12 }, boxWidth: 12, padding: 16, usePointStyle: true } },
+        legend: {
+          position: 'top',
+          labels: { color: textColor, font: { size: 12 }, boxWidth: 12, padding: 16, usePointStyle: true }
+        },
         tooltip: {
           backgroundColor: isDark ? '#1e293b' : '#fff',
           borderColor: isDark ? '#334155' : '#e2e8f0', borderWidth: 1,
           titleColor: textColor, bodyColor: textColor,
           padding: 12, cornerRadius: 10,
           callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`,
+            afterBody: items => {
+              const s = items.find(i=>i.dataset.label==='Sent')?.parsed.y || 0;
+              const e = items.find(i=>i.dataset.label==='Expected')?.parsed.y || 0;
+              if (!e) return [];
+              const pct = Math.round(s/e*100);
+              const icon = pct>=95?'✅':pct>=80?'⚠️':'🔴';
+              return [`  ${icon} Rate: ${pct}%`];
+            }
           }
         }
       },
       scales: {
-        x: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } },
-        y: { beginAtZero: true, ticks: { color: textColor, font: { size: 11 }, callback: v => v.toLocaleString() }, grid: { color: gridColor } }
+        x: { ticks: { color: textColor, font: { size: 11 }, maxRotation: 45 }, grid: { color: gridColor } },
+        y: { beginAtZero: true, ticks: { color: textColor, font: { size: 11 }, callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v }, grid: { color: gridColor } }
       }
     }
   });

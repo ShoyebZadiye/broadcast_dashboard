@@ -415,6 +415,45 @@
   /* ── CHART ── */
   .chart-container { position: relative; height: 220px; }
 
+  /* ── DELIVERY RATE BADGE ── */
+  .rate-badge { display:inline-flex; align-items:center; gap:3px; padding:3px 9px; border-radius:999px; font-size:0.72rem; font-weight:700; white-space:nowrap; }
+  .rate-good  { background:#d1fae5; color:#065f46; }
+  .rate-warn  { background:#fef3c7; color:#92400e; }
+  .rate-bad   { background:#fee2e2; color:#991b1b; }
+  .rate-na    { background:var(--light); color:var(--muted); }
+
+  /* ── KPI TREND ── */
+  .kpi-trend { font-size:0.72rem; font-weight:700; margin-top:5px; display:flex; align-items:center; gap:3px; }
+  .trend-up   { color:#10b981; }
+  .trend-down { color:#ef4444; }
+  .trend-flat { color:var(--muted); }
+
+  /* ── MOBILE RECORD CARDS ── */
+  @media(max-width:768px) {
+    .rec-table-wrap { display: none; }
+    .rec-cards-wrap { display: block; }
+  }
+  @media(min-width:769px) {
+    .rec-table-wrap { display: block; }
+    .rec-cards-wrap { display: none; }
+  }
+  .rec-card-item {
+    background: var(--surface); border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 10px; box-shadow: var(--shadow-md); border: 1px solid rgba(0,0,0,.05);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .rec-card-top { display: flex; align-items: center; justify-content: space-between; }
+  .rec-card-name { font-weight: 700; font-size: 0.875rem; color: var(--text); }
+  .rec-card-meta { font-size: 0.75rem; color: var(--muted); display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .rec-card-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .rec-stat { display: flex; flex-direction: column; gap: 2px; }
+  .rec-stat-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .rec-stat-val { font-size: 0.95rem; font-weight: 800; color: var(--text); }
+  .rec-stat-val.sent-val { color: var(--accent); }
+  .rec-stat-val.yest-val { color: #f59e0b; }
+  .rec-card-bottom { display: flex; align-items: center; justify-content: space-between; }
+  body.dark .rec-card-item { border-color: rgba(255,255,255,.04); }
+
   /* ── BOTTOM NAV ── */
   .bottom-nav {
     display: none; position: fixed; bottom: 0; left: 0; right: 0;
@@ -665,10 +704,10 @@
             </div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Time</th><th>Type</th><th>Campaign</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Diff</th></tr></thead>
+                <thead><tr><th>Time</th><th>Type</th><th>Campaign</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Rate</th><th>Diff</th></tr></thead>
                 <tbody id="dash-today-tbody"></tbody>
               </table>
-              <div class="empty" id="dash-today-empty">Koi record nahi — extension se Copy & Save karo.</div>
+              <div class="empty" id="dash-today-empty" style="display:none">📭 No records yet — use extension pe Copy & Save karo.</div>
             </div>
           </div>
 
@@ -683,7 +722,7 @@
                 <thead><tr><th>Time</th><th>Program</th><th>Broadcast Name</th><th>Status</th><th>Sent</th><th>Expected</th><th>Difference</th></tr></thead>
                 <tbody id="dash-paid-tbody"></tbody>
               </table>
-              <div class="empty" id="dash-paid-empty">No PAID broadcasts scheduled.</div>
+              <div class="empty" id="dash-paid-empty">📋 No PAID broadcasts scheduled for this day.</div>
             </div>
           </div>
 
@@ -698,7 +737,7 @@
                 <thead><tr><th>Time</th><th>CID</th><th>Type</th><th>Broadcast Name</th><th>Status</th><th>Sent</th><th>Expected</th><th>Difference</th></tr></thead>
                 <tbody id="dash-free-tbody"></tbody>
               </table>
-              <div class="empty" id="dash-free-empty">No FREE broadcasts scheduled.</div>
+              <div class="empty" id="dash-free-empty">📋 No FREE broadcasts scheduled for this day.</div>
             </div>
           </div>
 
@@ -812,7 +851,7 @@
                 <thead><tr><th>#</th><th>Category</th><th>Program / CID</th><th>Time</th><th>Days</th><th>Message Name</th><th>Message Content</th><th></th></tr></thead>
                 <tbody id="bc-tbody"></tbody>
               </table>
-              <div class="empty" id="bc-empty">No broadcasts added yet.</div>
+              <div class="empty" id="bc-empty">📌 No broadcasts added yet. Use Add Broadcast to get started.</div>
             </div>
           </div>
         </div>
@@ -848,13 +887,14 @@
                 <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Export</button>
               </div>
             </div>
-            <div class="table-wrap">
+            <div class="rec-table-wrap table-wrap">
               <table>
-                <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Campaign</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Diff</th><th></th></tr></thead>
+                <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Campaign</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Rate</th><th>Diff</th><th></th></tr></thead>
                 <tbody id="rec-tbody"></tbody>
               </table>
-              <div class="empty" id="rec-empty">No records found.</div>
             </div>
+            <div class="rec-cards-wrap" id="rec-cards"></div>
+            <div class="empty" id="rec-empty" style="display:none">🔍 No records found. Try a different filter.</div>
           </div>
         </div>
 
@@ -1214,6 +1254,22 @@ function fmt12(t) {
   h = h % 12 || 12;
   return `${h}:${m} ${ampm}`;
 }
+function deliveryBadge(sent, exp) {
+  if (!exp) return '<span class="rate-badge rate-na">—</span>';
+  const pct = Math.round(sent / exp * 100);
+  const cls  = pct >= 95 ? 'rate-good' : pct >= 80 ? 'rate-warn' : 'rate-bad';
+  const icon = pct >= 95 ? '✅' : pct >= 80 ? '⚠️' : '🔴';
+  return `<span class="rate-badge ${cls}">${icon} ${pct}%</span>`;
+}
+
+function trendHTML(curr, prev) {
+  if (!prev || prev === 0) return '';
+  const pct = ((curr - prev) / prev * 100).toFixed(1);
+  if (Math.abs(pct) < 0.5) return `<span class="kpi-trend trend-flat">→ Same as yesterday</span>`;
+  if (pct > 0) return `<span class="kpi-trend trend-up">↑ ${pct}% from yesterday</span>`;
+  return `<span class="kpi-trend trend-down">↓ ${Math.abs(pct)}% from yesterday</span>`;
+}
+
 function nl2br(text) {
   if (!text) return '—';
   return text
@@ -1765,11 +1821,20 @@ function renderDashboard() {
   // Completed + progress bar
   document.getElementById('kpi-completed').textContent = completed;
   document.getElementById('kpi-prog-fill').style.width = progPct + '%';
-  document.getElementById('kpi-prog-sub').textContent  = `${progPct}% done · ${upcoming} pending`;
 
-  // Sent
+  // Sent + trend vs yesterday
+  const ySent = (S.records||[]).filter(r=>r.date===yesterday()).reduce((s,r)=>s+(parseInt(r.sent)||0),0);
   document.getElementById('kpi-today-sent').textContent = tSent.toLocaleString();
-  document.getElementById('kpi-sent-sub').textContent   = tExp > 0 ? `Expected: ${tExp.toLocaleString()}` : 'No records yet';
+  const sentSubEl = document.getElementById('kpi-sent-sub');
+  sentSubEl.innerHTML = (tExp > 0 ? `Expected: ${tExp.toLocaleString()}` : 'No records yet') + trendHTML(tSent, ySent);
+
+  // Completed trend
+  const yCompleted = (() => {
+    const yRecs = (S.records||[]).filter(r=>r.date===yesterday());
+    const yBcs  = (S.broadcasts||[]).filter(b=>!b.days||b.days.length===0||b.days.includes(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(yesterday()+'T00:00:00').getDay()]));
+    return yBcs.filter(b=>yRecs.find(r=>r.category===b.category&&r.msgname===b.msgname)).length;
+  })();
+  document.getElementById('kpi-prog-sub').innerHTML = `${progPct}% done · ${upcoming} pending` + trendHTML(completed, yCompleted);
 
   // Today's Records (from extension)
   const todayTbody = document.getElementById('dash-today-tbody');
@@ -1791,6 +1856,7 @@ function renderDashboard() {
         <td>${rSent.toLocaleString()}</td>
         <td style="color:#f59e0b;font-weight:600">${yc !== null ? yc.toLocaleString() : '—'}</td>
         <td>${rExp.toLocaleString()}</td>
+        <td>${deliveryBadge(rSent, rExp)}</td>
         <td><span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span></td>
       </tr>`;
     }).join('');
@@ -1898,11 +1964,18 @@ function renderRecords() {
   document.getElementById('rec-kpi-diff').textContent = (te-ts).toLocaleString();
 
   const tbody = document.getElementById('rec-tbody');
+  const cards = document.getElementById('rec-cards');
   const empty = document.getElementById('rec-empty');
-  if (!sorted.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+
+  if (!sorted.length) {
+    tbody.innerHTML=''; if(cards) cards.innerHTML='';
+    empty.style.display='block'; return;
+  }
   empty.style.display='none';
+
+  // Desktop table rows
   tbody.innerHTML = sorted.map(r=>{
-    const yc = getYesterdayCount(r);
+    const yc   = getYesterdayCount(r);
     const sent = parseInt(r.sent)||0;
     const exp  = parseInt(r.expected)||0;
     const diff = r.diff != null ? parseInt(r.diff) : (exp - sent);
@@ -1914,9 +1987,47 @@ function renderRecords() {
     <td style="cursor:pointer;text-decoration:underline dotted" onclick="editSent(${r.id})" title="Click to edit">${sent.toLocaleString()}</td>
     <td style="color:#f59e0b;font-weight:600">${yc !== null ? yc.toLocaleString() : '—'}</td>
     <td>${exp.toLocaleString()}</td>
+    <td>${deliveryBadge(sent, exp)}</td>
     <td><span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span></td>
     <td><button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button></td>
   </tr>`;
+  }).join('');
+
+  // Mobile cards
+  if (cards) cards.innerHTML = sorted.map(r=>{
+    const yc   = getYesterdayCount(r);
+    const sent = parseInt(r.sent)||0;
+    const exp  = parseInt(r.expected)||0;
+    const diff = r.diff != null ? parseInt(r.diff) : (exp - sent);
+    return `<div class="rec-card-item">
+      <div class="rec-card-top">
+        <span class="rec-card-name">${r.msgname||'—'}</span>
+        ${deliveryBadge(sent, exp)}
+      </div>
+      <div class="rec-card-meta">
+        ${catBadge(r)}
+        <span>${r.date}</span>
+        ${r.time ? `<span>${fmt12(r.time)}</span>` : ''}
+      </div>
+      <div class="rec-card-stats">
+        <div class="rec-stat">
+          <span class="rec-stat-label">Sent</span>
+          <span class="rec-stat-val sent-val" onclick="editSent(${r.id})" style="cursor:pointer;text-decoration:underline dotted" title="Tap to edit">${sent.toLocaleString()}</span>
+        </div>
+        <div class="rec-stat">
+          <span class="rec-stat-label">Yesterday</span>
+          <span class="rec-stat-val yest-val">${yc !== null ? yc.toLocaleString() : '—'}</span>
+        </div>
+        <div class="rec-stat">
+          <span class="rec-stat-label">Expected</span>
+          <span class="rec-stat-val">${exp.toLocaleString()}</span>
+        </div>
+      </div>
+      <div class="rec-card-bottom">
+        <span class="badge ${diff>0?'badge-red':'badge-green'}">Diff: ${diff}</span>
+        <button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button>
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -2166,21 +2277,60 @@ function renderCharts() {
   const gridColor = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.05)';
   const textColor = isDark ? '#94a3b8' : '#64748b';
 
+  // Gradient fill for sent line
+  const gradSent = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
+  gradSent.addColorStop(0, 'rgba(79,70,229,.25)');
+  gradSent.addColorStop(1, 'rgba(79,70,229,.02)');
+  const gradExp = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
+  gradExp.addColorStop(0, isDark ? 'rgba(99,102,241,.15)' : 'rgba(99,102,241,.08)');
+  gradExp.addColorStop(1, 'rgba(99,102,241,.01)');
+
+  // Find best day for annotation
+  const maxSent = Math.max(...sent);
+  const pointColors = sent.map(v => v === maxSent && maxSent > 0 ? '#10b981' : '#4f46e5');
+  const pointRadius = sent.map(v => v === maxSent && maxSent > 0 ? 6 : 3);
+
   window._chart7day = new Chart(ctx, {
-    type: 'bar',
+    type: 'line',
     data: {
       labels,
       datasets: [
-        { label: 'Sent',     data: sent,     backgroundColor: '#4f46e5', borderRadius: 5, order: 2 },
-        { label: 'Expected', data: expected, backgroundColor: isDark ? '#334155' : '#e0e7ff', borderRadius: 5, order: 1 }
+        {
+          label: 'Sent', data: sent,
+          borderColor: '#4f46e5', backgroundColor: gradSent,
+          borderWidth: 2.5, fill: true, tension: 0.4,
+          pointBackgroundColor: pointColors, pointRadius, pointHoverRadius: 7,
+          order: 1
+        },
+        {
+          label: 'Expected', data: expected,
+          borderColor: isDark ? '#475569' : '#c7d2fe',
+          backgroundColor: gradExp,
+          borderWidth: 2, fill: true, tension: 0.4,
+          borderDash: [5, 4],
+          pointRadius: 3, pointBackgroundColor: isDark ? '#475569' : '#c7d2fe',
+          order: 2
+        }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'top', labels: { color: textColor, font: { size: 12 }, boxWidth: 14, padding: 16 } } },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { color: textColor, font: { size: 12 }, boxWidth: 12, padding: 16, usePointStyle: true } },
+        tooltip: {
+          backgroundColor: isDark ? '#1e293b' : '#fff',
+          borderColor: isDark ? '#334155' : '#e2e8f0', borderWidth: 1,
+          titleColor: textColor, bodyColor: textColor,
+          padding: 12, cornerRadius: 10,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`
+          }
+        }
+      },
       scales: {
         x: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } },
-        y: { beginAtZero: true, ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } }
+        y: { beginAtZero: true, ticks: { color: textColor, font: { size: 11 }, callback: v => v.toLocaleString() }, grid: { color: gridColor } }
       }
     }
   });

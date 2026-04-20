@@ -428,6 +428,33 @@
   .trend-down { color:#ef4444; }
   .trend-flat { color:var(--muted); }
 
+  /* ── SCHEDULE TABLE DONE ROW ── */
+  tr.row-done td { background: #f0fdf4; }
+  body.dark tr.row-done td { background: #052e16; }
+  tr.cid-group-start td { border-top: 2px solid var(--border) !important; }
+
+  /* ── SCHEDULE CARDS (mobile) ── */
+  @media(max-width:768px) {
+    .sched-table-wrap { display: none; }
+    .sched-cards-wrap { display: block; padding: 10px 14px; }
+  }
+  @media(min-width:769px) {
+    .sched-table-wrap { display: block; }
+    .sched-cards-wrap { display: none; }
+  }
+  .sched-card {
+    background: var(--surface); border-radius: 12px; padding: 12px 14px;
+    margin-bottom: 10px; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,.05);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .sched-card.done { background: #f0fdf4; border-color: #bbf7d0; }
+  body.dark .sched-card.done { background: #052e16; border-color: #14532d; }
+  .sched-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .sched-card-name { font-weight: 700; font-size: 0.875rem; color: var(--text); flex: 1; }
+  .sched-card-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 0.75rem; color: var(--muted); }
+  .sched-card-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  body.dark .sched-card { border-color: rgba(255,255,255,.04); }
+
   /* ── MOBILE RECORD CARDS ── */
   @media(max-width:768px) {
     .rec-table-wrap { display: none; }
@@ -714,31 +741,39 @@
           <!-- PAID Broadcasts -->
           <div class="card">
             <div class="card-header">
-              <h3>PAID Schedule</h3>
-              <span id="dash-paid-count" class="badge badge-blue" style="margin-left:8px">0</span>
+              <h3>💳 PAID Schedule</h3>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span id="dash-paid-done" class="badge badge-done" style="display:none"></span>
+                <span id="dash-paid-count" class="badge badge-blue">0 scheduled</span>
+              </div>
             </div>
-            <div class="table-wrap">
+            <div class="sched-table-wrap table-wrap">
               <table>
-                <thead><tr><th>Time</th><th>Program</th><th>Broadcast Name</th><th>Status</th><th>Sent</th><th>Expected</th><th>Difference</th></tr></thead>
+                <thead><tr><th>Time</th><th>Program</th><th>Broadcast</th><th>Status</th><th>Sent</th><th>Expected</th><th>Rate</th><th>Diff</th></tr></thead>
                 <tbody id="dash-paid-tbody"></tbody>
               </table>
-              <div class="empty" id="dash-paid-empty">📋 No PAID broadcasts scheduled for this day.</div>
             </div>
+            <div class="sched-cards-wrap" id="dash-paid-cards"></div>
+            <div class="empty" id="dash-paid-empty">📋 No PAID broadcasts scheduled for this day.</div>
           </div>
 
           <!-- FREE Broadcasts -->
           <div class="card">
             <div class="card-header">
-              <h3>FREE Schedule</h3>
-              <span id="dash-free-count" class="badge badge-green" style="margin-left:8px">0</span>
+              <h3>🆓 FREE Schedule</h3>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span id="dash-free-done" class="badge badge-done" style="display:none"></span>
+                <span id="dash-free-count" class="badge badge-green">0 scheduled</span>
+              </div>
             </div>
-            <div class="table-wrap">
+            <div class="sched-table-wrap table-wrap">
               <table>
-                <thead><tr><th>Time</th><th>CID</th><th>Type</th><th>Broadcast Name</th><th>Status</th><th>Sent</th><th>Expected</th><th>Difference</th></tr></thead>
+                <thead><tr><th>Time</th><th>CID</th><th>Type</th><th>Broadcast</th><th>Status</th><th>Sent</th><th>Expected</th><th>Rate</th><th>Diff</th></tr></thead>
                 <tbody id="dash-free-tbody"></tbody>
               </table>
-              <div class="empty" id="dash-free-empty">📋 No FREE broadcasts scheduled for this day.</div>
             </div>
+            <div class="sched-cards-wrap" id="dash-free-cards"></div>
+            <div class="empty" id="dash-free-empty">📋 No FREE broadcasts scheduled for this day.</div>
           </div>
 
         </div>
@@ -1864,68 +1899,138 @@ function renderDashboard() {
 
   // PAID
   const paid = broadcasts.filter(b=>b.category==='PAID').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-  const paidTbody = document.getElementById('dash-paid-tbody');
-  const paidEmpty = document.getElementById('dash-paid-empty');
-  document.getElementById('dash-paid-count').textContent = paid.length;
-  if (!paid.length) { paidTbody.innerHTML=''; paidEmpty.style.display='block'; }
+  const paidTbody  = document.getElementById('dash-paid-tbody');
+  const paidCards  = document.getElementById('dash-paid-cards');
+  const paidEmpty  = document.getElementById('dash-paid-empty');
+  const paidDoneEl = document.getElementById('dash-paid-done');
+  const paidDoneCnt = paid.filter(b=>findRecord(b)).length;
+  document.getElementById('dash-paid-count').textContent = `${paid.length} scheduled`;
+  if (paidDoneCnt > 0) { paidDoneEl.style.display='inline-block'; paidDoneEl.textContent=`✅ ${paidDoneCnt} done`; }
+  else paidDoneEl.style.display='none';
+
+  if (!paid.length) { paidTbody.innerHTML=''; if(paidCards)paidCards.innerHTML=''; paidEmpty.style.display='block'; }
   else {
     paidEmpty.style.display='none';
     paidTbody.innerHTML = paid.map(bc => {
-      const rec = findRecord(bc);
-      const statusBadge = rec
+      const rec  = findRecord(bc);
+      const sent = rec ? (parseInt(rec.sent)||0) : 0;
+      const exp  = rec ? (parseInt(rec.expected)||0) : 0;
+      const diff = rec ? (rec.diff??0) : null;
+      const statusBtn = rec
         ? `<button class="badge badge-done" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">✅ Done</button>`
-        : `<button class="badge badge-upcoming" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">⏳ Upcoming</button>`;
-      return `<tr>
-        <td>${fmt12(bc.time)}</td>
-        <td>${bc.program||'—'}</td>
-        <td><strong>${bc.msgname}</strong></td>
-        <td>${statusBadge}</td>
-        <td>${rec ? (rec.sent||0).toLocaleString() : '—'}</td>
-        <td>${rec ? (rec.expected||0).toLocaleString() : '—'}</td>
-        <td>${rec ? `<span class="badge ${(rec.diff||0)>0?'badge-red':'badge-green'}">${rec.diff??0}</span>` : '—'}</td>
+        : `<button class="badge badge-upcoming" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">⏳ Pending</button>`;
+      return `<tr class="${rec?'row-done':''}">
+        <td><strong>${fmt12(bc.time)}</strong></td>
+        <td><span class="badge ${bc.program==='Yoga'?'badge-yoga':'badge-strong'}">${bc.program||'—'}</span></td>
+        <td>${bc.msgname}</td>
+        <td>${statusBtn}</td>
+        <td>${rec ? sent.toLocaleString() : '—'}</td>
+        <td>${rec ? exp.toLocaleString() : '—'}</td>
+        <td>${rec ? deliveryBadge(sent,exp) : '—'}</td>
+        <td>${diff!==null ? `<span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span>` : '—'}</td>
       </tr>`;
+    }).join('');
+
+    if (paidCards) paidCards.innerHTML = paid.map(bc => {
+      const rec  = findRecord(bc);
+      const sent = rec ? (parseInt(rec.sent)||0) : 0;
+      const exp  = rec ? (parseInt(rec.expected)||0) : 0;
+      const diff = rec ? (rec.diff??0) : null;
+      return `<div class="sched-card ${rec?'done':''}">
+        <div class="sched-card-top">
+          <span class="sched-card-name">${bc.msgname}</span>
+          ${rec ? deliveryBadge(sent,exp) : `<span class="badge badge-upcoming">⏳ Pending</span>`}
+        </div>
+        <div class="sched-card-meta">
+          <span class="badge ${bc.program==='Yoga'?'badge-yoga':'badge-strong'}">${bc.program||'—'}</span>
+          <span>🕐 ${fmt12(bc.time)}</span>
+          ${rec ? `<button class="badge badge-done" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">✅ Done</button>` : `<button class="badge badge-upcoming" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">Mark Done</button>`}
+        </div>
+        ${rec ? `<div class="sched-card-stats">
+          <div class="rec-stat"><span class="rec-stat-label">Sent</span><span class="rec-stat-val sent-val">${sent.toLocaleString()}</span></div>
+          <div class="rec-stat"><span class="rec-stat-label">Expected</span><span class="rec-stat-val">${exp.toLocaleString()}</span></div>
+          <div class="rec-stat"><span class="rec-stat-label">Diff</span><span class="rec-stat-val" style="color:${diff>0?'var(--danger)':'var(--accent2)'}">${diff}</span></div>
+        </div>` : ''}
+      </div>`;
     }).join('');
   }
 
   // Charts
   renderCharts();
 
-  // FREE — group by active CIDs
+  // FREE — group by CID
   const free = broadcasts.filter(b=>b.category==='FREE').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-  const freeTbody = document.getElementById('dash-free-tbody');
-  const freeEmpty = document.getElementById('dash-free-empty');
-  document.getElementById('dash-free-count').textContent = free.length;
-  if (!free.length) { freeTbody.innerHTML=''; freeEmpty.style.display='block'; }
+  const freeTbody  = document.getElementById('dash-free-tbody');
+  const freeCards  = document.getElementById('dash-free-cards');
+  const freeEmpty  = document.getElementById('dash-free-empty');
+  const freeDoneEl = document.getElementById('dash-free-done');
+  const freeDoneCnt = free.filter(b=>findRecord(b)).length;
+  document.getElementById('dash-free-count').textContent = `${free.length} scheduled`;
+  if (freeDoneCnt > 0) { freeDoneEl.style.display='inline-block'; freeDoneEl.textContent=`✅ ${freeDoneCnt} done`; }
+  else freeDoneEl.style.display='none';
+
+  if (!free.length) { freeTbody.innerHTML=''; if(freeCards)freeCards.innerHTML=''; freeEmpty.style.display='block'; }
   else {
     freeEmpty.style.display='none';
-    // Group by CID
     const cidGroups = {};
-    free.forEach(bc => {
-      const cid = bc.cid || '—';
-      if (!cidGroups[cid]) cidGroups[cid] = [];
-      cidGroups[cid].push(bc);
-    });
+    free.forEach(bc => { const cid=bc.cid||'—'; if(!cidGroups[cid])cidGroups[cid]=[]; cidGroups[cid].push(bc); });
+
+    // Desktop table
     let html = '';
     Object.keys(cidGroups).sort().forEach(cid => {
-      const rows = cidGroups[cid];
-      rows.forEach((bc, idx) => {
-        const rec = findRecord(bc);
-        const statusBadge = rec
-          ? `<span class="badge badge-done">✅ Done</span>`
-          : `<span class="badge badge-upcoming">⏳ Upcoming</span>`;
-        html += `<tr ${idx===0?'style="border-top:2px solid var(--border)"':''}>
-          <td>${fmt12(bc.time)}</td>
-          <td>${idx===0?`<strong>${cid}</strong>`:'↳'}</td>
+      cidGroups[cid].forEach((bc, idx) => {
+        const rec  = findRecord(bc);
+        const sent = rec ? (parseInt(rec.sent)||0) : 0;
+        const exp  = rec ? (parseInt(rec.expected)||0) : 0;
+        const diff = rec ? (rec.diff??0) : null;
+        const statusBtn = rec
+          ? `<button class="badge badge-done" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">✅ Done</button>`
+          : `<button class="badge badge-upcoming" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">⏳ Pending</button>`;
+        html += `<tr class="${rec?'row-done':''} ${idx===0?'cid-group-start':''}">
+          <td><strong>${fmt12(bc.time)}</strong></td>
+          <td>${idx===0?`<strong>${cid}</strong>`:`<span style="color:var(--muted);font-size:.8rem">↳</span>`}</td>
           <td>${bc.type||'—'}</td>
-          <td><strong>${bc.msgname}</strong></td>
-          <td>${statusBadge}</td>
-          <td>${rec ? rec.sent.toLocaleString() : '—'}</td>
-          <td>${rec ? rec.expected.toLocaleString() : '—'}</td>
-          <td>${rec ? `<span class="badge ${rec.diff>0?'badge-red':'badge-green'}">${rec.diff}</span>` : '—'}</td>
+          <td>${bc.msgname}</td>
+          <td>${statusBtn}</td>
+          <td>${rec ? sent.toLocaleString() : '—'}</td>
+          <td>${rec ? exp.toLocaleString() : '—'}</td>
+          <td>${rec ? deliveryBadge(sent,exp) : '—'}</td>
+          <td>${diff!==null ? `<span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span>` : '—'}</td>
         </tr>`;
       });
     });
     freeTbody.innerHTML = html;
+
+    // Mobile cards
+    if (freeCards) {
+      let cardsHtml = '';
+      Object.keys(cidGroups).sort().forEach(cid => {
+        cardsHtml += `<div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:10px 0 4px">CID: ${cid}</div>`;
+        cidGroups[cid].forEach(bc => {
+          const rec  = findRecord(bc);
+          const sent = rec ? (parseInt(rec.sent)||0) : 0;
+          const exp  = rec ? (parseInt(rec.expected)||0) : 0;
+          const diff = rec ? (rec.diff??0) : null;
+          cardsHtml += `<div class="sched-card ${rec?'done':''}">
+            <div class="sched-card-top">
+              <span class="sched-card-name">${bc.msgname}</span>
+              ${rec ? deliveryBadge(sent,exp) : `<span class="badge badge-upcoming">⏳ Pending</span>`}
+            </div>
+            <div class="sched-card-meta">
+              <span>🕐 ${fmt12(bc.time)}</span>
+              ${bc.type?`<span class="badge badge-gray">${bc.type}</span>`:''}
+              ${rec ? `<button class="badge badge-done" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">✅ Done</button>` : `<button class="badge badge-upcoming" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">Mark Done</button>`}
+            </div>
+            ${rec ? `<div class="sched-card-stats">
+              <div class="rec-stat"><span class="rec-stat-label">Sent</span><span class="rec-stat-val sent-val">${sent.toLocaleString()}</span></div>
+              <div class="rec-stat"><span class="rec-stat-label">Expected</span><span class="rec-stat-val">${exp.toLocaleString()}</span></div>
+              <div class="rec-stat"><span class="rec-stat-label">Diff</span><span class="rec-stat-val" style="color:${diff>0?'var(--danger)':'var(--accent2)'}">${diff}</span></div>
+            </div>` : ''}
+          </div>`;
+        });
+      });
+      freeCards.innerHTML = cardsHtml;
+    }
   }
 }
 

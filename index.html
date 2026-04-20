@@ -1002,7 +1002,7 @@ function startApp() {
   document.getElementById('user-avatar').textContent = currentUser[0].toUpperCase();
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   document.getElementById('dash-date').value = today();
-  document.getElementById('rec-filter-date').value = today();
+  document.getElementById('rec-filter-date').value = '';
   document.getElementById('page-title').textContent = 'Records';
   // Show admin nav only for admin
   document.getElementById('admin-nav-section').style.display =
@@ -1611,9 +1611,9 @@ function renderDashboard() {
   }
 
   // KPIs from records
-  const tSent = records.reduce((s,r)=>s+(r.sent||0),0);
-  const tExp  = records.reduce((s,r)=>s+(r.expected||0),0);
-  const tDiff = records.reduce((s,r)=>s+(r.diff ?? ((r.expected||0)-(r.sent||0))),0);
+  const tSent = records.reduce((s,r)=>s+(parseInt(r.sent)||0),0);
+  const tExp  = records.reduce((s,r)=>s+(parseInt(r.expected)||0),0);
+  const tDiff = records.reduce((s,r)=>s+(r.diff!=null ? parseInt(r.diff) : ((parseInt(r.expected)||0)-(parseInt(r.sent)||0))),0);
   const completed = broadcasts.filter(b=>findRecord(b)).length;
   const upcoming  = broadcasts.filter(b=>!findRecord(b)).length;
   const total     = completed + upcoming;
@@ -1673,15 +1673,17 @@ function renderDashboard() {
   else {
     todayEmpty.style.display='none';
     todayTbody.innerHTML = todaySorted.map(r => {
-      const yc = getYesterdayCount(r);
-      const diff = r.diff ?? ((r.expected||0)-(r.sent||0));
+      const yc   = getYesterdayCount(r);
+      const rSent = parseInt(r.sent)||0;
+      const rExp  = parseInt(r.expected)||0;
+      const diff  = r.diff != null ? parseInt(r.diff) : (rExp - rSent);
       return `<tr>
         <td>${r.time ? fmt12(r.time) : '—'}</td>
         <td>${catBadge(r)}</td>
         <td><strong>${r.msgname||'—'}</strong></td>
-        <td>${(r.sent||0).toLocaleString()}</td>
+        <td>${rSent.toLocaleString()}</td>
         <td style="color:#f59e0b;font-weight:600">${yc !== null ? yc.toLocaleString() : '—'}</td>
-        <td>${(r.expected||0).toLocaleString()}</td>
+        <td>${rExp.toLocaleString()}</td>
         <td><span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span></td>
       </tr>`;
     }).join('');
@@ -1782,8 +1784,8 @@ function renderRecords() {
   });
   const sorted = [...data].sort((a,b)=>b.date.localeCompare(a.date)||(a.time||'').localeCompare(b.time||''));
 
-  const ts = data.reduce((s,r)=>s+(r.sent||0),0);
-  const te = data.reduce((s,r)=>s+(r.expected||0),0);
+  const ts = data.reduce((s,r)=>s+(parseInt(r.sent)||0),0);
+  const te = data.reduce((s,r)=>s+(parseInt(r.expected)||0),0);
   document.getElementById('rec-kpi-sent').textContent = ts.toLocaleString();
   document.getElementById('rec-kpi-exp').textContent  = te.toLocaleString();
   document.getElementById('rec-kpi-diff').textContent = (te-ts).toLocaleString();
@@ -1794,15 +1796,17 @@ function renderRecords() {
   empty.style.display='none';
   tbody.innerHTML = sorted.map(r=>{
     const yc = getYesterdayCount(r);
-    const diff = r.diff ?? ((r.expected||0) - (r.sent||0));
+    const sent = parseInt(r.sent)||0;
+    const exp  = parseInt(r.expected)||0;
+    const diff = r.diff != null ? parseInt(r.diff) : (exp - sent);
     return `<tr>
     <td>${r.date}</td>
     <td>${r.time ? fmt12(r.time) : '—'}</td>
     <td>${catBadge(r)}</td>
     <td><strong>${r.msgname||'—'}</strong></td>
-    <td style="cursor:pointer;text-decoration:underline dotted" onclick="editSent(${r.id})" title="Click to edit">${(r.sent||0).toLocaleString()}</td>
+    <td style="cursor:pointer;text-decoration:underline dotted" onclick="editSent(${r.id})" title="Click to edit">${sent.toLocaleString()}</td>
     <td style="color:#f59e0b;font-weight:600">${yc !== null ? yc.toLocaleString() : '—'}</td>
-    <td>${(r.expected||0).toLocaleString()}</td>
+    <td>${exp.toLocaleString()}</td>
     <td><span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span></td>
     <td><button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button></td>
   </tr>`;

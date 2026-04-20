@@ -1955,7 +1955,7 @@ function renderDashboard() {
         r.category === bc.category &&
         r.msgname  === bc.msgname  &&
         r.time     &&
-        Math.abs(toMins(r.time) - toMins(bc.time)) <= 15
+        Math.abs(toMins(r.time) - toMins(bc.time)) <= 45
       );
     }
     // Unique name — match by name only

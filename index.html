@@ -2559,9 +2559,17 @@ async function initApp() {
     const btn = document.getElementById('dark-btn');
     if (btn) btn.textContent = '☀️';
   }
+
+  const savedUser = localStorage.getItem('bcast_user');
+
+  // Hide login immediately if we already know the user — no Firestore wait needed
+  if (savedUser) {
+    document.getElementById('login-screen').style.display = 'none';
+  }
+
   await loadS();
   await loadRequests();
-  const savedUser = localStorage.getItem('bcast_user');
+
   if (savedUser) { currentUser = savedUser; startApp(); }
 }
 initApp();

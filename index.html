@@ -694,17 +694,6 @@
 
           <!-- KPIs -->
           <div class="kpi-row">
-            <div class="kpi">
-              <div class="label">📡 Scheduled Today</div>
-              <div class="val" id="kpi-total">0</div>
-              <div class="kpi-sub" id="kpi-total-sub">—</div>
-            </div>
-            <div class="kpi green">
-              <div class="label">✅ Completed</div>
-              <div class="val" id="kpi-completed">0</div>
-              <div class="kpi-bar-wrap"><div class="kpi-bar-fill" id="kpi-prog-fill" style="width:0%"></div></div>
-              <div class="kpi-sub" id="kpi-prog-sub">0% · 0 pending</div>
-            </div>
             <div class="kpi blue">
               <div class="label">📤 Total Sent</div>
               <div class="val" id="kpi-today-sent">0</div>
@@ -738,43 +727,6 @@
             </div>
           </div>
 
-          <!-- PAID Broadcasts -->
-          <div class="card">
-            <div class="card-header">
-              <h3>💳 PAID Schedule</h3>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span id="dash-paid-done" class="badge badge-done" style="display:none"></span>
-                <span id="dash-paid-count" class="badge badge-blue">0 scheduled</span>
-              </div>
-            </div>
-            <div class="sched-table-wrap table-wrap">
-              <table>
-                <thead><tr><th>Time</th><th>Program</th><th>Broadcast</th><th>Status</th><th>Sent</th><th>Expected</th><th>Rate</th><th>Diff</th></tr></thead>
-                <tbody id="dash-paid-tbody"></tbody>
-              </table>
-            </div>
-            <div class="sched-cards-wrap" id="dash-paid-cards"></div>
-            <div class="empty" id="dash-paid-empty">📋 No PAID broadcasts scheduled for this day.</div>
-          </div>
-
-          <!-- FREE Broadcasts -->
-          <div class="card">
-            <div class="card-header">
-              <h3>🆓 FREE Schedule</h3>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span id="dash-free-done" class="badge badge-done" style="display:none"></span>
-                <span id="dash-free-count" class="badge badge-green">0 scheduled</span>
-              </div>
-            </div>
-            <div class="sched-table-wrap table-wrap">
-              <table>
-                <thead><tr><th>Time</th><th>CID</th><th>Type</th><th>Broadcast</th><th>Status</th><th>Sent</th><th>Expected</th><th>Rate</th><th>Diff</th></tr></thead>
-                <tbody id="dash-free-tbody"></tbody>
-              </table>
-            </div>
-            <div class="sched-cards-wrap" id="dash-free-cards"></div>
-            <div class="empty" id="dash-free-empty">📋 No FREE broadcasts scheduled for this day.</div>
-          </div>
 
         </div>
 

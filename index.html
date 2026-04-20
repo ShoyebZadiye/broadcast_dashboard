@@ -259,6 +259,7 @@
   .badge-renewal { background: #dbeafe; color: #1e3a8a; }
   .badge-pause { background: #f1f5f9; color: #334155; }
   .badge-reminder { background: #fef9c3; color: #713f12; }
+  .badge-night    { background: #1e1b4b; color: #a5b4fc; }
 
   /* Days picker */
   .days-picker { display: flex; flex-direction: column; gap: 8px; }
@@ -742,6 +743,7 @@
                   <option value="renewal">Renewal</option>
                   <option value="pause/unpause">Pause</option>
                   <option value="reminder">Reminder</option>
+                  <option value="night">Night</option>
                   <option value="PAID">PAID</option>
                   <option value="FREE">FREE</option>
                 </select>
@@ -1069,6 +1071,7 @@ function catBadge(r) {
   if (sub === 'renewal')      return `<span class="badge badge-renewal">renewal</span>`;
   if (sub === 'pause/unpause')return `<span class="badge badge-pause">pause/unpause</span>`;
   if (sub === 'reminder')     return `<span class="badge badge-reminder">reminder</span>`;
+  if (sub === 'night')        return `<span class="badge badge-night">night</span>`;
   if (cat === 'PAID')         return `<span class="badge badge-blue">PAID</span>`;
   if (cat === 'FREE')         return `<span class="badge badge-green">FREE</span>`;
   return `<span class="badge badge-yellow">${cat}</span>`;

@@ -2546,7 +2546,8 @@ function renderCalendar() {
     const badge   = doneCount > 0
       ? `<span class="cal-done-badge">${doneCount} done</span>`
       : '';
-    const schedTxt = schedCount > 0
+    const isFuture  = dateStr >= todayStr;
+    const schedTxt  = schedCount > 0 && isFuture
       ? `<span class="cal-sched-txt">${schedCount} sched</span>`
       : '';
 
@@ -2571,14 +2572,16 @@ function calDayClick(dateStr, dow) {
     .sort((a,b) => (a.time||'').localeCompare(b.time||''));
   const records = (S.records || []).filter(r => r.date === dateStr);
 
-  const doneCount   = records.length;
-  const schedCount  = scheduled.length;
-  const totalSent   = records.reduce((s,r) => s + (parseInt(r.sent)||0), 0);
+  const todayStr2  = today();
+  const isFuture   = dateStr >= todayStr2;
+  const doneCount  = records.length;
+  const schedCount = scheduled.length;
+  const totalSent  = records.reduce((s,r) => s + (parseInt(r.sent)||0), 0);
 
   document.getElementById('cal-detail-title').textContent = label;
   document.getElementById('cal-detail-badges').innerHTML = `
-    <span class="badge badge-blue">${doneCount} records</span>
-    <span class="badge badge-gray">${schedCount} scheduled</span>
+    ${doneCount > 0 ? `<span class="badge badge-blue">${doneCount} records</span>` : ''}
+    ${isFuture && schedCount > 0 ? `<span class="badge badge-gray">${schedCount} upcoming</span>` : ''}
     ${totalSent > 0 ? `<span class="badge badge-green">📤 ${totalSent.toLocaleString()} sent</span>` : ''}
   `;
 
@@ -2611,23 +2614,29 @@ function calDayClick(dateStr, dow) {
     });
   }
 
-  if (scheduled.length > 0) {
-    body += `<div style="padding:10px 16px 4px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">📡 Scheduled</div>`;
-    scheduled.forEach(b => {
-      const isDone = records.find(r => r.category === b.category && r.msgname === b.msgname);
-      body += `<div class="cal-detail-item" style="${isDone?'opacity:.5':''}">
-        <span class="badge ${b.category==='PAID'?'badge-blue':'badge-green'}" style="flex-shrink:0">${b.category}</span>
-        <span class="cal-detail-name">${b.msgname}</span>
-        <div class="cal-detail-meta">
-          ${b.time ? `<span style="font-size:.75rem;color:var(--muted)">${fmt12(b.time)}</span>` : ''}
-          ${isDone ? '<span style="color:#059669;font-size:.8rem;font-weight:700">✅ Done</span>' : '<span style="color:var(--muted);font-size:.8rem">⏳ Pending</span>'}
-        </div>
-      </div>`;
-    });
+  // Show scheduled section only for today and future dates
+  if (isFuture && scheduled.length > 0) {
+    const pending = scheduled.filter(b => !records.find(r => r.category === b.category && r.msgname === b.msgname));
+    if (pending.length > 0) {
+      body += `<div style="padding:10px 16px 4px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">📡 Upcoming</div>`;
+      pending.forEach(b => {
+        body += `<div class="cal-detail-item">
+          <span class="badge ${b.category==='PAID'?'badge-blue':'badge-green'}" style="flex-shrink:0">${b.category}</span>
+          <span class="cal-detail-name">${b.msgname}</span>
+          <div class="cal-detail-meta">
+            ${b.time ? `<span style="font-size:.75rem;color:var(--muted)">${fmt12(b.time)}</span>` : ''}
+            <span style="color:var(--muted);font-size:.8rem">⏳ Pending</span>
+          </div>
+        </div>`;
+      });
+    }
   }
 
-  if (!records.length && !scheduled.length) {
-    body = '<div class="empty">No broadcasts scheduled or recorded for this day.</div>';
+  if (!records.length && (!isFuture || !scheduled.length)) {
+    body = '<div class="empty">No records for this day.</div>';
+  }
+  if (!records.length && isFuture && scheduled.length > 0 && body === '') {
+    body = '<div class="empty">No records yet — broadcasts scheduled for this day.</div>';
   }
 
   document.getElementById('cal-detail-body').innerHTML = body;

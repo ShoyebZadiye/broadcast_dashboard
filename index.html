@@ -294,6 +294,7 @@
   .badge-yellow    { background: #fef3c7; color: #92400e; }
   .badge-gray      { background: var(--light); color: var(--muted); }
   .badge-upcoming  { background: #fef3c7; color: #92400e; }
+  .badge-missed    { background: #fee2e2; color: #991b1b; }
   .badge-done      { background: #d1fae5; color: #065f46; }
   .badge-yoga      { background: #fce7f3; color: #9d174d; }
   .badge-strong    { background: #fff7ed; color: #9a3412; }
@@ -789,6 +790,17 @@
               <div class="val" id="kpi-today-sent">0</div>
               <div class="kpi-sub" id="kpi-sent-sub">—</div>
             </div>
+            <div class="kpi green">
+              <div class="label">📅 Scheduled Today</div>
+              <div class="val" id="kpi-total">0</div>
+              <div class="kpi-sub" id="kpi-total-sub">—</div>
+            </div>
+            <div class="kpi yellow">
+              <div class="label">✅ Completed</div>
+              <div class="val" id="kpi-completed">0</div>
+              <div class="kpi-bar-wrap"><div class="kpi-bar-fill" id="kpi-prog-fill" style="width:0%"></div></div>
+              <div class="kpi-sub" id="kpi-prog-sub">—</div>
+            </div>
           </div>
 
           <!-- Performance Chart -->
@@ -832,6 +844,44 @@
               </div>
               <div class="chart-container"><canvas id="chart-7day"></canvas></div>
             </div>
+          </div>
+
+          <!-- PAID Scheduler -->
+          <div class="card">
+            <div class="card-header">
+              <h3>💳 PAID Broadcasts</h3>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span id="dash-paid-count" class="badge badge-gray">0 scheduled</span>
+                <span id="dash-paid-done" class="badge badge-done" style="display:none">✅ 0 done</span>
+              </div>
+            </div>
+            <div class="sched-table-wrap table-wrap">
+              <table>
+                <thead><tr><th>Time</th><th>Program</th><th>Broadcast</th><th>Status</th><th>Sent</th><th>Expected</th><th>Rate</th><th>Diff</th></tr></thead>
+                <tbody id="dash-paid-tbody"></tbody>
+              </table>
+            </div>
+            <div class="sched-cards-wrap" id="dash-paid-cards"></div>
+            <div class="empty" id="dash-paid-empty" style="display:none">📭 No PAID broadcasts scheduled for this day.</div>
+          </div>
+
+          <!-- FREE Scheduler -->
+          <div class="card">
+            <div class="card-header">
+              <h3>🆓 FREE Broadcasts</h3>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span id="dash-free-count" class="badge badge-gray">0 scheduled</span>
+                <span id="dash-free-done" class="badge badge-done" style="display:none">✅ 0 done</span>
+              </div>
+            </div>
+            <div class="sched-table-wrap table-wrap">
+              <table>
+                <thead><tr><th>Time</th><th>CID</th><th>Type</th><th>Broadcast</th><th>Status</th><th>Sent</th><th>Expected</th><th>Rate</th><th>Diff</th></tr></thead>
+                <tbody id="dash-free-tbody"></tbody>
+              </table>
+            </div>
+            <div class="sched-cards-wrap" id="dash-free-cards"></div>
+            <div class="empty" id="dash-free-empty" style="display:none">📭 No FREE broadcasts scheduled for this day.</div>
           </div>
 
           <!-- Today's Records (from Extension) -->
@@ -1134,8 +1184,14 @@ const DEFAULT_PAID_BROADCASTS = [
   { id:1000008, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'19:00', msgname:'Paid_Unpause_Reminder',     content:'', days:[] },
   { id:1000009, category:'PAID', program:'Strong', identifier:'Strong', time:'19:40', msgname:'Paid_SE_Reminder',          content:'', days:[] },
   { id:1000010, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'19:50', msgname:'Paid_YE_Milestone_Evening', content:'', days:[] },
-  { id:1000011, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'21:00', msgname:'Paid_Night_Reminder',       content:'', days:[] },
-  { id:1000012, category:'PAID', program:'Strong', identifier:'Strong', time:'21:00', msgname:'Paid_Night_Reminder',       content:'', days:[] },
+  { id:1000011, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'21:00', msgname:'Paid_Night_Reminder',              content:'', days:[] },
+  { id:1000012, category:'PAID', program:'Strong', identifier:'Strong', time:'21:00', msgname:'Paid_Night_Reminder',              content:'', days:[] },
+  { id:1000013, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'21:00', msgname:'Paid_Night_Absent_Reminder',       content:'', days:[] },
+  { id:1000014, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'21:00', msgname:'Paid_Night_Present_Reminder',      content:'', days:[] },
+  { id:1000015, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'21:00', msgname:'Paid_Sunday_Attendance',           content:'', days:['Sun'] },
+  { id:1000016, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'21:00', msgname:'Paid_Hindi_Night_Absent_Reminder', content:'', days:[] },
+  { id:1000017, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'21:00', msgname:'Paid_Hindi_Night_Present_Reminder',content:'', days:[] },
+  { id:1000018, category:'PAID', program:'Yoga',   identifier:'Yoga',   time:'21:00', msgname:'Paid_Hindi_Sunday_Attendance',     content:'', days:['Sun'] },
 ];
 let addBcCat = 'PAID';
 let trackCat = 'PAID';
@@ -1173,6 +1229,14 @@ async function loadS() {
     S.broadcasts = [...DEFAULT_PAID_BROADCASTS, ...(S.broadcasts||[])];
     S.seeded = true;
     saveS();
+  } else {
+    // Add any new default broadcasts added after initial seed
+    const existingIds = new Set((S.broadcasts||[]).map(b => b.id));
+    const toAdd = DEFAULT_PAID_BROADCASTS.filter(b => !existingIds.has(b.id));
+    if (toAdd.length > 0) {
+      S.broadcasts = [...(S.broadcasts||[]), ...toAdd];
+      saveS();
+    }
   }
 }
 
@@ -1932,9 +1996,9 @@ function renderDashboard() {
   const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(selDate+'T00:00:00').getDay()];
 
   // Records logged for selected date
-  const records = S.records.filter(r => r.date === selDate);
+  const records = (S.records||[]).filter(r => r.date === selDate);
 
-  let broadcasts = S.broadcasts.filter(b =>
+  let broadcasts = (S.broadcasts||[]).filter(b =>
     !b.days || b.days.length === 0 || b.days.includes(dow)
   );
   if (q) broadcasts = broadcasts.filter(b =>
@@ -1962,28 +2026,51 @@ function renderDashboard() {
     return records.find(r => r.category === bc.category && r.msgname === bc.msgname);
   }
 
+  // Time-aware status: past-time broadcasts without a record are "Missed", not "Upcoming"
+  const nowMins    = new Date().getHours() * 60 + new Date().getMinutes();
+  const isToday    = selDate === today();
+  const isPastDate = selDate < today();
+  function isMissed(bc) {
+    if (isPastDate) return true;
+    const bcMins = toMins(bc.time);
+    return isToday && bcMins >= 0 && bcMins < nowMins;
+  }
+  function pendingBtn(bc) {
+    const missed = isMissed(bc);
+    const cls    = missed ? 'badge-missed' : 'badge-upcoming';
+    const label  = missed ? '❌ Missed'    : '⏳ Upcoming';
+    return `<button class="badge ${cls}" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">${label}</button>`;
+  }
+  function pendingSpan(bc) {
+    const missed = isMissed(bc);
+    const cls    = missed ? 'badge-missed' : 'badge-upcoming';
+    const label  = missed ? '❌ Missed'    : '⏳ Upcoming';
+    return `<span class="badge ${cls}">${label}</span>`;
+  }
+
   // KPIs from records
   const tSent = records.reduce((s,r)=>s+(parseInt(r.sent)||0),0);
   const tExp  = records.reduce((s,r)=>s+(parseInt(r.expected)||0),0);
   const tDiff = records.reduce((s,r)=>s+(r.diff!=null ? parseInt(r.diff) : ((parseInt(r.expected)||0)-(parseInt(r.sent)||0))),0);
-  const completed = broadcasts.filter(b=>findRecord(b)).length;
-  const upcoming  = broadcasts.filter(b=>!findRecord(b)).length;
-  const total     = completed + upcoming;
+  const completed  = broadcasts.filter(b=>findRecord(b)).length;
+  const missedCnt  = broadcasts.filter(b=>!findRecord(b) && isMissed(b)).length;
+  const upcomingCnt= broadcasts.filter(b=>!findRecord(b) && !isMissed(b)).length;
+  const upcoming   = missedCnt + upcomingCnt;
+  const total      = completed + upcoming;
   const progPct   = total > 0 ? Math.round(completed / total * 100) : 0;
   const deliveryRate = tExp > 0 ? ((tSent / tExp) * 100).toFixed(1) : null;
 
   // Scheduled Today
-  document.getElementById('kpi-total').textContent = total;
+  const elTotal = document.getElementById('kpi-total'); if(elTotal) elTotal.textContent = total;
   const paidCnt = broadcasts.filter(b=>b.category==='PAID').length;
   const freeCnt = broadcasts.filter(b=>b.category==='FREE').length;
   const othCnt  = broadcasts.filter(b=>b.category==='OTHER').length;
-  document.getElementById('kpi-total-sub').textContent =
-    [paidCnt?paidCnt+' Paid':'', freeCnt?freeCnt+' Free':'', othCnt?othCnt+' Other':'']
-    .filter(Boolean).join(' · ') || '—';
+  const elTotalSub = document.getElementById('kpi-total-sub');
+  if(elTotalSub) elTotalSub.textContent = [paidCnt?paidCnt+' Paid':'', freeCnt?freeCnt+' Free':'', othCnt?othCnt+' Other':''].filter(Boolean).join(' · ') || '—';
 
   // Completed + progress bar
-  document.getElementById('kpi-completed').textContent = completed;
-  document.getElementById('kpi-prog-fill').style.width = progPct + '%';
+  const elComp = document.getElementById('kpi-completed'); if(elComp) elComp.textContent = completed;
+  const elFill = document.getElementById('kpi-prog-fill'); if(elFill) elFill.style.width = progPct + '%';
 
   // Sent + trend vs yesterday
   const ySent = (S.records||[]).filter(r=>r.date===yesterday()).reduce((s,r)=>s+(parseInt(r.sent)||0),0);
@@ -1997,7 +2084,8 @@ function renderDashboard() {
     const yBcs  = (S.broadcasts||[]).filter(b=>!b.days||b.days.length===0||b.days.includes(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(yesterday()+'T00:00:00').getDay()]));
     return yBcs.filter(b=>yRecs.find(r=>r.category===b.category&&r.msgname===b.msgname)).length;
   })();
-  document.getElementById('kpi-prog-sub').innerHTML = `${progPct}% done · ${upcoming} pending` + trendHTML(completed, yCompleted);
+  const pendingTxt = [upcomingCnt ? upcomingCnt+' upcoming' : '', missedCnt ? missedCnt+' missed' : ''].filter(Boolean).join(' · ') || 'all done';
+  const elProgSub = document.getElementById('kpi-prog-sub'); if(elProgSub) elProgSub.innerHTML = `${progPct}% done · ${pendingTxt}` + trendHTML(completed, yCompleted);
 
   // Today's Records (from extension)
   const todayTbody = document.getElementById('dash-today-tbody');
@@ -2046,7 +2134,7 @@ function renderDashboard() {
       const diff = rec ? (rec.diff??0) : null;
       const statusBtn = rec
         ? `<button class="badge badge-done" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">✅ Done</button>`
-        : `<button class="badge badge-upcoming" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">⏳ Pending</button>`;
+        : pendingBtn(bc);
       return `<tr class="${rec?'row-done':''}">
         <td><strong>${fmt12(bc.time)}</strong></td>
         <td><span class="badge ${bc.program==='Yoga'?'badge-yoga':'badge-strong'}">${bc.program||'—'}</span></td>
@@ -2067,12 +2155,12 @@ function renderDashboard() {
       return `<div class="sched-card ${rec?'done':''}">
         <div class="sched-card-top">
           <span class="sched-card-name">${bc.msgname}</span>
-          ${rec ? deliveryBadge(sent,exp) : `<span class="badge badge-upcoming">⏳ Pending</span>`}
+          ${rec ? deliveryBadge(sent,exp) : pendingSpan(bc)}
         </div>
         <div class="sched-card-meta">
           <span class="badge ${bc.program==='Yoga'?'badge-yoga':'badge-strong'}">${bc.program||'—'}</span>
           <span>🕐 ${fmt12(bc.time)}</span>
-          ${rec ? `<button class="badge badge-done" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">✅ Done</button>` : `<button class="badge badge-upcoming" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">Mark Done</button>`}
+          ${rec ? `<button class="badge badge-done" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">✅ Done</button>` : pendingBtn(bc)}
         </div>
         ${rec ? `<div class="sched-card-stats">
           <div class="rec-stat"><span class="rec-stat-label">Sent</span><span class="rec-stat-val sent-val">${sent.toLocaleString()}</span></div>
@@ -2113,7 +2201,7 @@ function renderDashboard() {
         const diff = rec ? (rec.diff??0) : null;
         const statusBtn = rec
           ? `<button class="badge badge-done" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">✅ Done</button>`
-          : `<button class="badge badge-upcoming" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">⏳ Pending</button>`;
+          : pendingBtn(bc);
         html += `<tr class="${rec?'row-done':''} ${idx===0?'cid-group-start':''}">
           <td><strong>${fmt12(bc.time)}</strong></td>
           <td>${idx===0?`<strong>${cid}</strong>`:`<span style="color:var(--muted);font-size:.8rem">↳</span>`}</td>
@@ -2142,12 +2230,12 @@ function renderDashboard() {
           cardsHtml += `<div class="sched-card ${rec?'done':''}">
             <div class="sched-card-top">
               <span class="sched-card-name">${bc.msgname}</span>
-              ${rec ? deliveryBadge(sent,exp) : `<span class="badge badge-upcoming">⏳ Pending</span>`}
+              ${rec ? deliveryBadge(sent,exp) : pendingSpan(bc)}
             </div>
             <div class="sched-card-meta">
               <span>🕐 ${fmt12(bc.time)}</span>
               ${bc.type?`<span class="badge badge-gray">${bc.type}</span>`:''}
-              ${rec ? `<button class="badge badge-done" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">✅ Done</button>` : `<button class="badge badge-upcoming" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">Mark Done</button>`}
+              ${rec ? `<button class="badge badge-done" style="cursor:pointer;border:none" onclick="toggleStatus('${bc.category}','${bc.msgname}','${bc.time||''}')">✅ Done</button>` : pendingBtn(bc)}
             </div>
             ${rec ? `<div class="sched-card-stats">
               <div class="rec-stat"><span class="rec-stat-label">Sent</span><span class="rec-stat-val sent-val">${sent.toLocaleString()}</span></div>
@@ -2574,14 +2662,25 @@ function calDayClick(dateStr, dow) {
 
   const todayStr2  = today();
   const isFuture   = dateStr >= todayStr2;
-  const doneCount  = records.length;
-  const schedCount = scheduled.length;
-  const totalSent  = records.reduce((s,r) => s + (parseInt(r.sent)||0), 0);
+  const isCalToday = dateStr === todayStr2;
+  const nowMins2   = new Date().getHours() * 60 + new Date().getMinutes();
+  function toMins2(t) { if (!t) return -1; const [h,m] = t.split(':').map(Number); return h*60+(m||0); }
+  function calIsMissed(b) {
+    if (!isFuture) return true;
+    return isCalToday && toMins2(b.time) >= 0 && toMins2(b.time) < nowMins2;
+  }
+
+  const doneCount    = records.length;
+  const unrecorded   = scheduled.filter(b => !records.find(r => r.category === b.category && r.msgname === b.msgname));
+  const upcomingList = isFuture ? unrecorded.filter(b => !calIsMissed(b)) : [];
+  const missedList   = unrecorded.filter(b => calIsMissed(b));
+  const totalSent    = records.reduce((s,r) => s + (parseInt(r.sent)||0), 0);
 
   document.getElementById('cal-detail-title').textContent = label;
   document.getElementById('cal-detail-badges').innerHTML = `
     ${doneCount > 0 ? `<span class="badge badge-blue">${doneCount} records</span>` : ''}
-    ${isFuture && schedCount > 0 ? `<span class="badge badge-gray">${schedCount} upcoming</span>` : ''}
+    ${upcomingList.length > 0 ? `<span class="badge badge-gray">${upcomingList.length} upcoming</span>` : ''}
+    ${missedList.length > 0 ? `<span class="badge badge-missed">${missedList.length} missed</span>` : ''}
     ${totalSent > 0 ? `<span class="badge badge-green">📤 ${totalSent.toLocaleString()} sent</span>` : ''}
   `;
 
@@ -2614,29 +2713,38 @@ function calDayClick(dateStr, dow) {
     });
   }
 
-  // Show scheduled section only for today and future dates
-  if (isFuture && scheduled.length > 0) {
-    const pending = scheduled.filter(b => !records.find(r => r.category === b.category && r.msgname === b.msgname));
-    if (pending.length > 0) {
-      body += `<div style="padding:10px 16px 4px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">📡 Upcoming</div>`;
-      pending.forEach(b => {
-        body += `<div class="cal-detail-item">
-          <span class="badge ${b.category==='PAID'?'badge-blue':'badge-green'}" style="flex-shrink:0">${b.category}</span>
-          <span class="cal-detail-name">${b.msgname}</span>
-          <div class="cal-detail-meta">
-            ${b.time ? `<span style="font-size:.75rem;color:var(--muted)">${fmt12(b.time)}</span>` : ''}
-            <span style="color:var(--muted);font-size:.8rem">⏳ Pending</span>
-          </div>
-        </div>`;
-      });
-    }
+  // Missed broadcasts (past-time or past-date, no record)
+  if (missedList.length > 0) {
+    body += `<div style="padding:10px 16px 4px;font-size:.7rem;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:.05em">❌ Missed</div>`;
+    missedList.forEach(b => {
+      body += `<div class="cal-detail-item">
+        <span class="badge ${b.category==='PAID'?'badge-blue':'badge-green'}" style="flex-shrink:0">${b.category}</span>
+        <span class="cal-detail-name">${b.msgname}</span>
+        <div class="cal-detail-meta">
+          ${b.time ? `<span style="font-size:.75rem;color:var(--muted)">${fmt12(b.time)}</span>` : ''}
+          <span class="badge badge-missed" style="font-size:.72rem">❌ Missed</span>
+        </div>
+      </div>`;
+    });
   }
 
-  if (!records.length && (!isFuture || !scheduled.length)) {
-    body = '<div class="empty">No records for this day.</div>';
+  // Upcoming broadcasts (future time only)
+  if (upcomingList.length > 0) {
+    body += `<div style="padding:10px 16px 4px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">📡 Upcoming</div>`;
+    upcomingList.forEach(b => {
+      body += `<div class="cal-detail-item">
+        <span class="badge ${b.category==='PAID'?'badge-blue':'badge-green'}" style="flex-shrink:0">${b.category}</span>
+        <span class="cal-detail-name">${b.msgname}</span>
+        <div class="cal-detail-meta">
+          ${b.time ? `<span style="font-size:.75rem;color:var(--muted)">${fmt12(b.time)}</span>` : ''}
+          <span style="color:var(--muted);font-size:.8rem">⏳ Upcoming</span>
+        </div>
+      </div>`;
+    });
   }
-  if (!records.length && isFuture && scheduled.length > 0 && body === '') {
-    body = '<div class="empty">No records yet — broadcasts scheduled for this day.</div>';
+
+  if (!records.length && !missedList.length && !upcomingList.length) {
+    body = '<div class="empty">No records for this day.</div>';
   }
 
   document.getElementById('cal-detail-body').innerHTML = body;

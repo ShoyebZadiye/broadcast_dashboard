@@ -846,23 +846,19 @@
             </div>
           </div>
 
-          <!-- PAID Scheduler -->
+          <!-- Today's Records (from Extension) -->
           <div class="card">
             <div class="card-header">
-              <h3>💳 PAID Broadcasts</h3>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span id="dash-paid-count" class="badge badge-gray">0 scheduled</span>
-                <span id="dash-paid-done" class="badge badge-done" style="display:none">✅ 0 done</span>
-              </div>
+              <h3>Today's Broadcasts</h3>
+              <span id="dash-today-count" class="badge badge-blue" style="margin-left:8px">0</span>
             </div>
-            <div class="sched-table-wrap table-wrap">
+            <div class="table-wrap">
               <table>
-                <thead><tr><th>Time</th><th>Program</th><th>Broadcast</th><th>Status</th><th>Sent</th><th>Expected</th><th>Rate</th><th>Diff</th></tr></thead>
-                <tbody id="dash-paid-tbody"></tbody>
+                <thead><tr><th>Time</th><th>Type</th><th>Campaign</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Rate</th><th>Diff</th></tr></thead>
+                <tbody id="dash-today-tbody"></tbody>
               </table>
+              <div class="empty" id="dash-today-empty" style="display:none">📭 No records yet — use extension pe Copy & Save karo.</div>
             </div>
-            <div class="sched-cards-wrap" id="dash-paid-cards"></div>
-            <div class="empty" id="dash-paid-empty" style="display:none">📭 No PAID broadcasts scheduled for this day.</div>
           </div>
 
           <!-- FREE Scheduler -->
@@ -882,21 +878,6 @@
             </div>
             <div class="sched-cards-wrap" id="dash-free-cards"></div>
             <div class="empty" id="dash-free-empty" style="display:none">📭 No FREE broadcasts scheduled for this day.</div>
-          </div>
-
-          <!-- Today's Records (from Extension) -->
-          <div class="card">
-            <div class="card-header">
-              <h3>Today's Broadcasts</h3>
-              <span id="dash-today-count" class="badge badge-blue" style="margin-left:8px">0</span>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Time</th><th>Type</th><th>Campaign</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Rate</th><th>Diff</th></tr></thead>
-                <tbody id="dash-today-tbody"></tbody>
-              </table>
-              <div class="empty" id="dash-today-empty" style="display:none">📭 No records yet — use extension pe Copy & Save karo.</div>
-            </div>
           </div>
 
 
@@ -2254,10 +2235,26 @@ function renderDashboard() {
 // ══════════════════════════════════════════════
 // RECORDS
 // ══════════════════════════════════════════════
+function getPrevDateFor(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dow = d.getDay(); // 0=Sun,1=Mon
+  d.setDate(d.getDate() - (dow === 1 ? 2 : 1));
+  return d.toISOString().slice(0, 10);
+}
+function _toMins(t) { if (!t) return -1; const [h,m] = t.split(':').map(Number); return h*60+(m||0); }
 function getYesterdayCount(r) {
-  const d = new Date(r.date + 'T00:00:00');
-  d.setDate(d.getDate() - 1);
-  const yDate = d.toISOString().slice(0, 10);
+  const yDate = getPrevDateFor(r.date);
+  const sub = (r.subtype || '').toLowerCase();
+  if (sub === 'night') {
+    const curMins = _toMins(r.time);
+    const matches = S.records.filter(x =>
+      x.date === yDate &&
+      (x.subtype || '').toLowerCase() === 'night' &&
+      Math.abs(_toMins(x.time) - curMins) <= 30
+    );
+    if (!matches.length) return null;
+    return matches.reduce((s, x) => s + (parseInt(x.sent) || 0), 0);
+  }
   const m = S.records.find(x => x.date === yDate && x.msgname === r.msgname);
   return m != null ? m.sent : null;
 }

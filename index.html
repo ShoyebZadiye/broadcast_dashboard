@@ -2247,10 +2247,12 @@ function getYesterdayCount(r) {
   const sub = (r.subtype || '').toLowerCase();
   if (sub === 'night') {
     const curMins = _toMins(r.time);
+    const isHindi = (r.msgname || '').toLowerCase().includes('hindi');
     const matches = S.records.filter(x =>
       x.date === yDate &&
       (x.subtype || '').toLowerCase() === 'night' &&
-      Math.abs(_toMins(x.time) - curMins) <= 30
+      Math.abs(_toMins(x.time) - curMins) <= 30 &&
+      (x.msgname || '').toLowerCase().includes('hindi') === isHindi
     );
     if (!matches.length) return null;
     return matches.reduce((s, x) => s + (parseInt(x.sent) || 0), 0);

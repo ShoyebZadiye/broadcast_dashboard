@@ -967,6 +967,12 @@
             <div class="cat-tab" onclick="filterBcList('PAID',this)">💳 PAID</div>
             <div class="cat-tab" onclick="filterBcList('FREE',this)">🆓 FREE</div>
           </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+            <span style="font-size:.78rem;font-weight:600;color:var(--muted)">Time:</span>
+            <button class="preset-btn active" id="bc-tod-all" onclick="setBcTodFilter('',this)">All</button>
+            <button class="preset-btn" id="bc-tod-morning" onclick="setBcTodFilter('morning',this)">🌅 Morning</button>
+            <button class="preset-btn" id="bc-tod-evening" onclick="setBcTodFilter('evening',this)">🌙 Evening</button>
+          </div>
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
             <span style="font-size:.78rem;font-weight:600;color:var(--muted)">Filter by day:</span>
             <button class="preset-btn active" id="bc-day-all" onclick="setBcDayFilter('',this)">All</button>
@@ -1023,6 +1029,11 @@
                   <option value="night">Night</option>
                   <option value="PAID">PAID</option>
                   <option value="FREE">FREE</option>
+                </select>
+                <select id="rec-filter-tod" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)">
+                  <option value="">🕐 All Times</option>
+                  <option value="morning">🌅 Morning</option>
+                  <option value="evening">🌙 Evening</option>
                 </select>
                 <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Export</button>
               </div>
@@ -1199,6 +1210,7 @@ function setChartBc(val) {
 let trackSubFilter = '';   // program (Yoga/Strong) or CID
 let trackBcId = null;      // selected broadcast id
 let bcListFilter = 'ALL';
+let bcTodFilter  = '';
 let bcDayFilter = '';
 
 async function loadS() {
@@ -1674,7 +1686,14 @@ function filterBcList(f, btn) {
 
 function setBcDayFilter(day, btn) {
   bcDayFilter = day;
-  document.querySelectorAll('#panel-broadcasts .preset-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#panel-broadcasts .preset-btn[id^="bc-day"]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBroadcastList();
+}
+
+function setBcTodFilter(tod, btn) {
+  bcTodFilter = tod;
+  document.querySelectorAll('#panel-broadcasts .preset-btn[id^="bc-tod"]').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   renderBroadcastList();
 }
@@ -1682,6 +1701,10 @@ function setBcDayFilter(day, btn) {
 function renderBroadcastList() {
   let data = bcListFilter==='ALL' ? S.broadcasts : S.broadcasts.filter(b=>b.category===bcListFilter);
   if (bcDayFilter) data = data.filter(b=> b.days && b.days.includes(bcDayFilter));
+  if (bcTodFilter) data = data.filter(b => {
+    const h = b.time ? parseInt(b.time.split(':')[0]) : -1;
+    return bcTodFilter === 'morning' ? (h >= 0 && h < 14) : (h >= 14);
+  });
   const sorted = [...data].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   document.getElementById('bc-count').textContent = sorted.length;
   const tbody = document.getElementById('bc-tbody');
@@ -2274,6 +2297,7 @@ function renderRecords() {
   const filter  = document.getElementById('rec-filter-date').value;
   const search  = (document.getElementById('rec-search')?.value || '').toLowerCase();
   const subtype = document.getElementById('rec-filter-subtype')?.value || '';
+  const tod     = document.getElementById('rec-filter-tod')?.value || '';
   let data = filter ? S.records.filter(r=>r.date===filter) : S.records;
   if (search) data = data.filter(r =>
     (r.msgname||'').toLowerCase().includes(search) ||
@@ -2283,6 +2307,10 @@ function renderRecords() {
   if (subtype) data = data.filter(r => {
     if (subtype === 'PAID' || subtype === 'FREE') return r.category === subtype;
     return (r.subtype||'').toLowerCase() === subtype.toLowerCase();
+  });
+  if (tod) data = data.filter(r => {
+    const h = r.time ? parseInt(r.time.split(':')[0]) : -1;
+    return tod === 'morning' ? (h >= 0 && h < 14) : (h >= 14);
   });
   const sorted = [...data].sort((a,b)=>b.date.localeCompare(a.date)||(a.time||'').localeCompare(b.time||''));
 

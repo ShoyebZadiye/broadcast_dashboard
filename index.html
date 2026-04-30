@@ -2076,12 +2076,21 @@ function renderDashboard() {
   if (!todaySorted.length) { todayTbody.innerHTML=''; todayEmpty.style.display='block'; }
   else {
     todayEmpty.style.display='none';
+    let lastPeriod = null;
     todayTbody.innerHTML = todaySorted.map(r => {
+      const hour = r.time ? parseInt(r.time.split(':')[0]) : -1;
+      const period = hour < 0 ? null : hour < 14 ? 'Morning' : 'Evening';
+      let divider = '';
+      if (period && period !== lastPeriod) {
+        lastPeriod = period;
+        const icon = period === 'Morning' ? '🌅' : '🌙';
+        divider = `<tr><td colspan="8" style="padding:6px 12px 4px;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--surface);border-bottom:1px solid var(--border)">${icon} ${period}</td></tr>`;
+      }
       const yc   = getYesterdayCount(r);
       const rSent = parseInt(r.sent)||0;
       const rExp  = parseInt(r.expected)||0;
       const diff  = r.diff != null ? parseInt(r.diff) : (rExp - rSent);
-      return `<tr>
+      return divider + `<tr>
         <td>${r.time ? fmt12(r.time) : '—'}</td>
         <td>${catBadge(r)}</td>
         <td><strong>${r.msgname||'—'}</strong></td>

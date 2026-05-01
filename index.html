@@ -1122,6 +1122,7 @@
             <button class="cs-filter-btn dash-filter-btn" onclick="setCsFilter('custom',this)">📅</button>
             <input type="date" id="cs-date" oninput="renderCountSheet()" style="display:none;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)">
             <span class="dash-period-lbl" id="cs-period-lbl"></span>
+            <button id="cs-refresh-btn" onclick="initCountSheet(true)" title="Refresh from sheet" style="margin-left:auto;padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:.85rem">🔄</button>
           </div>
 
           <div class="kpi-row">
@@ -3204,15 +3205,25 @@ function parseCSVLine(line) {
   return fields;
 }
 
+function parseDateHeader(raw) {
+  // Sheet uses DD/MM/YYYY for 2025 and MM/DD/YYYY for 2026+
+  const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
+  if (a > 12) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;  // DD/MM certain
+  if (b > 12) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;  // MM/DD certain
+  if (y >= 2026) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`; // MM/DD for 2026+
+  return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;               // DD/MM for 2025
+}
+
 function parseCountSheetCSV(text) {
   const lines = text.split('\n');
   // Line 0: blank; Line 1: header with dates from col 5; Line 2+: data
   const hdr = parseCSVLine(lines[1] || '');
   const colDate = {};
   for (let c = 5; c < hdr.length; c++) {
-    const raw = hdr[c].trim().replace(/"/g,'');
-    const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (m) colDate[c] = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    const iso = parseDateHeader(hdr[c].trim().replace(/"/g,''));
+    if (iso) colDate[c] = iso;
   }
   const rows = [];
   for (let i = 2; i < lines.length; i++) {
@@ -3243,19 +3254,31 @@ function csGroupLabel(name) {
   return name;
 }
 
-async function initCountSheet() {
-  if (csData) { renderCountSheet(); return; }
-  document.getElementById('cs-perf-list').innerHTML =
-    '<div style="color:var(--muted);text-align:center;padding:28px;font-size:.9rem">⏳ Loading count sheet...</div>';
+let csAutoRefresh = null;
+
+async function initCountSheet(force) {
+  if (csData && !force) { renderCountSheet(); return; }
+  const list = document.getElementById('cs-perf-list');
+  if (list) list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:28px;font-size:.9rem">⏳ Loading count sheet...</div>';
+  const btn = document.getElementById('cs-refresh-btn');
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   try {
-    const r = await fetch(CS_CSV_URL);
+    const r = await fetch(CS_CSV_URL + '&_=' + Date.now()); // cache-bust
     if (!r.ok) throw new Error('HTTP ' + r.status);
     csData = parseCountSheetCSV(await r.text());
     renderCountSheet();
   } catch(e) {
-    document.getElementById('cs-perf-list').innerHTML =
-      `<div style="color:var(--danger);text-align:center;padding:28px;font-size:.85rem">❌ Load failed: ${e.message}<br><small>Sheet must be publicly accessible</small></div>`;
+    if (list) list.innerHTML = `<div style="color:var(--danger);text-align:center;padding:28px;font-size:.85rem">❌ Load failed: ${e.message}</div>`;
+  } finally {
+    if (btn) { btn.textContent = '🔄'; btn.disabled = false; }
   }
+  // Auto-refresh every 5 minutes while on this tab
+  clearInterval(csAutoRefresh);
+  csAutoRefresh = setInterval(() => {
+    if (document.getElementById('panel-countsheet')?.classList.contains('active')) {
+      initCountSheet(true);
+    }
+  }, 5 * 60 * 1000);
 }
 
 function renderCountSheet() {

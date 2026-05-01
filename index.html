@@ -757,6 +757,7 @@
         <div class="nav-label">Main</div>
         <button class="nav-item active" onclick="goTo('countsheet',this)"><span class="icon">🏠</span> Dashboard</button>
         <button class="nav-item" onclick="goTo('records',this)"><span class="icon">🗂</span> Records</button>
+        <button class="nav-item" onclick="goTo('calendar',this)"><span class="icon">📅</span> Calendar</button>
         <div class="nav-label" style="margin-top:8px">Manage</div>
         <button class="nav-item" onclick="goTo('add-broadcast',this)"><span class="icon">➕</span> Add Broadcast</button>
         <button class="nav-item" onclick="goTo('broadcasts',this)"><span class="icon">📋</span> All Broadcasts</button>
@@ -1237,6 +1238,9 @@
       <button class="bn-item" id="bn-records" onclick="goToMobile('records')">
         <span class="bn-icon">🗂</span><span>Records</span>
       </button>
+      <button class="bn-item" id="bn-calendar" onclick="goToMobile('calendar')">
+        <span class="bn-icon">📅</span><span>Calendar</span>
+      </button>
       <button class="bn-item" id="bn-add-broadcast" onclick="goToMobile('add-broadcast')">
         <span class="bn-icon">➕</span><span>Add</span>
       </button>
@@ -1561,6 +1565,7 @@ const pageTitles = {
   'records': 'Records',
   'calendar': 'Calendar',
   'countsheet': 'Dashboard',
+  'calendar': 'Calendar',
   'admin': 'Access Control'
 };
 

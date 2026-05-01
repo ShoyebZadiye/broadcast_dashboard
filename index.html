@@ -1094,7 +1094,7 @@
                 <button class="dash-filter-btn"        id="rb-custom"    onclick="toggleRecCal(event)">📅</button>
                 <input type="hidden" id="rec-filter-from">
                 <input type="hidden" id="rec-filter-to">
-                <div id="rc-popup" style="display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:300;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:16px 14px 12px;width:266px;user-select:none"></div>
+                <div id="rc-popup" style="display:none;position:fixed;z-index:9999;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:16px 14px 12px;width:266px;user-select:none"></div>
                 <input type="text" id="rec-search" placeholder="🔍 Search..." oninput="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:140px;color:var(--text);background:var(--surface)" />
                 <select id="rec-filter-subtype" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)">
                   <option value="">All Types</option>
@@ -2600,7 +2600,18 @@ function toggleRecCal(e) {
   const pop = document.getElementById('rc-popup');
   if (!pop) return;
   pop.style.display = rcPopupOpen ? 'block' : 'none';
-  if (rcPopupOpen) renderRcCal();
+  if (rcPopupOpen) {
+    const btn = document.getElementById('rb-custom');
+    if (btn) {
+      const r = btn.getBoundingClientRect();
+      const popW = 266;
+      let left = r.left;
+      if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+      pop.style.top  = (r.bottom + 8) + 'px';
+      pop.style.left = left + 'px';
+    }
+    renderRcCal();
+  }
 }
 
 document.addEventListener('click', e => {

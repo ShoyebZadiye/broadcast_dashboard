@@ -1240,9 +1240,8 @@
                 <button class="cs-type-btn" onclick="setCsType('DS / Strong SE',this)">DS / Strong</button>
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
-                <button class="cs-type-btn active" id="cs-tod-all"     onclick="setCsTod('all',this)">🕐 All Time</button>
-                <button class="cs-type-btn"        id="cs-tod-morning" onclick="setCsTod('morning',this)">🌅 Morning</button>
-                <button class="cs-type-btn"        id="cs-tod-evening" onclick="setCsTod('evening',this)">🌙 Evening</button>
+                <button class="cs-type-btn" id="cs-tod-morning" onclick="setCsTod('morning',this)">🌅 Morning</button>
+                <button class="cs-type-btn" id="cs-tod-evening" onclick="setCsTod('evening',this)">🌙 Evening</button>
               </div>
             </div>
             <div class="table-wrap">
@@ -3628,9 +3627,10 @@ function setCsType(t, el) {
 }
 
 function setCsTod(t, el) {
+  if (csTodFilter === t) { csTodFilter = 'all'; el.classList.remove('active','ct-orng'); renderCountSheet(); return; }
   csTodFilter = t;
   csTodToggle++;
-  document.querySelectorAll('#cs-tod-all,#cs-tod-morning,#cs-tod-evening').forEach(b => { b.classList.remove('active','ct-orng'); });
+  document.querySelectorAll('#cs-tod-morning,#cs-tod-evening').forEach(b => { b.classList.remove('active','ct-orng'); });
   if (el) {
     el.classList.add('active');
     if (csTodToggle % 2 === 0) el.classList.add('ct-orng');

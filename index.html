@@ -218,7 +218,8 @@
   .dash-filter-bar { display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
   .dash-filter-btn { padding:6px 16px; border-radius:20px; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); font-size:.82rem; font-weight:600; cursor:pointer; transition:all .2s; }
   .dash-filter-btn:hover { border-color:var(--accent); color:var(--accent); }
-  .dash-filter-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 2px 8px rgba(79,70,229,.3); }
+  .dash-filter-btn.active         { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 2px 8px rgba(79,70,229,.3); }
+  .dash-filter-btn.active.ct-orng { background:#f97316; border-color:#f97316; box-shadow:0 2px 8px rgba(249,115,22,.3); }
   .dash-period-lbl { font-size:.8rem; color:var(--muted); margin-left:4px; }
   /* Count sheet table filters */
   .cs-type-btn { padding:5px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; }
@@ -3191,6 +3192,7 @@ let csData        = null;
 let csFilter      = 'today';
 let csTypeFilter  = 'all';
 let csColorToggle = 0;
+let csDayToggle   = 0;
 
 function setCsType(t, el) {
   csTypeFilter = t;
@@ -3205,8 +3207,12 @@ function setCsType(t, el) {
 
 function setCsFilter(f, el) {
   csFilter = f;
-  document.querySelectorAll('.cs-filter-btn').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
+  csDayToggle++;
+  document.querySelectorAll('.cs-filter-btn').forEach(b => { b.classList.remove('active'); b.classList.remove('ct-orng'); });
+  if (el) {
+    el.classList.add('active');
+    if (csDayToggle % 2 === 0) el.classList.add('ct-orng');
+  }
   const inp = document.getElementById('cs-date');
   if (inp) inp.style.display = f === 'custom' ? '' : 'none';
   renderCountSheet();

@@ -1066,14 +1066,17 @@
           <div class="card">
             <div class="card-header">
               <h3>Records</h3>
-              <div class="rec-filters-wrap" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                <button class="btn btn-ghost btn-sm" onclick="setRecDate(today(),today())">Today</button>
-                <button class="btn btn-ghost btn-sm" onclick="setRecDate(yesterday(),yesterday())">Yesterday</button>
-                <button class="btn btn-ghost btn-sm" onclick="setRecDate('','')">All</button>
-                <div style="display:flex;align-items:center;gap:4px">
-                  <input type="date" id="rec-filter-from" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)" />
-                  <span style="font-size:.8rem;color:var(--muted)">→</span>
-                  <input type="date" id="rec-filter-to" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)" />
+              <div class="rec-filters-wrap" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                <button class="dash-filter-btn active" id="rb-today"     onclick="setRecFilter('today',this)">Today</button>
+                <button class="dash-filter-btn"        id="rb-yesterday" onclick="setRecFilter('yesterday',this)">Yesterday</button>
+                <button class="dash-filter-btn"        id="rb-week"      onclick="setRecFilter('week',this)">7 Days</button>
+                <button class="dash-filter-btn"        id="rb-month"     onclick="setRecFilter('month',this)">30 Days</button>
+                <button class="dash-filter-btn"        id="rb-all"       onclick="setRecFilter('all',this)">All</button>
+                <button class="dash-filter-btn"        id="rb-custom"    onclick="setRecFilter('custom',this)">📅</button>
+                <div id="rec-custom-range" style="display:none;align-items:center;gap:4px">
+                  <input type="date" id="rec-filter-from" onchange="renderRecords()" style="padding:5px 8px;border:1.5px solid var(--border);border-radius:7px 0 0 7px;font-size:.8rem;outline:none;color:var(--text);background:var(--surface);border-right:none">
+                  <span style="padding:5px 6px;background:var(--light);border-top:1.5px solid var(--border);border-bottom:1.5px solid var(--border);font-size:.75rem;color:var(--muted)">→</span>
+                  <input type="date" id="rec-filter-to"   onchange="renderRecords()" style="padding:5px 8px;border:1.5px solid var(--border);border-radius:0 7px 7px 0;font-size:.8rem;outline:none;color:var(--text);background:var(--surface);border-left:none">
                 </div>
                 <input type="text" id="rec-search" placeholder="🔍 Search..." oninput="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:140px;color:var(--text);background:var(--surface)" />
                 <select id="rec-filter-subtype" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)">
@@ -1537,8 +1540,8 @@ function startApp() {
   document.getElementById('user-email-display').textContent = currentUser;
   document.getElementById('user-avatar').textContent = currentUser[0].toUpperCase();
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  const rf = document.getElementById('rec-filter-from'); if(rf) rf.value='';
-  const rt = document.getElementById('rec-filter-to');   if(rt) rt.value='';
+  const rf = document.getElementById('rec-filter-from'); if(rf) rf.value=today();
+  const rt = document.getElementById('rec-filter-to');   if(rt) rt.value=today();
   document.getElementById('page-title').textContent = 'Dashboard';
   const mobLabel = document.getElementById('mob-page-label');
   if (mobLabel) mobLabel.textContent = 'Dashboard';
@@ -2550,11 +2553,29 @@ function getYesterdayCount(r) {
   return m != null ? m.sent : null;
 }
 
-function setRecDate(from, to) {
-  const f = document.getElementById('rec-filter-from');
-  const t = document.getElementById('rec-filter-to');
-  if (f) f.value = from;
-  if (t) t.value = to;
+let recFilterToggle = 0;
+function setRecFilter(f, el) {
+  const pad2 = n => String(n).padStart(2,'0');
+  const fmtD = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const t = today(), y = yesterday();
+  const fromEl = document.getElementById('rec-filter-from');
+  const toEl   = document.getElementById('rec-filter-to');
+  const customWrap = document.getElementById('rec-custom-range');
+
+  recFilterToggle++;
+  document.querySelectorAll('#panel-records .dash-filter-btn').forEach(b => { b.classList.remove('active','ct-orng'); });
+  if (el) {
+    el.classList.add('active');
+    if (recFilterToggle % 2 === 0) el.classList.add('ct-orng');
+  }
+
+  customWrap.style.display = f === 'custom' ? 'flex' : 'none';
+
+  if (f === 'today')     { fromEl.value = t;  toEl.value = t; }
+  else if (f === 'yesterday') { fromEl.value = y; toEl.value = y; }
+  else if (f === 'week') { const d=new Date(); d.setDate(d.getDate()-6); fromEl.value=fmtD(d); toEl.value=t; }
+  else if (f === 'month'){ const d=new Date(); d.setDate(d.getDate()-29); fromEl.value=fmtD(d); toEl.value=t; }
+  else if (f === 'all')  { fromEl.value=''; toEl.value=''; }
   renderRecords();
 }
 

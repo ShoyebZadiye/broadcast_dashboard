@@ -1067,10 +1067,14 @@
             <div class="card-header">
               <h3>Records</h3>
               <div class="rec-filters-wrap" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rec-filter-date').value=today();renderRecords()">Today</button>
-                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rec-filter-date').value=yesterday();renderRecords()">Yesterday</button>
-                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('rec-filter-date').value='';renderRecords()">All</button>
-                <input type="date" id="rec-filter-date" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)" />
+                <button class="btn btn-ghost btn-sm" onclick="setRecDate(today(),today())">Today</button>
+                <button class="btn btn-ghost btn-sm" onclick="setRecDate(yesterday(),yesterday())">Yesterday</button>
+                <button class="btn btn-ghost btn-sm" onclick="setRecDate('','')">All</button>
+                <div style="display:flex;align-items:center;gap:4px">
+                  <input type="date" id="rec-filter-from" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)" />
+                  <span style="font-size:.8rem;color:var(--muted)">→</span>
+                  <input type="date" id="rec-filter-to" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)" />
+                </div>
                 <input type="text" id="rec-search" placeholder="🔍 Search..." oninput="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:140px;color:var(--text);background:var(--surface)" />
                 <select id="rec-filter-subtype" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)">
                   <option value="">All Types</option>
@@ -1533,7 +1537,8 @@ function startApp() {
   document.getElementById('user-email-display').textContent = currentUser;
   document.getElementById('user-avatar').textContent = currentUser[0].toUpperCase();
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('rec-filter-date').value = '';
+  const rf = document.getElementById('rec-filter-from'); if(rf) rf.value='';
+  const rt = document.getElementById('rec-filter-to');   if(rt) rt.value='';
   document.getElementById('page-title').textContent = 'Dashboard';
   const mobLabel = document.getElementById('mob-page-label');
   if (mobLabel) mobLabel.textContent = 'Dashboard';
@@ -2545,12 +2550,24 @@ function getYesterdayCount(r) {
   return m != null ? m.sent : null;
 }
 
+function setRecDate(from, to) {
+  const f = document.getElementById('rec-filter-from');
+  const t = document.getElementById('rec-filter-to');
+  if (f) f.value = from;
+  if (t) t.value = to;
+  renderRecords();
+}
+
 function renderRecords() {
-  const filter  = document.getElementById('rec-filter-date').value;
+  const from    = document.getElementById('rec-filter-from')?.value || '';
+  const to      = document.getElementById('rec-filter-to')?.value || '';
   const search  = (document.getElementById('rec-search')?.value || '').toLowerCase();
   const subtype = document.getElementById('rec-filter-subtype')?.value || '';
   const tod     = document.getElementById('rec-filter-tod')?.value || '';
-  let data = filter ? S.records.filter(r=>r.date===filter) : S.records;
+  let data = S.records;
+  if (from && to)   data = data.filter(r => r.date >= from && r.date <= to);
+  else if (from)    data = data.filter(r => r.date >= from);
+  else if (to)      data = data.filter(r => r.date <= to);
   if (search) data = data.filter(r =>
     (r.msgname||'').toLowerCase().includes(search) ||
     (r.identifier||'').toLowerCase().includes(search) ||

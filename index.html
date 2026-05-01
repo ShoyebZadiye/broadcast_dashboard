@@ -220,6 +220,16 @@
   .dash-filter-btn:hover { border-color:var(--accent); color:var(--accent); }
   .dash-filter-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 2px 8px rgba(79,70,229,.3); }
   .dash-period-lbl { font-size:.8rem; color:var(--muted); margin-left:4px; }
+  /* Count sheet table filters */
+  .cs-type-btn { padding:5px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; }
+  .cs-type-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .cs-type-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 2px 8px rgba(79,70,229,.25); }
+  .cs-search-bar { padding:12px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--surface2); }
+  .cs-search-input { padding:8px 12px 8px 34px; border:1.5px solid var(--border); border-radius:8px; font-size:.83rem; outline:none; color:var(--text); background:var(--surface); width:200px; transition:all .2s; }
+  .cs-search-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,70,229,.08); }
+  .cs-search-wrap { position:relative; }
+  .cs-search-wrap::before { content:'🔍'; position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:.8rem; pointer-events:none; }
+  @media(max-width:600px){ .cs-search-input { width:100%; } .cs-search-bar { gap:8px; } }
   /* Performance by category */
   .perf-cat-list { display:flex; flex-direction:column; gap:14px; padding:4px 0; }
   .perf-cat-row { display:grid; grid-template-columns:150px 1fr 90px 56px; align-items:center; gap:12px; }
@@ -1159,13 +1169,25 @@
               <h3>📋 Daily Broadcast Counts</h3>
               <span style="font-size:.72rem;color:var(--muted)" id="cs-table-period"></span>
             </div>
-            <div class="card-body" style="padding:0">
-              <div class="table-wrap">
-                <table>
-                  <thead id="cs-table-head"></thead>
-                  <tbody id="cs-table-body"></tbody>
-                </table>
+            <div class="cs-search-bar">
+              <div class="cs-search-wrap">
+                <input class="cs-search-input" id="cs-search" type="text" placeholder="Search broadcast..." oninput="renderCountSheet()">
               </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="cs-type-btn active" onclick="setCsType('all',this)">All</button>
+                <button class="cs-type-btn" onclick="setCsType('Yoga Reminder',this)">Yoga Reminder</button>
+                <button class="cs-type-btn" onclick="setCsType('Yoga Attendance',this)">Attendance</button>
+                <button class="cs-type-btn" onclick="setCsType('Night Message',this)">Night</button>
+                <button class="cs-type-btn" onclick="setCsType('Night Absent',this)">Night Absent</button>
+                <button class="cs-type-btn" onclick="setCsType('Night Present',this)">Night Present</button>
+                <button class="cs-type-btn" onclick="setCsType('DS / Strong SE',this)">DS / Strong</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead id="cs-table-head"></thead>
+                <tbody id="cs-table-body"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -3167,8 +3189,16 @@ initApp();
 // COUNT SHEET
 // ══════════════════════════════════════════════
 const CS_CSV_URL = 'https://docs.google.com/spreadsheets/d/17KV51RAjGrrCftIfei9obV-QXl1aC7AF6XAF0lUQsIU/export?format=csv&gid=617135708';
-let csData   = null;
-let csFilter = 'today';
+let csData       = null;
+let csFilter     = 'today';
+let csTypeFilter = 'all';
+
+function setCsType(t, el) {
+  csTypeFilter = t;
+  document.querySelectorAll('.cs-type-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderCountSheet();
+}
 
 function setCsFilter(f, el) {
   csFilter = f;
@@ -3353,15 +3383,39 @@ function renderCountSheet() {
 
   const head = el('cs-table-head'), body = el('cs-table-body');
   if (!head || !body) return;
-  head.innerHTML = `<tr><th>Broadcast</th><th>Time</th>${datesInRange.map(d=>`<th>${d.slice(8)}/${d.slice(5,7)}</th>`).join('')}<th style="text-align:right">Total</th></tr>`;
-  const rows = csData.rows.map(row => {
+
+  // Apply search + type filters
+  const q = (el('cs-search')?.value || '').toLowerCase().trim();
+  const filteredRows = csData.rows.filter(row => {
+    if (q && !row.name.toLowerCase().includes(q) && !fmt12cs(row.time).toLowerCase().includes(q)) return false;
+    if (csTypeFilter !== 'all' && csGroupLabel(row.name) !== csTypeFilter) return false;
+    return true;
+  });
+
+  head.innerHTML = `<tr>
+    <th style="min-width:180px">Broadcast</th>
+    <th>Time</th>
+    ${datesInRange.map(d=>`<th style="text-align:right">${d.slice(8)}/${d.slice(5,7)}</th>`).join('')}
+    <th style="text-align:right">Total</th>
+  </tr>`;
+
+  const rows = filteredRows.map(row => {
     let rt = 0;
     Object.entries(row.vals).forEach(([d,v]) => { if (d >= from && d <= to) rt += v; });
     if (!rt) return '';
-    const cells = datesInRange.map(d => `<td style="text-align:right;color:var(--text)">${row.vals[d] ? row.vals[d].toLocaleString('en-IN') : '<span style="color:var(--border)">—</span>'}</td>`).join('');
-    return `<tr><td>${row.name}</td><td style="color:var(--muted);white-space:nowrap">${fmt12cs(row.time)}</td>${cells}<td style="font-weight:700;text-align:right">${fmtIN(rt)}</td></tr>`;
+    const cells = datesInRange.map(d => {
+      const v = row.vals[d];
+      return `<td style="text-align:right">${v ? `<span style="color:var(--text)">${v.toLocaleString('en-IN')}</span>` : `<span style="color:var(--border)">—</span>`}</td>`;
+    }).join('');
+    return `<tr>
+      <td style="font-weight:500">${row.name}</td>
+      <td style="color:var(--muted);white-space:nowrap;font-size:.8rem">${fmt12cs(row.time)}</td>
+      ${cells}
+      <td style="font-weight:700;text-align:right;color:var(--accent)">${fmtIN(rt)}</td>
+    </tr>`;
   }).filter(Boolean).join('');
-  body.innerHTML = rows || `<tr><td colspan="${datesInRange.length+3}" style="text-align:center;color:var(--muted);padding:20px">No data for this period.</td></tr>`;
+
+  body.innerHTML = rows || `<tr><td colspan="${datesInRange.length+3}" style="text-align:center;color:var(--muted);padding:24px">No matching broadcasts for this period.</td></tr>`;
 }
 </script>
 </body>

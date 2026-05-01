@@ -2579,28 +2579,67 @@ function renderDashboard() {
 // ══════════════════════════════════════════════
 function getPrevDateFor(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
-  const dow = d.getDay(); // 0=Sun,1=Mon
+  const dow = d.getDay();
   d.setDate(d.getDate() - (dow === 1 ? 2 : 1));
   return d.toISOString().slice(0, 10);
 }
 function _toMins(t) { if (!t) return -1; const [h,m] = t.split(':').map(Number); return h*60+(m||0); }
+// Parses count-sheet time (12h "5:20 am"/"4:20 pm" or 24h "16:20") → minutes
+function _csTimeMins(t) {
+  if (!t) return -1;
+  const s = t.trim().toLowerCase();
+  const m12 = s.match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/);
+  if (m12) {
+    let h = parseInt(m12[1]); const min = parseInt(m12[2]);
+    if (m12[3] === 'pm' && h !== 12) h += 12;
+    if (m12[3] === 'am' && h === 12) h = 0;
+    return h * 60 + min;
+  }
+  const m24 = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (m24) return parseInt(m24[1]) * 60 + parseInt(m24[2]);
+  return -1;
+}
+
 function getYesterdayCount(r) {
   const yDate = getPrevDateFor(r.date);
-  const sub = (r.subtype || '').toLowerCase();
+  const sub   = (r.subtype || '').toLowerCase();
+  const rMins = _toMins(r.time);
+
+  // ── Condition 1: S.records ───────────────────────────
   if (sub === 'night') {
-    const curMins = _toMins(r.time);
     const isHindi = (r.msgname || '').toLowerCase().includes('hindi');
     const matches = S.records.filter(x =>
       x.date === yDate &&
       (x.subtype || '').toLowerCase() === 'night' &&
-      Math.abs(_toMins(x.time) - curMins) <= 30 &&
+      Math.abs(_toMins(x.time) - rMins) <= 30 &&
       (x.msgname || '').toLowerCase().includes('hindi') === isHindi
     );
-    if (!matches.length) return null;
-    return matches.reduce((s, x) => s + (parseInt(x.sent) || 0), 0);
+    if (matches.length) return matches.reduce((s, x) => s + (parseInt(x.sent) || 0), 0);
+  } else {
+    // exact name match
+    const byName = S.records.find(x => x.date === yDate && x.msgname === r.msgname);
+    if (byName != null) return parseInt(byName.sent) || 0;
+    // time ±5 min + same subtype fallback
+    if (rMins >= 0) {
+      const byTime = S.records.find(x =>
+        x.date === yDate &&
+        Math.abs(_toMins(x.time) - rMins) <= 5 &&
+        (x.subtype || '').toLowerCase() === sub
+      );
+      if (byTime != null) return parseInt(byTime.sent) || 0;
+    }
   }
-  const m = S.records.find(x => x.date === yDate && x.msgname === r.msgname);
-  return m != null ? m.sent : null;
+
+  // ── Condition 2: count sheet fallback ────────────────
+  if (!csData || rMins < 0) return null;
+  let best = null, bestDiff = 11; // max ±10 min tolerance
+  for (const row of csData.rows) {
+    const v = row.vals[yDate];
+    if (!v) continue;
+    const diff = Math.abs(_csTimeMins(row.time) - rMins);
+    if (diff < bestDiff) { bestDiff = diff; best = v; }
+  }
+  return best;
 }
 
 let recFilterToggle = 0;

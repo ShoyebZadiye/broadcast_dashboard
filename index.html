@@ -240,6 +240,19 @@
   .rc-footer button { background:none; border:none; cursor:pointer; font-size:.82rem; font-weight:600; padding:4px 8px; border-radius:6px; }
   .rc-footer .rc-clear-btn { color:var(--muted); } .rc-footer .rc-clear-btn:hover { color:var(--danger); }
   .rc-footer .rc-today-btn { color:var(--accent); } .rc-footer .rc-today-btn:hover { background:#eef2ff; }
+  /* Log sub-tabs */
+  .log-tabs { display:flex; margin-bottom:16px; }
+  .log-tab { flex:1; padding:9px 0; border:1.5px solid var(--border); background:var(--surface2); cursor:pointer; font-size:.85rem; font-weight:600; color:var(--muted); transition:all .15s; }
+  .log-tab:first-child { border-radius:10px 0 0 10px; }
+  .log-tab:last-child  { border-radius:0 10px 10px 0; border-left:none; }
+  .log-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  /* Activity log */
+  .act-type-badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:.72rem; font-weight:700; }
+  .act-login  { background:#dbeafe; color:#1d4ed8; }
+  .act-edit   { background:#fef3c7; color:#92400e; }
+  .act-delete { background:#fee2e2; color:#991b1b; }
+  .act-ext    { background:#d1fae5; color:#065f46; }
+  tr.act-undone td { opacity:.45; }
   /* Count sheet table filters */
   .cs-type-btn { padding:5px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; }
   .cs-type-btn:hover { border-color:var(--accent); color:var(--accent); }
@@ -1075,34 +1088,61 @@
           </div>
         </div>
 
-        <!-- ── RECORDS ── -->
+        <!-- ── RECORDS / LOGS ── -->
         <div class="panel active" id="panel-records">
-          <div class="kpi-row">
-            <div class="kpi blue"><div class="label">Total Sent</div><div class="val" id="rec-kpi-sent">0</div></div>
-            <div class="kpi green"><div class="label">Total Expected</div><div class="val" id="rec-kpi-exp">0</div></div>
-            <div class="kpi red"><div class="label">Total Difference</div><div class="val" id="rec-kpi-diff">0</div></div>
+          <div class="log-tabs">
+            <button class="log-tab active" id="lt-broadcast" onclick="switchLogTab('broadcast',this)">📤 Broadcast</button>
+            <button class="log-tab"        id="lt-activity"  onclick="switchLogTab('activity',this)">🕐 Activity</button>
           </div>
-          <div class="card">
-            <div class="card-header">
-              <h3>Logs</h3>
-              <div class="rec-filters-wrap" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;position:relative">
-                <button class="dash-filter-btn active" id="rb-today"     onclick="setRecFilter('today',this)">Today</button>
-                <button class="dash-filter-btn"        id="rb-yesterday" onclick="setRecFilter('yesterday',this)">Yesterday</button>
-                <button class="dash-filter-btn"        id="rb-custom"    onclick="toggleRecCal(event)">📅</button>
-                <input type="hidden" id="rec-filter-from">
-                <input type="hidden" id="rec-filter-to">
-                <div id="rc-popup" style="display:none;position:fixed;z-index:9999;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:16px 14px 12px;width:266px;user-select:none"></div>
-                <input type="text" id="rec-search" placeholder="🔍 Search..." oninput="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:160px;color:var(--text);background:var(--surface)" />
+
+          <!-- BROADCAST sub-section -->
+          <div id="log-broadcast-section">
+            <div class="kpi-row">
+              <div class="kpi blue"><div class="label">Total Sent</div><div class="val" id="rec-kpi-sent">0</div></div>
+              <div class="kpi green"><div class="label">Total Expected</div><div class="val" id="rec-kpi-exp">0</div></div>
+              <div class="kpi red"><div class="label">Total Difference</div><div class="val" id="rec-kpi-diff">0</div></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>Broadcast Logs</h3>
+                <div class="rec-filters-wrap" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;position:relative">
+                  <button class="dash-filter-btn active" id="rb-today"     onclick="setRecFilter('today',this)">Today</button>
+                  <button class="dash-filter-btn"        id="rb-yesterday" onclick="setRecFilter('yesterday',this)">Yesterday</button>
+                  <button class="dash-filter-btn"        id="rb-custom"    onclick="toggleRecCal(event)">📅</button>
+                  <input type="hidden" id="rec-filter-from">
+                  <input type="hidden" id="rec-filter-to">
+                  <div id="rc-popup" style="display:none;position:fixed;z-index:9999;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:16px 14px 12px;width:266px;user-select:none"></div>
+                  <input type="text" id="rec-search" placeholder="🔍 Search..." oninput="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:160px;color:var(--text);background:var(--surface)" />
+                </div>
               </div>
+              <div class="rec-table-wrap table-wrap">
+                <table>
+                  <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Campaign</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Rate</th><th>Diff</th><th></th></tr></thead>
+                  <tbody id="rec-tbody"></tbody>
+                </table>
+              </div>
+              <div class="rec-cards-wrap" id="rec-cards"></div>
+              <div class="empty" id="rec-empty" style="display:none">🔍 No records found. Try a different filter.</div>
             </div>
-            <div class="rec-table-wrap table-wrap">
-              <table>
-                <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Campaign</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Rate</th><th>Diff</th><th></th></tr></thead>
-                <tbody id="rec-tbody"></tbody>
-              </table>
+          </div>
+
+          <!-- ACTIVITY sub-section -->
+          <div id="log-activity-section" style="display:none">
+            <div class="card">
+              <div class="card-header">
+                <h3>Activity Log</h3>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <input type="text" id="act-search" placeholder="🔍 Search..." oninput="renderActivityLog()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:160px;color:var(--text);background:var(--surface)" />
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Detail</th><th></th></tr></thead>
+                  <tbody id="act-log-body"></tbody>
+                </table>
+              </div>
+              <div class="empty" id="act-empty" style="display:none">No activity logged yet.</div>
             </div>
-            <div class="rec-cards-wrap" id="rec-cards"></div>
-            <div class="empty" id="rec-empty" style="display:none">🔍 No records found. Try a different filter.</div>
           </div>
         </div>
 
@@ -1387,7 +1427,15 @@ let _rtUnsub    = null;
 let _rtLastFire = 0;
 
 function _applyUpdate(data) {
+  const oldIds = new Set((S.records||[]).map(r=>r.id));
   S = data;
+  if (currentUser) {
+    (S.records||[]).forEach(r => {
+      if (!oldIds.has(r.id) && r.savedBy) {
+        logActivity('ext_save', `Extension: "${r.msgname}" saved on ${r.date} (${r.sent} sent)`, null, { recordId: r.id, savedBy: r.savedBy });
+      }
+    });
+  }
   clearTimeout(_rtDebounce);
   _rtDebounce = setTimeout(() => {
     const scrollY = window.scrollY;
@@ -1467,6 +1515,7 @@ function doLogin() {
   if (isApproved(email)) {
     currentUser = email;
     localStorage.setItem('bcast_user', email);
+    logActivity('login', 'Logged in via dashboard', null, null);
     startApp();
     return;
   }
@@ -1591,7 +1640,7 @@ function goTo(name, btn) {
   if (bnItem) bnItem.classList.add('active');
   if (name==='dashboard') renderDashboard();
   if (name==='broadcasts') renderBroadcastList();
-  if (name==='records') renderRecords();
+  if (name==='records') { renderRecords(); if (activeLogTab === 'activity') renderActivityLog(); }
   if (name==='calendar') renderCalendar();
   if (name==='countsheet') initCountSheet();
   if (name==='admin') { if(currentUser!==ADMIN_EMAIL){return;} renderAdminPanel(); }
@@ -2898,15 +2947,19 @@ function editSent(id) {
   if (!r) return;
   const val = prompt(`"${r.msgname}" ka sent count:`, r.sent||0);
   if (val === null) return;
+  const prevSent = r.sent;
   r.sent = parseInt(val) || 0;
   r.diff = (r.expected||0) - r.sent;
   saveS();
+  logActivity('edit_sent', `"${r.msgname}" sent: ${prevSent} → ${r.sent} (${r.date})`, { sent: prevSent, recordId: id }, { sent: r.sent, recordId: id });
   renderRecords();
   renderDashboard();
 }
 
 function deleteRecord(id) {
-  S.records = S.records.filter(r=>r.id!==id);
+  const r = S.records.find(x => x.id === id);
+  if (r) logActivity('delete_record', `Deleted "${r.msgname}" on ${r.date}`, { record: JSON.parse(JSON.stringify(r)) }, null);
+  S.records = S.records.filter(x=>x.id!==id);
   saveS();
   renderRecords();
   renderTodayLog();
@@ -3789,6 +3842,102 @@ function renderCountSheet() {
   }).filter(Boolean).join('');
 
   body.innerHTML = rows || `<tr><td colspan="${datesInRange.length+3}" style="text-align:center;color:var(--muted);padding:24px">No matching broadcasts for this period.</td></tr>`;
+}
+
+// ══════════════════════════════════════════════
+// ACTIVITY LOG
+// ══════════════════════════════════════════════
+function getActivityLog() {
+  try { return JSON.parse(localStorage.getItem('bcast_activity') || '[]'); } catch { return []; }
+}
+function saveActivityLog(logs) {
+  if (logs.length > 500) logs = logs.slice(-500);
+  localStorage.setItem('bcast_activity', JSON.stringify(logs));
+}
+function logActivity(type, detail, before, after) {
+  const logs = getActivityLog();
+  logs.push({
+    id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    ts: new Date().toISOString(),
+    type,
+    user: currentUser || 'unknown',
+    detail,
+    before: before || null,
+    after: after || null,
+    undone: false
+  });
+  saveActivityLog(logs);
+  if (document.getElementById('log-activity-section')?.style.display !== 'none') renderActivityLog();
+}
+
+function renderActivityLog() {
+  const wrap = document.getElementById('act-log-body');
+  const empty = document.getElementById('act-empty');
+  if (!wrap) return;
+  const q = (document.getElementById('act-search')?.value || '').toLowerCase();
+  let logs = getActivityLog().slice().reverse();
+  if (q) logs = logs.filter(l => l.detail.toLowerCase().includes(q) || l.user.toLowerCase().includes(q));
+  if (!logs.length) {
+    wrap.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  const typeInfo = {
+    login:         ['🔐', 'Login',          'act-login'],
+    edit_sent:     ['✏️',  'Edit Sent',       'act-edit'],
+    delete_record: ['🗑',  'Delete',          'act-delete'],
+    ext_save:      ['📤', 'Extension Save',  'act-ext'],
+  };
+  wrap.innerHTML = logs.map(l => {
+    const [icon, label, cls] = typeInfo[l.type] || ['•', l.type, ''];
+    const canUndo = !l.undone && currentUser === ADMIN_EMAIL && (l.type === 'edit_sent' || l.type === 'delete_record');
+    const ts = new Date(l.ts).toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    return `<tr class="${l.undone ? 'act-undone' : ''}">
+      <td style="white-space:nowrap;font-size:.75rem;color:var(--muted)">${ts}</td>
+      <td style="font-size:.78rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.user}">${l.user}</td>
+      <td><span class="act-type-badge ${cls}">${icon} ${label}</span></td>
+      <td style="font-size:.8rem;color:var(--text)">${l.detail}</td>
+      <td>${l.undone ? `<span style="color:var(--muted);font-size:.72rem">↩ Undone</span>` : canUndo ? `<button class="del-btn" title="Undo" onclick="undoActivity('${l.id}')">↩</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function undoActivity(actId) {
+  if (currentUser !== ADMIN_EMAIL) return;
+  const logs = getActivityLog();
+  const entry = logs.find(l => l.id === actId);
+  if (!entry || entry.undone) return;
+
+  if (entry.type === 'edit_sent') {
+    const r = S.records.find(x => x.id === entry.before?.recordId);
+    if (!r) { toast('Record not found — may have been deleted'); return; }
+    r.sent = entry.before.sent;
+    r.diff = (r.expected||0) - r.sent;
+    saveS();
+    renderRecords();
+  } else if (entry.type === 'delete_record') {
+    if (!entry.before?.record) return;
+    S.records.push(entry.before.record);
+    saveS();
+    renderRecords();
+    renderTodayLog();
+    renderDashboard();
+  }
+  entry.undone = true;
+  saveActivityLog(logs);
+  renderActivityLog();
+  toast('↩ Undone');
+}
+
+let activeLogTab = 'broadcast';
+function switchLogTab(tab, el) {
+  activeLogTab = tab;
+  document.querySelectorAll('.log-tab').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('log-broadcast-section').style.display = tab === 'broadcast' ? '' : 'none';
+  document.getElementById('log-activity-section').style.display  = tab === 'activity'  ? '' : 'none';
+  if (tab === 'activity') renderActivityLog();
 }
 </script>
 </body>

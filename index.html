@@ -734,6 +734,7 @@
         <div class="nav-label">Main</div>
         <button class="nav-item" onclick="goTo('dashboard',this)"><span class="icon">🏠</span> Dashboard</button>
         <button class="nav-item active" onclick="goTo('records',this)"><span class="icon">🗂</span> Records</button>
+        <button class="nav-item" onclick="goTo('countsheet',this)"><span class="icon">📊</span> Count Sheet</button>
         <div class="nav-label" style="margin-top:8px">Manage</div>
         <button class="nav-item" onclick="goTo('add-broadcast',this)"><span class="icon">➕</span> Add Broadcast</button>
         <button class="nav-item" onclick="goTo('broadcasts',this)"><span class="icon">📋</span> All Broadcasts</button>
@@ -1111,6 +1112,64 @@
           </div>
         </div>
 
+        <!-- ── COUNT SHEET ── -->
+        <div class="panel" id="panel-countsheet">
+          <div class="dash-filter-bar">
+            <button class="cs-filter-btn dash-filter-btn active" onclick="setCsFilter('today',this)">Today</button>
+            <button class="cs-filter-btn dash-filter-btn" onclick="setCsFilter('yesterday',this)">Yesterday</button>
+            <button class="cs-filter-btn dash-filter-btn" onclick="setCsFilter('week',this)">7 Days</button>
+            <button class="cs-filter-btn dash-filter-btn" onclick="setCsFilter('month',this)">30 Days</button>
+            <button class="cs-filter-btn dash-filter-btn" onclick="setCsFilter('custom',this)">📅</button>
+            <input type="date" id="cs-date" oninput="renderCountSheet()" style="display:none;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)">
+            <span class="dash-period-lbl" id="cs-period-lbl"></span>
+          </div>
+
+          <div class="kpi-row">
+            <div class="kpi blue">
+              <div class="label">📤 Total Sent</div>
+              <div class="val" id="cs-kpi-sent">—</div>
+              <div class="kpi-sub" id="cs-kpi-sub">from count sheet</div>
+            </div>
+            <div class="kpi green">
+              <div class="label">📋 Active Broadcasts</div>
+              <div class="val" id="cs-kpi-types">—</div>
+              <div class="kpi-sub">with data in period</div>
+            </div>
+            <div class="kpi yellow">
+              <div class="label">📈 Top Type</div>
+              <div class="val" style="font-size:1.1rem" id="cs-kpi-top">—</div>
+              <div class="kpi-sub" id="cs-kpi-top-sent">—</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:18px">
+            <div class="card-header">
+              <h3>📊 Performance by Broadcast Type</h3>
+              <span style="font-size:.72rem;color:var(--muted)" id="cs-period-h"></span>
+            </div>
+            <div class="card-body" style="padding-top:8px">
+              <div class="perf-cat-list" id="cs-perf-list">
+                <div style="color:var(--muted);text-align:center;padding:24px">Click to load count sheet data...</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>📋 Daily Broadcast Counts</h3>
+              <span style="font-size:.72rem;color:var(--muted)" id="cs-table-period"></span>
+            </div>
+            <div class="card-body" style="padding:0">
+              <div class="table-wrap">
+                <table>
+                  <thead id="cs-table-head"></thead>
+                  <tbody id="cs-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ── ADMIN ── -->
         <div class="panel" id="panel-admin">
           <div class="card" style="margin-bottom:20px">
@@ -1147,6 +1206,9 @@
       </button>
       <button class="bn-item" id="bn-add-broadcast" onclick="goToMobile('add-broadcast')">
         <span class="bn-icon">➕</span><span>Add</span>
+      </button>
+      <button class="bn-item" id="bn-countsheet" onclick="goToMobile('countsheet')">
+        <span class="bn-icon">📊</span><span>Sheet</span>
       </button>
     </div>
   </nav>
@@ -1466,6 +1528,7 @@ const pageTitles = {
   'broadcasts': 'All Broadcasts',
   'records': 'Records',
   'calendar': 'Calendar',
+  'countsheet': 'Count Sheet',
   'admin': 'Access Control'
 };
 
@@ -1487,6 +1550,7 @@ function goTo(name, btn) {
   if (name==='broadcasts') renderBroadcastList();
   if (name==='records') renderRecords();
   if (name==='calendar') renderCalendar();
+  if (name==='countsheet') initCountSheet();
   if (name==='admin') { if(currentUser!==ADMIN_EMAIL){return;} renderAdminPanel(); }
   if (name==='tracking') { renderTrackForm(); renderTodayLog(); }
 }
@@ -1499,11 +1563,9 @@ function goToMobile(name) {
 // ══════════════════════════════════════════════
 // UTILITIES
 // ══════════════════════════════════════════════
-function today() { return new Date().toISOString().slice(0,10); }
-function yesterday() {
-  const d = new Date(); d.setDate(d.getDate()-1);
-  return d.toISOString().slice(0,10);
-}
+function fmtLocalDate(d) { const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
+function today() { return fmtLocalDate(new Date()); }
+function yesterday() { const d=new Date(); d.setDate(d.getDate()-1); return fmtLocalDate(d); }
 function toast(msg, type='default') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -3101,6 +3163,164 @@ async function initApp() {
   if (savedUser) { currentUser = savedUser; startApp(); }
 }
 initApp();
+
+// ══════════════════════════════════════════════
+// COUNT SHEET
+// ══════════════════════════════════════════════
+const CS_CSV_URL = 'https://docs.google.com/spreadsheets/d/17KV51RAjGrrCftIfei9obV-QXl1aC7AF6XAF0lUQsIU/export?format=csv&gid=617135708';
+let csData   = null;
+let csFilter = 'today';
+
+function setCsFilter(f, el) {
+  csFilter = f;
+  document.querySelectorAll('.cs-filter-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const inp = document.getElementById('cs-date');
+  if (inp) inp.style.display = f === 'custom' ? '' : 'none';
+  renderCountSheet();
+}
+
+function getCsRange() {
+  const pad2 = n => String(n).padStart(2,'0');
+  const fmtLocal = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const t = today();
+  if (csFilter === 'today')     return { from: t, to: t, label: 'Today' };
+  if (csFilter === 'yesterday') { const y = yesterday(); return { from: y, to: y, label: 'Yesterday' }; }
+  if (csFilter === 'week')  { const d = new Date(); d.setDate(d.getDate()-6);  return { from: fmtLocal(d), to: t, label: 'Last 7 Days' }; }
+  if (csFilter === 'month') { const d = new Date(); d.setDate(d.getDate()-29); return { from: fmtLocal(d), to: t, label: 'Last 30 Days' }; }
+  const v = document.getElementById('cs-date')?.value;
+  return v ? { from: v, to: v, label: v } : { from: t, to: t, label: 'Today' };
+}
+
+function parseCSVLine(line) {
+  const fields = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') inQ = !inQ;
+    else if (c === ',' && !inQ) { fields.push(cur); cur = ''; }
+    else cur += c;
+  }
+  fields.push(cur);
+  return fields;
+}
+
+function parseCountSheetCSV(text) {
+  const lines = text.split('\n');
+  // Line 0: blank; Line 1: header with dates from col 5; Line 2+: data
+  const hdr = parseCSVLine(lines[1] || '');
+  const colDate = {};
+  for (let c = 5; c < hdr.length; c++) {
+    const raw = hdr[c].trim().replace(/"/g,'');
+    const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) colDate[c] = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  }
+  const rows = [];
+  for (let i = 2; i < lines.length; i++) {
+    const f = parseCSVLine(lines[i]);
+    const name = (f[0]||'').trim();
+    if (!name) continue;
+    const vals = {};
+    for (const [c, iso] of Object.entries(colDate)) {
+      const v = parseInt((f[c]||'').replace(/[^0-9]/g,'')) || 0;
+      if (v > 0) vals[iso] = v;
+    }
+    rows.push({ name, time: (f[1]||'').trim(), template: (f[3]||'').trim(), vals });
+  }
+  return { rows };
+}
+
+function csGroupLabel(name) {
+  const n = (name||'').toLowerCase();
+  if (n.includes('reminder message') || n.includes('routine'))  return 'Yoga Reminder';
+  if (n.includes('attendance'))                                  return 'Yoga Attendance';
+  if (n.includes('ds') || n.includes('strong'))                 return 'DS / Strong SE';
+  if (n.includes('night absent') || (n.includes('absent') && n.includes('night'))) return 'Night Absent';
+  if (n.includes('night present') || (n.includes('present') && n.includes('night'))) return 'Night Present';
+  if (n.includes('night'))                                       return 'Night Message';
+  if (n.includes('absent'))                                      return 'Absent';
+  if (n.includes('milestone'))                                   return 'Milestone';
+  if (n.includes('saturday') || n.includes('sunday'))            return 'Weekend';
+  return name;
+}
+
+async function initCountSheet() {
+  if (csData) { renderCountSheet(); return; }
+  document.getElementById('cs-perf-list').innerHTML =
+    '<div style="color:var(--muted);text-align:center;padding:28px;font-size:.9rem">⏳ Loading count sheet...</div>';
+  try {
+    const r = await fetch(CS_CSV_URL);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    csData = parseCountSheetCSV(await r.text());
+    renderCountSheet();
+  } catch(e) {
+    document.getElementById('cs-perf-list').innerHTML =
+      `<div style="color:var(--danger);text-align:center;padding:28px;font-size:.85rem">❌ Load failed: ${e.message}<br><small>Sheet must be publicly accessible</small></div>`;
+  }
+}
+
+function renderCountSheet() {
+  if (!csData) { initCountSheet(); return; }
+  const { from, to, label } = getCsRange();
+  ['cs-period-lbl','cs-period-h','cs-table-period'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = label;
+  });
+
+  // Aggregate by group
+  const groups = {};
+  let totalSent = 0, activeBc = 0;
+  csData.rows.forEach(row => {
+    let rt = 0;
+    Object.entries(row.vals).forEach(([d,v]) => { if (d >= from && d <= to) rt += v; });
+    if (rt > 0) activeBc++;
+    totalSent += rt;
+    const g = csGroupLabel(row.name);
+    if (!groups[g]) groups[g] = { sent: 0 };
+    groups[g].sent += rt;
+  });
+
+  const fmtIN = v => v >= 1e5 ? (v/1e5).toFixed(1)+'L' : v.toLocaleString('en-IN');
+
+  // KPIs
+  const sorted = Object.entries(groups).filter(([,g])=>g.sent>0).sort((a,b)=>b[1].sent-a[1].sent);
+  const el = (id) => document.getElementById(id);
+  if (el('cs-kpi-sent'))    el('cs-kpi-sent').textContent    = totalSent > 0 ? fmtIN(totalSent) : '0';
+  if (el('cs-kpi-types'))   el('cs-kpi-types').textContent   = activeBc;
+  if (el('cs-kpi-top'))     el('cs-kpi-top').textContent     = sorted[0]?.[0] || '—';
+  if (el('cs-kpi-top-sent'))el('cs-kpi-top-sent').textContent= sorted[0] ? fmtIN(sorted[0][1].sent) : '—';
+
+  // Performance bars
+  const list = el('cs-perf-list');
+  if (!list) return;
+  if (!sorted.length) { list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">No data for this period.</div>'; return; }
+  const maxSent = sorted[0][1].sent;
+  list.innerHTML = sorted.map(([name, g]) => {
+    const barW = Math.round(g.sent / maxSent * 100);
+    const col  = barW === 100 ? '#6366f1' : barW > 60 ? '#10b981' : '#f59e0b';
+    return `<div class="perf-cat-row">
+      <div class="perf-cat-name" title="${name}">${name}</div>
+      <div class="perf-cat-bar-wrap"><div class="perf-cat-bar-fill" style="width:${barW}%;background:${col}"></div></div>
+      <div class="perf-cat-sent">${fmtIN(g.sent)}</div>
+      <div class="perf-cat-rate" style="color:${col}">${barW}%</div>
+    </div>`;
+  }).join('');
+
+  // Detailed table
+  const datesInRange = [...new Set(
+    csData.rows.flatMap(r => Object.keys(r.vals).filter(d => d >= from && d <= to))
+  )].sort().slice(-7);
+
+  const head = el('cs-table-head'), body = el('cs-table-body');
+  if (!head || !body) return;
+  head.innerHTML = `<tr><th>Broadcast</th><th>Time</th>${datesInRange.map(d=>`<th>${d.slice(8)}/${d.slice(5,7)}</th>`).join('')}<th style="text-align:right">Total</th></tr>`;
+  const rows = csData.rows.map(row => {
+    let rt = 0;
+    Object.entries(row.vals).forEach(([d,v]) => { if (d >= from && d <= to) rt += v; });
+    if (!rt) return '';
+    const cells = datesInRange.map(d => `<td style="text-align:right;color:var(--text)">${row.vals[d] ? row.vals[d].toLocaleString('en-IN') : '<span style="color:var(--border)">—</span>'}</td>`).join('');
+    return `<tr><td>${row.name}</td><td style="color:var(--muted);white-space:nowrap">${row.time}</td>${cells}<td style="font-weight:700;text-align:right">${fmtIN(rt)}</td></tr>`;
+  }).filter(Boolean).join('');
+  body.innerHTML = rows || `<tr><td colspan="${datesInRange.length+3}" style="text-align:center;color:var(--muted);padding:20px">No data for this period.</td></tr>`;
+}
 </script>
 </body>
 </html>

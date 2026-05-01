@@ -732,9 +732,8 @@
       </div>
       <nav class="sidebar-nav">
         <div class="nav-label">Main</div>
-        <button class="nav-item" onclick="goTo('dashboard',this)"><span class="icon">🏠</span> Dashboard</button>
-        <button class="nav-item active" onclick="goTo('records',this)"><span class="icon">🗂</span> Records</button>
-        <button class="nav-item" onclick="goTo('countsheet',this)"><span class="icon">📊</span> Count Sheet</button>
+        <button class="nav-item active" onclick="goTo('countsheet',this)"><span class="icon">🏠</span> Dashboard</button>
+        <button class="nav-item" onclick="goTo('records',this)"><span class="icon">🗂</span> Records</button>
         <div class="nav-label" style="margin-top:8px">Manage</div>
         <button class="nav-item" onclick="goTo('add-broadcast',this)"><span class="icon">➕</span> Add Broadcast</button>
         <button class="nav-item" onclick="goTo('broadcasts',this)"><span class="icon">📋</span> All Broadcasts</button>
@@ -1199,17 +1198,14 @@
   <!-- ── MOBILE BOTTOM NAV ── -->
   <nav class="bottom-nav" id="bottom-nav">
     <div class="bottom-nav-inner">
-      <button class="bn-item" id="bn-dashboard" onclick="goToMobile('dashboard')">
+      <button class="bn-item active" id="bn-countsheet" onclick="goToMobile('countsheet')">
         <span class="bn-icon">🏠</span><span>Home</span>
       </button>
-      <button class="bn-item active" id="bn-records" onclick="goToMobile('records')">
+      <button class="bn-item" id="bn-records" onclick="goToMobile('records')">
         <span class="bn-icon">🗂</span><span>Records</span>
       </button>
       <button class="bn-item" id="bn-add-broadcast" onclick="goToMobile('add-broadcast')">
         <span class="bn-icon">➕</span><span>Add</span>
-      </button>
-      <button class="bn-item" id="bn-countsheet" onclick="goToMobile('countsheet')">
-        <span class="bn-icon">📊</span><span>Sheet</span>
       </button>
     </div>
   </nav>
@@ -1500,19 +1496,21 @@ function startApp() {
   document.getElementById('user-email-display').textContent = currentUser;
   document.getElementById('user-avatar').textContent = currentUser[0].toUpperCase();
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('dash-date').value = today();
   document.getElementById('rec-filter-date').value = '';
-  document.getElementById('page-title').textContent = 'Records';
+  document.getElementById('page-title').textContent = 'Dashboard';
   const mobLabel = document.getElementById('mob-page-label');
-  if (mobLabel) mobLabel.textContent = 'Records';
+  if (mobLabel) mobLabel.textContent = 'Dashboard';
   // Show admin nav only for admin
   document.getElementById('admin-nav-section').style.display =
     currentUser === ADMIN_EMAIL ? 'block' : 'none';
   renderAddBcFields();
   renderTrackForm();
-  renderDashboard();
   renderBroadcastList();
   renderRecords();
+  // Land on count sheet dashboard
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-countsheet').classList.add('active');
+  initCountSheet();
   renderTodayLog();
   if (currentUser === ADMIN_EMAIL) renderAdminPanel();
   startRealtime();
@@ -1529,7 +1527,7 @@ const pageTitles = {
   'broadcasts': 'All Broadcasts',
   'records': 'Records',
   'calendar': 'Calendar',
-  'countsheet': 'Count Sheet',
+  'countsheet': 'Dashboard',
   'admin': 'Access Control'
 };
 

@@ -2081,6 +2081,22 @@ function getDashRange() {
   return { from:c, to:c, label:c };
 }
 
+function deriveSubtype(r) {
+  if (r.subtype) return r.subtype;
+  if (r.category === 'FREE') return 'FREE';
+  const n = (r.msgname || '').toLowerCase();
+  if (n.includes('renewal') || n.includes('x-1') || n.includes('x-2')) return 'renewal';
+  if (n.includes('pause') || n.includes('unpause'))   return 'pause';
+  if (n.includes('night_absent') || n.includes('night_present') || n.includes('night'))  return 'night';
+  if (n.includes('sunday_attendance') || n.includes('saturday') || n.includes('absent') || n.includes('present')) return 'attendance';
+  if (n.includes('attendance') || n.includes('tracker') || n.includes('milestone')) return 'attendance';
+  if (n.includes('reminder') && (n.includes('_ye') || n.includes('ye_') || n.includes('yoga'))) return 'yoga';
+  if (n.includes('_se') || n.includes('se_') || n.includes('strong')) return 'strong';
+  if (n.includes('reminder')) return 'reminder';
+  if (n.includes('_ye') || n.includes('ye_') || n.includes('yoga')) return 'yoga';
+  return 'PAID';
+}
+
 function renderPerfByCategory(records, label) {
   const list  = document.getElementById('perf-cat-list');
   const empty = document.getElementById('perf-cat-empty');
@@ -2089,14 +2105,15 @@ function renderPerfByCategory(records, label) {
   if (per) per.textContent = label || '';
 
   const LABELS = {
-    yoga:'Yoga Reminder', attendance:'Yoga Attendance', milestone:'Milestone Tracker',
-    ds:'DS-Class', night:'Night Message', reminder:'Reminder',
-    strong:'Strong SE', saturday:'Saturday', PAID:'PAID', FREE:'FREE', other:'Other'
+    yoga:'Yoga Reminder', attendance:'Attendance / Absent', milestone:'Milestone Tracker',
+    night:'Night Message', reminder:'Class Reminder',
+    strong:'Strong SE', renewal:'Renewal', pause:'Pause / Unpause',
+    saturday:'Saturday', PAID:'Other PAID', FREE:'FREE Campaign', other:'Other'
   };
 
   const groups = {};
   records.forEach(r => {
-    const key = r.subtype || (r.category==='FREE'?'FREE':'other');
+    const key = deriveSubtype(r);
     if (!groups[key]) groups[key] = { sent:0, expected:0, label: LABELS[key]||key };
     groups[key].sent     += parseInt(r.sent)||0;
     groups[key].expected += parseInt(r.expected)||0;

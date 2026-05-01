@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Broadcast Tracking Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%234f46e5'/><circle cx='16' cy='16' r='5' fill='white'/><path d='M16 4 A12 12 0 0 1 28 16' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round'/><path d='M16 4 A12 12 0 0 0 4 16' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>" type="image/svg+xml">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -212,6 +213,23 @@
   .kpi.red .val    { color: var(--danger); }
   .kpi.yellow .val { color: var(--warn); }
   .kpi-sub { font-size: .7rem; color: var(--muted); margin-top: 6px; }
+
+  /* Dash filter bar */
+  .dash-filter-bar { display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+  .dash-filter-btn { padding:6px 16px; border-radius:20px; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); font-size:.82rem; font-weight:600; cursor:pointer; transition:all .2s; }
+  .dash-filter-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .dash-filter-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 2px 8px rgba(79,70,229,.3); }
+  .dash-period-lbl { font-size:.8rem; color:var(--muted); margin-left:4px; }
+  /* Performance by category */
+  .perf-cat-list { display:flex; flex-direction:column; gap:14px; padding:4px 0; }
+  .perf-cat-row { display:grid; grid-template-columns:150px 1fr 90px 56px; align-items:center; gap:12px; }
+  .perf-cat-name { font-size:.82rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .perf-cat-bar-wrap { height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+  .perf-cat-bar-fill { height:100%; border-radius:4px; transition:width .6s ease; }
+  .perf-cat-sent { font-size:.82rem; font-weight:700; color:var(--text); text-align:right; }
+  .perf-cat-rate { font-size:.75rem; font-weight:700; text-align:right; }
+  @media(max-width:600px){ .perf-cat-row { grid-template-columns:110px 1fr 70px 48px; gap:8px; } }
+
   .kpi-bar-wrap { height: 4px; background: var(--border); border-radius: 3px; margin: 10px 0 5px; overflow: hidden; }
   .kpi-bar-fill { height: 100%; border-radius: 3px; background: var(--accent2); transition: width .5s ease; }
 
@@ -717,7 +735,6 @@
         <button class="nav-item" onclick="goTo('dashboard',this)"><span class="icon">🏠</span> Dashboard</button>
         <button class="nav-item active" onclick="goTo('records',this)"><span class="icon">🗂</span> Records</button>
         <div class="nav-label" style="margin-top:8px">Manage</div>
-        <button class="nav-item" onclick="goTo('calendar',this)"><span class="icon">📅</span> Calendar</button>
         <button class="nav-item" onclick="goTo('add-broadcast',this)"><span class="icon">➕</span> Add Broadcast</button>
         <button class="nav-item" onclick="goTo('broadcasts',this)"><span class="icon">📋</span> All Broadcasts</button>
         <div id="admin-nav-section" style="display:none">
@@ -773,14 +790,15 @@
         <!-- ── DASHBOARD ── -->
         <div class="panel" id="panel-dashboard">
 
-          <!-- Date + Search bar -->
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-            <input type="date" id="dash-date" oninput="renderDashboard()"
-              style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.875rem;outline:none;color:var(--text)" />
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('dash-date').value=today();renderDashboard()">Today</button>
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('dash-date').value=yesterday();renderDashboard()">Yesterday</button>
-            <input type="text" id="dash-search" placeholder="🔍 Search broadcasts..." oninput="renderDashboard()"
-              style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.875rem;outline:none;width:200px;color:var(--text)" />
+          <!-- Filter bar -->
+          <div class="dash-filter-bar">
+            <button class="dash-filter-btn active" id="pf-today"     onclick="setDashFilter('today',this)">Today</button>
+            <button class="dash-filter-btn"        id="pf-yesterday" onclick="setDashFilter('yesterday',this)">Yesterday</button>
+            <button class="dash-filter-btn"        id="pf-week"      onclick="setDashFilter('week',this)">7 Days</button>
+            <button class="dash-filter-btn"        id="pf-month"     onclick="setDashFilter('month',this)">30 Days</button>
+            <button class="dash-filter-btn"        id="pf-custom"    onclick="setDashFilter('custom',this)">📅</button>
+            <input type="date" id="dash-date" oninput="renderDashboard()" style="display:none;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)">
+            <span class="dash-period-lbl" id="dash-period-lbl"></span>
           </div>
 
           <!-- KPIs -->
@@ -800,6 +818,18 @@
               <div class="val" id="kpi-completed">0</div>
               <div class="kpi-bar-wrap"><div class="kpi-bar-fill" id="kpi-prog-fill" style="width:0%"></div></div>
               <div class="kpi-sub" id="kpi-prog-sub">—</div>
+            </div>
+          </div>
+
+          <!-- Performance by Broadcast Type -->
+          <div class="card" id="perf-cat-card" style="margin-bottom:18px">
+            <div class="card-header" style="gap:10px">
+              <h3>Performance by Broadcast Type</h3>
+              <span id="perf-cat-period" style="font-size:.72rem;color:var(--muted)"></span>
+            </div>
+            <div class="card-body" style="padding-top:8px">
+              <div class="perf-cat-list" id="perf-cat-list"></div>
+              <div class="empty" id="perf-cat-empty" style="display:none">No records for this period.</div>
             </div>
           </div>
 
@@ -1118,9 +1148,6 @@
       <button class="bn-item" id="bn-add-broadcast" onclick="goToMobile('add-broadcast')">
         <span class="bn-icon">➕</span><span>Add</span>
       </button>
-      <button class="bn-item" id="bn-calendar" onclick="goToMobile('calendar')">
-        <span class="bn-icon">📅</span><span>Calendar</span>
-      </button>
     </div>
   </nav>
 
@@ -1254,16 +1281,49 @@ function toggleStatus(category, msgname, bcTime) {
   renderRecords();
 }
 
-function startRealtime() {
-  db.collection('appData').doc('main').onSnapshot(doc => {
-    if (!doc.exists) return;
-    S = doc.data();
-    renderRecords();
-    renderDashboard();
-    renderTodayLog();
-    renderCharts();
-  }, e => console.warn('Realtime error', e));
+let _rtDebounce = null;
+let _rtUnsub    = null;
+let _rtLastFire = 0;
+
+function _applyUpdate(data) {
+  S = data;
+  clearTimeout(_rtDebounce);
+  _rtDebounce = setTimeout(() => {
+    const scrollY = window.scrollY;
+    try { renderRecords(); }      catch(e) { console.warn('renderRecords error', e); }
+    try { renderDashboard(); }    catch(e) { console.warn('renderDashboard error', e); }
+    try { renderTodayLog(); }     catch(e) { console.warn('renderTodayLog error', e); }
+    try { renderBroadcastList(); }catch(e) { console.warn('renderBroadcastList error', e); }
+    window.scrollTo(0, scrollY);
+  }, 250);
 }
+
+function startRealtime() {
+  if (_rtUnsub) _rtUnsub();
+  _rtLastFire = Date.now();
+  _rtUnsub = db.collection('appData').doc('main').onSnapshot(doc => {
+    if (!doc.exists) return;
+    _rtLastFire = Date.now();
+    _applyUpdate(doc.data());
+  }, e => {
+    console.warn('Realtime error, restarting...', e);
+    setTimeout(startRealtime, 3000);
+  });
+}
+
+// Reconnect when tab comes back into focus (handles background-tab disconnects)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && currentUser) startRealtime();
+});
+
+// Polling fallback: if onSnapshot hasn't fired in 45s, force re-fetch
+setInterval(async () => {
+  if (!currentUser || Date.now() - _rtLastFire < 45000) return;
+  try {
+    const doc = await db.collection('appData').doc('main').get();
+    if (doc.exists) { _rtLastFire = Date.now(); _applyUpdate(doc.data()); }
+  } catch(_) {}
+}, 45000);
 function saveS() {
   const clean = JSON.parse(JSON.stringify(S));
   db.collection('appData').doc('main').set(clean).catch(console.error);
@@ -1992,15 +2052,89 @@ function renderTodayLog() {
 // ══════════════════════════════════════════════
 // DASHBOARD
 // ══════════════════════════════════════════════
+let dashFilter = 'today';
+
+function setDashFilter(f, el) {
+  dashFilter = f;
+  document.querySelectorAll('.dash-filter-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const dateEl = document.getElementById('dash-date');
+  if (dateEl) dateEl.style.display = (f === 'custom') ? 'inline-block' : 'none';
+  renderDashboard();
+}
+
+function getDashRange() {
+  const pad2 = n => String(n).padStart(2,'0');
+  const fmtLocal = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const t = today();
+  if (dashFilter === 'today')     return { from:t, to:t, label:'Today' };
+  if (dashFilter === 'yesterday') { const y=yesterday(); return { from:y, to:y, label:'Yesterday' }; }
+  if (dashFilter === 'week') {
+    const d = new Date(); d.setDate(d.getDate()-6);
+    return { from:fmtLocal(d), to:t, label:'Last 7 Days' };
+  }
+  if (dashFilter === 'month') {
+    const d = new Date(); d.setDate(d.getDate()-29);
+    return { from:fmtLocal(d), to:t, label:'Last 30 Days' };
+  }
+  const c = document.getElementById('dash-date')?.value || t;
+  return { from:c, to:c, label:c };
+}
+
+function renderPerfByCategory(records, label) {
+  const list  = document.getElementById('perf-cat-list');
+  const empty = document.getElementById('perf-cat-empty');
+  const per   = document.getElementById('perf-cat-period');
+  if (!list) return;
+  if (per) per.textContent = label || '';
+
+  const LABELS = {
+    yoga:'Yoga Reminder', attendance:'Yoga Attendance', milestone:'Milestone Tracker',
+    ds:'DS-Class', night:'Night Message', reminder:'Reminder',
+    strong:'Strong SE', saturday:'Saturday', PAID:'PAID', FREE:'FREE', other:'Other'
+  };
+
+  const groups = {};
+  records.forEach(r => {
+    const key = r.subtype || (r.category==='FREE'?'FREE':'other');
+    if (!groups[key]) groups[key] = { sent:0, expected:0, label: LABELS[key]||key };
+    groups[key].sent     += parseInt(r.sent)||0;
+    groups[key].expected += parseInt(r.expected)||0;
+  });
+
+  const sorted = Object.entries(groups).sort((a,b)=>b[1].sent-a[1].sent);
+  if (!sorted.length) { list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  const maxSent = Math.max(...sorted.map(([,g])=>g.sent), 1);
+
+  list.innerHTML = sorted.map(([,g]) => {
+    const pct  = g.expected > 0 ? Math.min(100,Math.round(g.sent/g.expected*100)) : (g.sent>0?100:0);
+    const barW = Math.round(g.sent/maxSent*100);
+    const col  = pct >= 98 ? '#22c55e' : pct >= 90 ? '#6366f1' : '#f59e0b';
+    return `<div class="perf-cat-row">
+      <div class="perf-cat-name" title="${g.label}">${g.label}</div>
+      <div class="perf-cat-bar-wrap"><div class="perf-cat-bar-fill" style="width:${barW}%;background:${col}"></div></div>
+      <div class="perf-cat-sent">${g.sent.toLocaleString()}</div>
+      <div class="perf-cat-rate" style="color:${col}">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
 function renderDashboard() {
-  const selDate = document.getElementById('dash-date')?.value || today();
-  const q = (document.getElementById('dash-search')?.value||'').toLowerCase();
+  const { from: rangeFrom, to: rangeTo, label: rangeLabel } = getDashRange();
+  const selDate = rangeFrom; // keep for single-day logic (scheduler, dow)
+  const q = '';
+
+  // Update period label
+  const periodLbl = document.getElementById('dash-period-lbl');
+  if (periodLbl) periodLbl.textContent = rangeLabel;
 
   // Day-of-week for filtering broadcasts by their scheduled days
   const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(selDate+'T00:00:00').getDay()];
 
-  // Records logged for selected date
-  const records = (S.records||[]).filter(r => r.date === selDate);
+  // Records for selected period
+  const records = (S.records||[]).filter(r => r.date >= rangeFrom && r.date <= rangeTo);
 
   let broadcasts = (S.broadcasts||[]).filter(b =>
     !b.days || b.days.length === 0 || b.days.includes(dow)
@@ -2261,6 +2395,8 @@ function renderDashboard() {
       freeCards.innerHTML = cardsHtml;
     }
   }
+
+  renderPerfByCategory(records, rangeLabel);
 }
 
 
@@ -2340,7 +2476,7 @@ function renderRecords() {
     <td>${r.date}</td>
     <td>${r.time ? fmt12(r.time) : '—'}</td>
     <td>${catBadge(r)}</td>
-    <td><strong>${r.msgname||'—'}</strong></td>
+    <td><strong>${r.msgname||'—'}</strong>${r.savedBy ? `<br><span style="font-size:.7rem;color:var(--muted)">${r.savedBy}${r.savedAt ? ' @ '+r.savedAt : ''}</span>` : ''}</td>
     <td style="cursor:pointer;text-decoration:underline dotted" onclick="editSent(${r.id})" title="Click to edit">${sent.toLocaleString()}</td>
     <td style="color:#f59e0b;font-weight:600">${yc !== null ? yc.toLocaleString() : '—'}</td>
     <td>${exp.toLocaleString()}</td>

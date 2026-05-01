@@ -775,7 +775,7 @@
       <nav class="sidebar-nav">
         <div class="nav-label">Main</div>
         <button class="nav-item active" onclick="goTo('countsheet',this)"><span class="icon">🏠</span> Dashboard</button>
-        <button class="nav-item" onclick="goTo('records',this)"><span class="icon">🗂</span> Records</button>
+        <button class="nav-item" onclick="goTo('records',this)"><span class="icon">🗂</span> Logs</button>
         <button class="nav-item" onclick="goTo('calendar',this)"><span class="icon">📅</span> Calendar</button>
         <div class="nav-label" style="margin-top:8px">Manage</div>
         <button class="nav-item" onclick="goTo('add-broadcast',this)"><span class="icon">➕</span> Add Broadcast</button>
@@ -1084,36 +1084,15 @@
           </div>
           <div class="card">
             <div class="card-header">
-              <h3>Records</h3>
+              <h3>Logs</h3>
               <div class="rec-filters-wrap" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;position:relative">
                 <button class="dash-filter-btn active" id="rb-today"     onclick="setRecFilter('today',this)">Today</button>
                 <button class="dash-filter-btn"        id="rb-yesterday" onclick="setRecFilter('yesterday',this)">Yesterday</button>
-                <button class="dash-filter-btn"        id="rb-week"      onclick="setRecFilter('week',this)">7 Days</button>
-                <button class="dash-filter-btn"        id="rb-month"     onclick="setRecFilter('month',this)">30 Days</button>
-                <button class="dash-filter-btn"        id="rb-all"       onclick="setRecFilter('all',this)">All</button>
                 <button class="dash-filter-btn"        id="rb-custom"    onclick="toggleRecCal(event)">📅</button>
                 <input type="hidden" id="rec-filter-from">
                 <input type="hidden" id="rec-filter-to">
                 <div id="rc-popup" style="display:none;position:fixed;z-index:9999;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:16px 14px 12px;width:266px;user-select:none"></div>
-                <input type="text" id="rec-search" placeholder="🔍 Search..." oninput="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:140px;color:var(--text);background:var(--surface)" />
-                <select id="rec-filter-subtype" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)">
-                  <option value="">All Types</option>
-                  <option value="yoga">Yoga</option>
-                  <option value="strong">Strong</option>
-                  <option value="attendance">Attendance</option>
-                  <option value="renewal">Renewal</option>
-                  <option value="pause/unpause">Pause</option>
-                  <option value="reminder">Reminder</option>
-                  <option value="night">Night</option>
-                  <option value="PAID">PAID</option>
-                  <option value="FREE">FREE</option>
-                </select>
-                <select id="rec-filter-tod" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)">
-                  <option value="">🕐 All Times</option>
-                  <option value="morning">🌅 Morning</option>
-                  <option value="evening">🌙 Evening</option>
-                </select>
-                <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Export</button>
+                <input type="text" id="rec-search" placeholder="🔍 Search..." oninput="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:160px;color:var(--text);background:var(--surface)" />
               </div>
             </div>
             <div class="rec-table-wrap table-wrap">
@@ -1262,7 +1241,7 @@
         <span class="bn-icon">🏠</span><span>Home</span>
       </button>
       <button class="bn-item" id="bn-records" onclick="goToMobile('records')">
-        <span class="bn-icon">🗂</span><span>Records</span>
+        <span class="bn-icon">🗂</span><span>Logs</span>
       </button>
       <button class="bn-item" id="bn-calendar" onclick="goToMobile('calendar')">
         <span class="bn-icon">📅</span><span>Calendar</span>
@@ -1589,7 +1568,7 @@ const pageTitles = {
   'tracking': 'Daily Tracking',
   'add-broadcast': 'Add Broadcast',
   'broadcasts': 'All Broadcasts',
-  'records': 'Records',
+  'records': 'Logs',
   'calendar': 'Calendar',
   'countsheet': 'Dashboard',
   'calendar': 'Calendar',
@@ -2872,7 +2851,7 @@ function renderRecords() {
     <td>${exp.toLocaleString()}</td>
     <td>${deliveryBadge(sent, exp)}</td>
     <td><span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span></td>
-    <td><button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button></td>
+    <td>${currentUser===ADMIN_EMAIL?`<button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button>`:''}</td>
   </tr>`;
   }).join('');
 
@@ -2908,7 +2887,7 @@ function renderRecords() {
       </div>
       <div class="rec-card-bottom">
         <span class="badge ${diff>0?'badge-red':'badge-green'}">Diff: ${diff}</span>
-        <button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button>
+        ${currentUser===ADMIN_EMAIL?`<button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button>`:''}
       </div>
     </div>`;
   }).join('');

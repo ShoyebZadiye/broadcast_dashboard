@@ -221,6 +221,25 @@
   .dash-filter-btn.active         { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 2px 8px rgba(79,70,229,.3); }
   .dash-filter-btn.active.ct-orng { background:#f97316; border-color:#f97316; box-shadow:0 2px 8px rgba(249,115,22,.3); }
   .dash-period-lbl { font-size:.8rem; color:var(--muted); margin-left:4px; }
+  /* Custom date range calendar */
+  .rc-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .rc-month-lbl { font-size:.88rem; font-weight:700; color:var(--text); cursor:pointer; }
+  .rc-nav { background:none; border:none; cursor:pointer; color:var(--muted); font-size:1rem; padding:2px 6px; border-radius:6px; transition:all .15s; }
+  .rc-nav:hover { background:var(--light); color:var(--accent); }
+  .rc-dow { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:4px; }
+  .rc-dow span { text-align:center; font-size:.63rem; font-weight:700; color:var(--muted); padding:3px 0; }
+  .rc-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .rc-day { text-align:center; padding:7px 2px; border-radius:7px; cursor:pointer; font-size:.82rem; font-weight:500; transition:all .12s; color:var(--text); border:1.5px solid transparent; }
+  .rc-day:hover:not(.rc-empty):not(.rc-other) { background:var(--light); border-color:var(--border); }
+  .rc-day.rc-other { color:var(--border); cursor:default; }
+  .rc-day.rc-today { color:var(--accent); font-weight:800; }
+  .rc-day.rc-start, .rc-day.rc-end { background:#f97316 !important; color:#fff !important; border-color:#f97316 !important; font-weight:700; }
+  .rc-day.rc-single { background:var(--accent) !important; color:#fff !important; border-color:var(--accent) !important; font-weight:700; }
+  .rc-day.rc-mid { background:rgba(79,70,229,.1); color:var(--accent); border-radius:0; }
+  .rc-footer { display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+  .rc-footer button { background:none; border:none; cursor:pointer; font-size:.82rem; font-weight:600; padding:4px 8px; border-radius:6px; }
+  .rc-footer .rc-clear-btn { color:var(--muted); } .rc-footer .rc-clear-btn:hover { color:var(--danger); }
+  .rc-footer .rc-today-btn { color:var(--accent); } .rc-footer .rc-today-btn:hover { background:#eef2ff; }
   /* Count sheet table filters */
   .cs-type-btn { padding:5px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; }
   .cs-type-btn:hover { border-color:var(--accent); color:var(--accent); }
@@ -1066,18 +1085,16 @@
           <div class="card">
             <div class="card-header">
               <h3>Records</h3>
-              <div class="rec-filters-wrap" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+              <div class="rec-filters-wrap" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;position:relative">
                 <button class="dash-filter-btn active" id="rb-today"     onclick="setRecFilter('today',this)">Today</button>
                 <button class="dash-filter-btn"        id="rb-yesterday" onclick="setRecFilter('yesterday',this)">Yesterday</button>
                 <button class="dash-filter-btn"        id="rb-week"      onclick="setRecFilter('week',this)">7 Days</button>
                 <button class="dash-filter-btn"        id="rb-month"     onclick="setRecFilter('month',this)">30 Days</button>
                 <button class="dash-filter-btn"        id="rb-all"       onclick="setRecFilter('all',this)">All</button>
-                <button class="dash-filter-btn"        id="rb-custom"    onclick="setRecFilter('custom',this)">📅</button>
-                <div id="rec-custom-range" style="display:none;align-items:center;gap:4px">
-                  <input type="date" id="rec-filter-from" onchange="renderRecords()" style="padding:5px 8px;border:1.5px solid var(--border);border-radius:7px 0 0 7px;font-size:.8rem;outline:none;color:var(--text);background:var(--surface);border-right:none">
-                  <span style="padding:5px 6px;background:var(--light);border-top:1.5px solid var(--border);border-bottom:1.5px solid var(--border);font-size:.75rem;color:var(--muted)">→</span>
-                  <input type="date" id="rec-filter-to"   onchange="renderRecords()" style="padding:5px 8px;border:1.5px solid var(--border);border-radius:0 7px 7px 0;font-size:.8rem;outline:none;color:var(--text);background:var(--surface);border-left:none">
-                </div>
+                <button class="dash-filter-btn"        id="rb-custom"    onclick="toggleRecCal(event)">📅</button>
+                <input type="hidden" id="rec-filter-from">
+                <input type="hidden" id="rec-filter-to">
+                <div id="rc-popup" style="display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:300;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:16px 14px 12px;width:266px;user-select:none"></div>
                 <input type="text" id="rec-search" placeholder="🔍 Search..." oninput="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:140px;color:var(--text);background:var(--surface)" />
                 <select id="rec-filter-subtype" onchange="renderRecords()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;color:var(--text);background:var(--surface)">
                   <option value="">All Types</option>
@@ -2560,23 +2577,119 @@ function setRecFilter(f, el) {
   const t = today(), y = yesterday();
   const fromEl = document.getElementById('rec-filter-from');
   const toEl   = document.getElementById('rec-filter-to');
-  const customWrap = document.getElementById('rec-custom-range');
-
   recFilterToggle++;
-  document.querySelectorAll('#panel-records .dash-filter-btn').forEach(b => { b.classList.remove('active','ct-orng'); });
-  if (el) {
-    el.classList.add('active');
-    if (recFilterToggle % 2 === 0) el.classList.add('ct-orng');
+  document.querySelectorAll('#panel-records .dash-filter-btn').forEach(b => b.classList.remove('active','ct-orng'));
+  if (el) { el.classList.add('active'); if (recFilterToggle % 2 === 0) el.classList.add('ct-orng'); }
+  // close popup if open
+  const pop = document.getElementById('rc-popup'); if (pop) pop.style.display = 'none'; rcPopupOpen = false;
+  if (f === 'today')      { fromEl.value = t;  toEl.value = t; }
+  else if (f === 'yesterday') { fromEl.value = y; toEl.value = y; }
+  else if (f === 'week')  { const d=new Date(); d.setDate(d.getDate()-6); fromEl.value=fmtD(d); toEl.value=t; }
+  else if (f === 'month') { const d=new Date(); d.setDate(d.getDate()-29); fromEl.value=fmtD(d); toEl.value=t; }
+  else if (f === 'all')   { fromEl.value=''; toEl.value=''; }
+  renderRecords();
+}
+
+// ── Custom calendar popup ──────────────────────
+let rcPopupOpen = false, rcStart = null, rcEnd = null, rcSingle = false;
+let rcY = new Date().getFullYear(), rcM = new Date().getMonth();
+
+function toggleRecCal(e) {
+  if (e) e.stopPropagation();
+  rcPopupOpen = !rcPopupOpen;
+  const pop = document.getElementById('rc-popup');
+  if (!pop) return;
+  pop.style.display = rcPopupOpen ? 'block' : 'none';
+  if (rcPopupOpen) renderRcCal();
+}
+
+document.addEventListener('click', e => {
+  const pop = document.getElementById('rc-popup');
+  if (pop && rcPopupOpen && !pop.contains(e.target) && e.target.id !== 'rb-custom') {
+    pop.style.display = 'none'; rcPopupOpen = false;
+  }
+});
+
+function renderRcCal() {
+  const pop = document.getElementById('rc-popup'); if (!pop) return;
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DOWS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const todayStr = today();
+  const dim = new Date(rcY, rcM+1, 0).getDate();
+  const first = new Date(rcY, rcM, 1).getDay();
+  const p2 = n => String(n).padStart(2,'0');
+
+  let grid = '';
+  for (let i = 0; i < first; i++) grid += `<div class="rc-day rc-other"></div>`;
+  for (let d = 1; d <= dim; d++) {
+    const ds = `${rcY}-${p2(rcM+1)}-${p2(d)}`;
+    let cls = 'rc-day';
+    if (ds === todayStr) cls += ' rc-today';
+    const inRange = rcStart && rcEnd && ds > rcStart && ds < rcEnd;
+    if (rcSingle && ds === rcStart && ds === rcEnd) cls += ' rc-single';
+    else if (ds === rcStart) cls += ' rc-start';
+    else if (ds === rcEnd)   cls += ' rc-end';
+    else if (inRange)        cls += ' rc-mid';
+    grid += `<div class="${cls}" onclick="rcClick('${ds}',event)">${d}</div>`;
   }
 
-  customWrap.style.display = f === 'custom' ? 'flex' : 'none';
+  const fmtLbl = () => {
+    if (!rcStart) return 'Select date';
+    if (!rcEnd)   return rcStart;
+    if (rcSingle) return rcStart;
+    return `${rcStart} → ${rcEnd}`;
+  };
 
-  if (f === 'today')     { fromEl.value = t;  toEl.value = t; }
-  else if (f === 'yesterday') { fromEl.value = y; toEl.value = y; }
-  else if (f === 'week') { const d=new Date(); d.setDate(d.getDate()-6); fromEl.value=fmtD(d); toEl.value=t; }
-  else if (f === 'month'){ const d=new Date(); d.setDate(d.getDate()-29); fromEl.value=fmtD(d); toEl.value=t; }
-  else if (f === 'all')  { fromEl.value=''; toEl.value=''; }
+  pop.innerHTML = `
+    <div class="rc-head">
+      <button class="rc-nav" onclick="rcPrev(event)">↑</button>
+      <span class="rc-month-lbl">${MONTHS[rcM]} ${rcY}</span>
+      <button class="rc-nav" onclick="rcNext(event)">↓</button>
+    </div>
+    <div class="rc-dow">${DOWS.map(d=>`<span>${d}</span>`).join('')}</div>
+    <div class="rc-grid">${grid}</div>
+    <div class="rc-footer">
+      <button class="rc-clear-btn" onclick="rcClearSel(event)">Clear</button>
+      <span style="font-size:.72rem;color:var(--muted)">${fmtLbl()}</span>
+      <button class="rc-today-btn" onclick="rcSetToday(event)">Today</button>
+    </div>`;
+}
+
+function rcClick(ds, e) {
+  if (e) e.stopPropagation();
+  if (!rcStart || (rcStart && rcEnd)) {
+    rcStart = ds; rcEnd = null; rcSingle = false;
+  } else if (ds === rcStart) {
+    rcEnd = ds; rcSingle = true;
+    applyRcFilter();
+  } else {
+    if (ds < rcStart) { rcEnd = rcStart; rcStart = ds; } else { rcEnd = ds; }
+    rcSingle = false;
+    applyRcFilter();
+  }
+  renderRcCal();
+}
+
+function applyRcFilter() {
+  const fromEl = document.getElementById('rec-filter-from');
+  const toEl   = document.getElementById('rec-filter-to');
+  if (fromEl) fromEl.value = rcStart || '';
+  if (toEl)   toEl.value   = rcEnd || rcStart || '';
   renderRecords();
+  setTimeout(() => { const p=document.getElementById('rc-popup'); if(p){p.style.display='none';rcPopupOpen=false;} }, 300);
+}
+
+function rcPrev(e) { e.stopPropagation(); rcM--; if(rcM<0){rcM=11;rcY--;} renderRcCal(); }
+function rcNext(e) { e.stopPropagation(); rcM++; if(rcM>11){rcM=0;rcY++;} renderRcCal(); }
+function rcClearSel(e) {
+  e.stopPropagation(); rcStart=null; rcEnd=null; rcSingle=false;
+  document.getElementById('rec-filter-from').value='';
+  document.getElementById('rec-filter-to').value='';
+  renderRecords(); renderRcCal();
+}
+function rcSetToday(e) {
+  e.stopPropagation(); rcStart=today(); rcEnd=today(); rcSingle=true;
+  applyRcFilter();
 }
 
 function renderRecords() {

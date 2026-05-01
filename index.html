@@ -3773,7 +3773,7 @@ function renderCountSheet() {
   // Detailed table
   const datesInRange = [...new Set(
     csData.rows.flatMap(r => Object.keys(r.vals).filter(d => d >= from && d <= to))
-  )].sort().slice(-7);
+  )].sort();
 
   const head = el('cs-table-head'), body = el('cs-table-body');
   if (!head || !body) return;

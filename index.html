@@ -223,7 +223,11 @@
   /* Count sheet table filters */
   .cs-type-btn { padding:5px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; }
   .cs-type-btn:hover { border-color:var(--accent); color:var(--accent); }
-  .cs-type-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 2px 8px rgba(79,70,229,.25); }
+  .cs-type-btn.active                 { background:var(--accent);  color:#fff; border-color:var(--accent);  box-shadow:0 2px 8px rgba(79,70,229,.3); }
+  .cs-type-btn.active.ct-green        { background:#10b981; border-color:#10b981; box-shadow:0 2px 8px rgba(16,185,129,.3); }
+  .cs-type-btn.active.ct-orange       { background:#f97316; border-color:#f97316; box-shadow:0 2px 8px rgba(249,115,22,.3); }
+  .cs-type-btn.active.ct-orange-red   { background:#ef4444; border-color:#ef4444; box-shadow:0 2px 8px rgba(239,68,68,.3); }
+  .cs-type-btn.active.ct-purple       { background:#8b5cf6; border-color:#8b5cf6; box-shadow:0 2px 8px rgba(139,92,246,.3); }
   .cs-search-bar { padding:12px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--surface2); }
   .cs-search-input { padding:8px 12px 8px 34px; border:1.5px solid var(--border); border-radius:8px; font-size:.83rem; outline:none; color:var(--text); background:var(--surface); width:200px; transition:all .2s; }
   .cs-search-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,70,229,.08); }
@@ -1171,13 +1175,13 @@
             </div>
             <div class="cs-search-bar">
               <div style="display:flex;gap:6px;flex-wrap:wrap">
-                <button class="cs-type-btn active" onclick="setCsType('all',this)">All</button>
-                <button class="cs-type-btn" onclick="setCsType('Yoga Reminder',this)">Yoga Reminder</button>
-                <button class="cs-type-btn" onclick="setCsType('Yoga Attendance',this)">Attendance</button>
-                <button class="cs-type-btn" onclick="setCsType('Night Message',this)">Night</button>
-                <button class="cs-type-btn" onclick="setCsType('Night Absent',this)">Night Absent</button>
-                <button class="cs-type-btn" onclick="setCsType('Night Present',this)">Night Present</button>
-                <button class="cs-type-btn" onclick="setCsType('DS / Strong SE',this)">DS / Strong</button>
+                <button class="cs-type-btn active"          onclick="setCsType('all',this)">All</button>
+                <button class="cs-type-btn ct-blue"         onclick="setCsType('Yoga Reminder',this)">Yoga Reminder</button>
+                <button class="cs-type-btn ct-green"        onclick="setCsType('Yoga Attendance',this)">Attendance</button>
+                <button class="cs-type-btn ct-orange"       onclick="setCsType('Night Message',this)">Night</button>
+                <button class="cs-type-btn ct-orange-red"   onclick="setCsType('Night Absent',this)">Night Absent</button>
+                <button class="cs-type-btn ct-orange"       onclick="setCsType('Night Present',this)">Night Present</button>
+                <button class="cs-type-btn ct-purple"       onclick="setCsType('DS / Strong SE',this)">DS / Strong</button>
               </div>
             </div>
             <div class="table-wrap">
@@ -3196,6 +3200,7 @@ function setCsType(t, el) {
   if (el) el.classList.add('active');
   renderCountSheet();
 }
+
 
 function setCsFilter(f, el) {
   csFilter = f;

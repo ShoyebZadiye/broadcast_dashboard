@@ -1617,6 +1617,7 @@ function startApp() {
   initCountSheet();
   renderTodayLog();
   if (currentUser === ADMIN_EMAIL) renderAdminPanel();
+  loadActivityLog();
   startRealtime();
 
 }
@@ -3947,17 +3948,29 @@ function renderCountSheet() {
 }
 
 // ══════════════════════════════════════════════
-// ACTIVITY LOG
+// ACTIVITY LOG  (Firestore-backed, shared across users)
 // ══════════════════════════════════════════════
-function getActivityLog() {
-  try { return JSON.parse(localStorage.getItem('bcast_activity') || '[]'); } catch { return []; }
+let _activityLogCache = [];
+
+async function loadActivityLog() {
+  try {
+    const doc = await db.collection('appData').doc('activityLog').get();
+    if (doc.exists && Array.isArray(doc.data().logs)) {
+      _activityLogCache = doc.data().logs;
+    }
+  } catch(_) {}
 }
+
+function getActivityLog() { return _activityLogCache; }
+
 function saveActivityLog(logs) {
-  if (logs.length > 500) logs = logs.slice(-500);
-  localStorage.setItem('bcast_activity', JSON.stringify(logs));
+  if (logs.length > 300) logs = logs.slice(-300);
+  _activityLogCache = logs;
+  db.collection('appData').doc('activityLog').set({ logs }).catch(console.error);
 }
+
 function logActivity(type, detail, before, after) {
-  const logs = getActivityLog();
+  const logs = getActivityLog().slice();
   logs.push({
     id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
     ts: new Date().toISOString(),
@@ -4039,7 +4052,7 @@ function switchLogTab(tab, el) {
   if (el) el.classList.add('active');
   document.getElementById('log-broadcast-section').style.display = tab === 'broadcast' ? '' : 'none';
   document.getElementById('log-activity-section').style.display  = tab === 'activity'  ? '' : 'none';
-  if (tab === 'activity') renderActivityLog();
+  if (tab === 'activity') { loadActivityLog().then(renderActivityLog); }
 }
 </script>
 </body>

@@ -915,9 +915,6 @@
             </div>
           </div>
 
-          <!-- Missing Broadcasts Alert -->
-          <div id="missing-alert-card"></div>
-
           <!-- Performance by Broadcast Type -->
           <div class="card" id="perf-cat-card" style="margin-bottom:18px">
             <div class="card-header" style="gap:10px">
@@ -982,19 +979,6 @@
                 </div>
               </div>
               <div class="chart-container"><canvas id="chart-7day"></canvas></div>
-            </div>
-          </div>
-
-          <!-- Template 7-Day Trends -->
-          <div class="card" id="template-trends-card" style="margin-bottom:18px">
-            <div class="card-header">
-              <h3>📊 7-Day Template Trends</h3>
-              <span style="font-size:.72rem;color:var(--muted)">Sent per broadcast · last 7 days</span>
-            </div>
-            <div class="card-body" style="padding-top:8px">
-              <div class="trend-cards-wrap" id="template-trends-container">
-                <div class="empty">No data yet.</div>
-              </div>
             </div>
           </div>
 
@@ -1222,6 +1206,9 @@
             </div>
           </div>
 
+          <!-- Missing Broadcasts Alert -->
+          <div id="missing-alert-card"></div>
+
           <div class="card" style="margin-bottom:18px">
             <div class="card-header">
               <h3>📊 Performance by Broadcast Type</h3>
@@ -1255,6 +1242,19 @@
                 <thead id="cs-table-head"></thead>
                 <tbody id="cs-table-body"></tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- Template 7-Day Trends -->
+          <div class="card" id="template-trends-card" style="margin-top:18px">
+            <div class="card-header">
+              <h3>📊 7-Day Template Trends</h3>
+              <span style="font-size:.72rem;color:var(--muted)">Sent per broadcast · last 7 days</span>
+            </div>
+            <div class="card-body" style="padding-top:8px">
+              <div class="trend-cards-wrap" id="template-trends-container">
+                <div class="empty">No data yet.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -1448,11 +1448,9 @@ function _applyUpdate(data) {
     const scrollY = window.scrollY;
     try { renderRecords(); }          catch(e) { console.warn('renderRecords error', e); }
     try { renderDashboard(); }        catch(e) { console.warn('renderDashboard error', e); }
-    try { renderTemplateTrends(); }   catch(e) { console.warn('renderTemplateTrends error', e); }
-    try { renderMissingAlert(); }     catch(e) { console.warn('renderMissingAlert error', e); }
+    try { renderCountSheet(); }       catch(e) { console.warn('renderCountSheet error', e); }
     try { renderTodayLog(); }       catch(e) { console.warn('renderTodayLog error', e); }
     try { renderBroadcastList(); }  catch(e) { console.warn('renderBroadcastList error', e); }
-    try { renderExtraSessions(); }  catch(e) { console.warn('renderExtraSessions error', e); }
     window.scrollTo(0, scrollY);
   }, 250);
 }
@@ -2359,7 +2357,7 @@ function renderTemplateTrends() {
 function renderMissingAlert() {
   const card = document.getElementById('missing-alert-card');
   if (!card) return;
-  if (dashFilter !== 'today') { card.style.display = 'none'; return; }
+  if (csFilter !== 'today') { card.style.display = 'none'; return; }
 
   const todayStr = today();
   const todayRecs = (S.records||[]).filter(r => r.date === todayStr && !r.noSheet);
@@ -2422,8 +2420,6 @@ function renderMissingAlert() {
 }
 
 function renderDashboard() {
-  renderTemplateTrends();
-  renderMissingAlert();
   const { from: rangeFrom, to: rangeTo, label: rangeLabel } = getDashRange();
   const selDate = rangeFrom; // keep for single-day logic (scheduler, dow)
   const q = '';
@@ -4035,6 +4031,8 @@ async function initCountSheet(force) {
 }
 
 function renderCountSheet() {
+  renderMissingAlert();
+  renderTemplateTrends();
   if (csTypeFilter === 'Extra Session') { renderExtraSessions(); return; }
   if (!csData) { initCountSheet(); return; }
   const { from, to, label } = getCsRange();

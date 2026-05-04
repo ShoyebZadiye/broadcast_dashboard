@@ -809,9 +809,6 @@
         <button class="nav-item active" onclick="goTo('countsheet',this)"><span class="icon">🏠</span> Dashboard</button>
         <button class="nav-item" onclick="goTo('records',this)"><span class="icon">🗂</span> Logs</button>
         <button class="nav-item" onclick="goTo('calendar',this)"><span class="icon">📅</span> Calendar</button>
-        <div class="nav-label" style="margin-top:8px">Manage</div>
-        <button class="nav-item" onclick="goTo('add-broadcast',this)"><span class="icon">➕</span> Add Broadcast</button>
-        <button class="nav-item" onclick="goTo('broadcasts',this)"><span class="icon">📋</span> All Broadcasts</button>
         <div id="admin-nav-section" style="display:none">
           <div class="nav-label" style="margin-top:8px">Admin</div>
           <button class="nav-item" onclick="goTo('admin',this)" id="admin-nav-btn">
@@ -1055,69 +1052,6 @@
           </div>
         </div>
 
-        <!-- ── ADD BROADCAST ── -->
-        <div class="panel" id="panel-add-broadcast">
-          <div class="cat-tabs">
-            <div class="cat-tab active" onclick="selectAddCat('PAID',this)">💳 PAID</div>
-            <div class="cat-tab" onclick="selectAddCat('FREE',this)">🆓 FREE</div>
-            <div class="cat-tab" onclick="selectAddCat('OTHER',this)">📌 Other</div>
-          </div>
-
-          <div class="card">
-            <div class="card-header"><h3 id="add-bc-title">➕ Add PAID Broadcast</h3></div>
-            <div class="card-body">
-              <div class="form-row" id="add-bc-fields">
-                <!-- injected by JS -->
-              </div>
-              <div style="margin-top:20px;display:flex;gap:10px">
-                <button class="btn btn-primary" onclick="saveBroadcast()">Add Broadcast</button>
-                <button class="btn btn-ghost" onclick="clearAddBcForm()">Clear</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── ALL BROADCASTS ── -->
-        <div class="panel" id="panel-broadcasts">
-          <div class="cat-tabs">
-            <div class="cat-tab active" onclick="filterBcList('ALL',this)">All</div>
-            <div class="cat-tab" onclick="filterBcList('PAID',this)">💳 PAID</div>
-            <div class="cat-tab" onclick="filterBcList('FREE',this)">🆓 FREE</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-            <span style="font-size:.78rem;font-weight:600;color:var(--muted)">Time:</span>
-            <button class="preset-btn active" id="bc-tod-all" onclick="setBcTodFilter('',this)">All</button>
-            <button class="preset-btn" id="bc-tod-morning" onclick="setBcTodFilter('morning',this)">🌅 Morning</button>
-            <button class="preset-btn" id="bc-tod-evening" onclick="setBcTodFilter('evening',this)">🌙 Evening</button>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-            <span style="font-size:.78rem;font-weight:600;color:var(--muted)">Filter by day:</span>
-            <button class="preset-btn active" id="bc-day-all" onclick="setBcDayFilter('',this)">All</button>
-            <button class="preset-btn" id="bc-day-Mon" onclick="setBcDayFilter('Mon',this)">Mon</button>
-            <button class="preset-btn" id="bc-day-Tue" onclick="setBcDayFilter('Tue',this)">Tue</button>
-            <button class="preset-btn" id="bc-day-Wed" onclick="setBcDayFilter('Wed',this)">Wed</button>
-            <button class="preset-btn" id="bc-day-Thu" onclick="setBcDayFilter('Thu',this)">Thu</button>
-            <button class="preset-btn" id="bc-day-Fri" onclick="setBcDayFilter('Fri',this)">Fri</button>
-            <button class="preset-btn" id="bc-day-Sat" onclick="setBcDayFilter('Sat',this)">Sat</button>
-            <button class="preset-btn" id="bc-day-Sun" onclick="setBcDayFilter('Sun',this)">Sun</button>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <h3>📋 Broadcasts</h3>
-              <div style="display:flex;gap:8px;align-items:center">
-                <span id="bc-count" class="badge badge-gray">0</span>
-                <button class="btn btn-danger btn-sm" onclick="deleteAllBroadcasts()">🗑 Delete All</button>
-              </div>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>#</th><th>Category</th><th>Program / CID</th><th>Time</th><th>Days</th><th>Message Name</th><th>Message Content</th><th></th></tr></thead>
-                <tbody id="bc-tbody"></tbody>
-              </table>
-              <div class="empty" id="bc-empty">📌 No broadcasts added yet. Use Add Broadcast to get started.</div>
-            </div>
-          </div>
-        </div>
 
         <!-- ── RECORDS / LOGS ── -->
         <div class="panel active" id="panel-records">
@@ -1323,9 +1257,6 @@
       </button>
       <button class="bn-item" id="bn-calendar" onclick="goToMobile('calendar')">
         <span class="bn-icon">📅</span><span>Calendar</span>
-      </button>
-      <button class="bn-item" id="bn-add-broadcast" onclick="goToMobile('add-broadcast')">
-        <span class="bn-icon">➕</span><span>Add</span>
       </button>
     </div>
   </nav>
@@ -1655,8 +1586,6 @@ function startApp() {
 const pageTitles = {
   'dashboard': 'Dashboard',
   'tracking': 'Daily Tracking',
-  'add-broadcast': 'Add Broadcast',
-  'broadcasts': 'All Broadcasts',
   'records': 'Logs',
   'calendar': 'Calendar',
   'countsheet': 'Dashboard',

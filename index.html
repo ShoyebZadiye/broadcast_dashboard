@@ -423,6 +423,36 @@
   .trend-card-hint { position:absolute; bottom:8px; right:12px; font-size:.6rem; color:var(--muted); opacity:0; transition:opacity .15s; }
   .trend-card:hover .trend-card-hint { opacity:1; }
 
+  /* ── INSIGHTS HERO BANNER ── */
+  .insights-hero {
+    background: linear-gradient(135deg, #3730a3 0%, #4f46e5 50%, #7c3aed 100%);
+    border-radius: var(--radius); padding: 22px 26px; margin-bottom: 18px;
+    position: relative; overflow: hidden; color: #fff;
+    box-shadow: 0 8px 32px rgba(79,70,229,.35);
+  }
+  .insights-hero::before {
+    content:''; position:absolute; width:300px; height:300px; border-radius:50%;
+    background:rgba(255,255,255,.06); top:-80px; right:-60px; pointer-events:none;
+  }
+  .insights-hero::after {
+    content:''; position:absolute; width:180px; height:180px; border-radius:50%;
+    background:rgba(255,255,255,.05); bottom:-50px; left:30px; pointer-events:none;
+  }
+  .insights-hero-inner { position:relative; z-index:1; }
+  .insights-hero-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; }
+  .insights-hero-title { font-size:1.05rem; font-weight:800; margin-bottom:3px; }
+  .insights-hero-sub { font-size:.75rem; opacity:.65; }
+  .insights-hero-date { font-size:.72rem; opacity:.55; background:rgba(255,255,255,.12); padding:4px 10px; border-radius:20px; border:1px solid rgba(255,255,255,.18); white-space:nowrap; }
+  .insights-hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
+  .ihs { background:rgba(255,255,255,.13); border-radius:10px; padding:12px 14px; backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.16); transition:background .15s; }
+  .ihs:hover { background:rgba(255,255,255,.2); }
+  .ihs-val { font-size:1.55rem; font-weight:800; line-height:1; color:#fff; }
+  .ihs-lbl { font-size:.62rem; opacity:.65; margin-top:5px; text-transform:uppercase; letter-spacing:.07em; }
+  .insights-hero-top { display:flex; align-items:center; gap:8px; padding:10px 12px; background:rgba(255,255,255,.1); border-radius:8px; border:1px solid rgba(255,255,255,.15); }
+  .insights-hero-top .iht-label { font-size:.65rem; opacity:.65; text-transform:uppercase; letter-spacing:.07em; }
+  .insights-hero-top .iht-name { font-size:.85rem; font-weight:700; opacity:.95; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .insights-hero-top .iht-cnt  { font-size:.75rem; font-weight:700; opacity:.75; background:rgba(255,255,255,.15); padding:2px 8px; border-radius:12px; white-space:nowrap; }
+
   /* ── TREND DETAIL MODAL ── */
   #trend-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:2000; align-items:center; justify-content:center; padding:16px; }
   #trend-modal-overlay.open { display:flex; }
@@ -1291,28 +1321,38 @@
         <!-- ── INSIGHTS ── -->
         <div class="panel" id="panel-insights">
 
-          <!-- Summary KPIs -->
-          <div class="kpi-row" style="margin-bottom:18px">
-            <div class="kpi blue">
-              <div class="label">📤 7-Day Total</div>
-              <div class="val" id="ins-kpi-total">—</div>
-              <div class="kpi-sub">messages sent</div>
-            </div>
-            <div class="kpi green">
-              <div class="label">📡 Active</div>
-              <div class="val" id="ins-kpi-active">—</div>
-              <div class="kpi-sub">broadcasts tracked</div>
-            </div>
-            <div class="kpi yellow">
-              <div class="label">✅ Avg Rate</div>
-              <div class="val" id="ins-kpi-rate">—</div>
-              <div class="kpi-bar-wrap"><div class="kpi-bar-fill" id="ins-kpi-rate-fill" style="width:0%"></div></div>
-              <div class="kpi-sub">delivery rate</div>
-            </div>
-            <div class="kpi" style="border-left-color:#a855f7">
-              <div class="label" style="color:#7c3aed">🏆 Top Broadcast</div>
-              <div class="val" id="ins-kpi-best" style="font-size:.9rem;color:#7c3aed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
-              <div class="kpi-sub" id="ins-kpi-best-sub">this week</div>
+          <!-- Hero Banner -->
+          <div class="insights-hero">
+            <div class="insights-hero-inner">
+              <div class="insights-hero-head">
+                <div>
+                  <div class="insights-hero-title">📊 Broadcast Insights</div>
+                  <div class="insights-hero-sub">Last 7 days performance</div>
+                </div>
+                <div class="insights-hero-date" id="ins-hero-date">—</div>
+              </div>
+              <div class="insights-hero-stats">
+                <div class="ihs">
+                  <div class="ihs-val" id="ins-kpi-total">—</div>
+                  <div class="ihs-lbl">Total Sent</div>
+                </div>
+                <div class="ihs">
+                  <div class="ihs-val" id="ins-kpi-rate">—</div>
+                  <div class="ihs-lbl">Delivery Rate</div>
+                </div>
+                <div class="ihs">
+                  <div class="ihs-val" id="ins-kpi-active">—</div>
+                  <div class="ihs-lbl">Broadcasts</div>
+                </div>
+              </div>
+              <div class="insights-hero-top">
+                <span>🏆</span>
+                <div>
+                  <div class="iht-label">Top Broadcast</div>
+                  <div class="iht-name" id="ins-kpi-best">—</div>
+                </div>
+                <span class="iht-cnt" id="ins-kpi-best-sub">—</span>
+              </div>
             </div>
           </div>
 
@@ -2445,13 +2485,17 @@ function renderTemplateTrends() {
     if (s > bestSent7) { bestSent7 = s; bestName7 = n; }
   });
   const _el = id => document.getElementById(id);
-  if (_el('ins-kpi-total'))     _el('ins-kpi-total').textContent     = totalSent7All>0?totalSent7All.toLocaleString():'0';
-  if (_el('ins-kpi-active'))    _el('ins-kpi-active').textContent    = msgnames.length;
-  if (_el('ins-kpi-rate'))    { _el('ins-kpi-rate').textContent = rate7All!==null?rate7All+'%':'—';
-    _el('ins-kpi-rate').style.color = rate7All===null?'var(--warn)':rate7All>=97?'var(--accent2)':rate7All>=90?'var(--warn)':'var(--danger)'; }
-  if (_el('ins-kpi-rate-fill')) _el('ins-kpi-rate-fill').style.width = (rate7All||0)+'%';
-  if (_el('ins-kpi-best'))      _el('ins-kpi-best').textContent      = bestName7;
-  if (_el('ins-kpi-best-sub'))  _el('ins-kpi-best-sub').textContent  = bestSent7>0?bestSent7.toLocaleString()+' sent':'this week';
+  if (_el('ins-kpi-total'))    _el('ins-kpi-total').textContent    = totalSent7All>0?totalSent7All.toLocaleString():'0';
+  if (_el('ins-kpi-active'))   _el('ins-kpi-active').textContent   = msgnames.length;
+  if (_el('ins-kpi-rate'))     _el('ins-kpi-rate').textContent     = rate7All!==null?rate7All+'%':'—';
+  if (_el('ins-kpi-best'))     _el('ins-kpi-best').textContent     = bestName7;
+  if (_el('ins-kpi-best-sub')) _el('ins-kpi-best-sub').textContent = bestSent7>0?bestSent7.toLocaleString()+' sent':'—';
+  if (_el('ins-hero-date')) {
+    const d0 = new Date(); d0.setDate(d0.getDate()-6);
+    const d1 = new Date();
+    const fmt = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    _el('ins-hero-date').textContent = fmt(d0)+' – '+fmt(d1);
+  }
 
   container.innerHTML = msgnames.map(name => {
     const nameRecs     = recentRecs.filter(r => r.msgname === name);

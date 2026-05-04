@@ -829,6 +829,7 @@
       <nav class="sidebar-nav">
         <div class="nav-label">Main</div>
         <button class="nav-item active" onclick="goTo('countsheet',this)"><span class="icon">🏠</span> Dashboard</button>
+        <button class="nav-item" onclick="goTo('insights',this)"><span class="icon">📈</span> Insights</button>
         <button class="nav-item" onclick="goTo('records',this)"><span class="icon">🗂</span> Logs</button>
         <button class="nav-item" onclick="goTo('calendar',this)"><span class="icon">📅</span> Calendar</button>
         <div id="admin-nav-section" style="display:none">
@@ -1206,9 +1207,6 @@
             </div>
           </div>
 
-          <!-- Missing Broadcasts Alert -->
-          <div id="missing-alert-card"></div>
-
           <div class="card" style="margin-bottom:18px">
             <div class="card-header">
               <h3>📊 Performance by Broadcast Type</h3>
@@ -1245,18 +1243,27 @@
             </div>
           </div>
 
-          <!-- Template 7-Day Trends -->
-          <div class="card" id="template-trends-card" style="margin-top:18px">
+        </div>
+
+        <!-- ── INSIGHTS ── -->
+        <div class="panel" id="panel-insights">
+
+          <!-- Missing Broadcasts Alert -->
+          <div id="missing-alert-card" style="margin-bottom:18px"></div>
+
+          <!-- 7-Day Template Trends -->
+          <div class="card">
             <div class="card-header">
               <h3>📊 7-Day Template Trends</h3>
               <span style="font-size:.72rem;color:var(--muted)">Sent per broadcast · last 7 days</span>
             </div>
-            <div class="card-body" style="padding-top:8px">
+            <div class="card-body" style="padding-top:12px">
               <div class="trend-cards-wrap" id="template-trends-container">
                 <div class="empty">No data yet.</div>
               </div>
             </div>
           </div>
+
         </div>
 
         <!-- ── ADMIN ── -->
@@ -1289,6 +1296,9 @@
     <div class="bottom-nav-inner">
       <button class="bn-item active" id="bn-countsheet" onclick="goToMobile('countsheet')">
         <span class="bn-icon">🏠</span><span>Home</span>
+      </button>
+      <button class="bn-item" id="bn-insights" onclick="goToMobile('insights')">
+        <span class="bn-icon">📈</span><span>Insights</span>
       </button>
       <button class="bn-item" id="bn-records" onclick="goToMobile('records')">
         <span class="bn-icon">🗂</span><span>Logs</span>
@@ -1449,6 +1459,9 @@ function _applyUpdate(data) {
     try { renderRecords(); }          catch(e) { console.warn('renderRecords error', e); }
     try { renderDashboard(); }        catch(e) { console.warn('renderDashboard error', e); }
     try { renderCountSheet(); }       catch(e) { console.warn('renderCountSheet error', e); }
+    if (document.getElementById('panel-insights')?.classList.contains('active')) {
+      try { renderMissingAlert(); renderTemplateTrends(); } catch(e) {}
+    }
     try { renderTodayLog(); }       catch(e) { console.warn('renderTodayLog error', e); }
     try { renderBroadcastList(); }  catch(e) { console.warn('renderBroadcastList error', e); }
     window.scrollTo(0, scrollY);
@@ -1622,6 +1635,7 @@ function startApp() {
 const pageTitles = {
   'dashboard': 'Dashboard',
   'tracking': 'Daily Tracking',
+  'insights': 'Insights',
   'records': 'Logs',
   'calendar': 'Calendar',
   'countsheet': 'Dashboard',
@@ -1648,6 +1662,7 @@ function goTo(name, btn) {
   if (name==='records') { renderRecords(); if (activeLogTab === 'activity') renderActivityLog(); }
   if (name==='calendar') renderCalendar();
   if (name==='countsheet') initCountSheet();
+  if (name==='insights') { renderMissingAlert(); renderTemplateTrends(); }
   if (name==='admin') { if(currentUser!==ADMIN_EMAIL){return;} renderAdminPanel(); }
   if (name==='tracking') { renderTrackForm(); renderTodayLog(); }
 }
@@ -2357,7 +2372,7 @@ function renderTemplateTrends() {
 function renderMissingAlert() {
   const card = document.getElementById('missing-alert-card');
   if (!card) return;
-  if (csFilter !== 'today') { card.style.display = 'none'; return; }
+  // Missing broadcasts is always about today
 
   const todayStr = today();
   const todayRecs = (S.records||[]).filter(r => r.date === todayStr && !r.noSheet);
@@ -4031,8 +4046,6 @@ async function initCountSheet(force) {
 }
 
 function renderCountSheet() {
-  renderMissingAlert();
-  renderTemplateTrends();
   if (csTypeFilter === 'Extra Session') { renderExtraSessions(); return; }
   if (!csData) { initCountSheet(); return; }
   const { from, to, label } = getCsRange();

@@ -386,15 +386,24 @@
   .badge-extra     { background: #ccfbf1; color: #0f766e; }
 
   /* ── TEMPLATE TREND CARDS ── */
-  .trend-cards-wrap { display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:12px; }
-  .trend-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 14px; }
-  .trend-card-name { font-size:.75rem; font-weight:700; color:var(--text); margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .trend-card-stats { display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
-  .trend-sent { font-size:1.05rem; font-weight:700; color:var(--text); }
-  .trend-rate { font-size:.73rem; font-weight:700; }
-  .trend-sparkline { display:block; margin-bottom:3px; }
-  .trend-day-labels { display:flex; }
-  .trend-day-labels span { font-size:.6rem; color:var(--muted); flex:1; text-align:center; }
+  .trend-cards-wrap { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:14px; }
+  .trend-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:14px 16px; }
+  .trend-card-name { font-size:.72rem; font-weight:700; color:var(--muted); margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-transform:uppercase; letter-spacing:.04em; }
+  .trend-today-row { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; }
+  .trend-today-val { font-size:1.4rem; font-weight:800; color:var(--text); }
+  .trend-today-label { font-size:.68rem; color:var(--muted); }
+  .trend-arrow-up { color:#16a34a; font-size:.75rem; font-weight:700; }
+  .trend-arrow-down { color:#dc2626; font-size:.75rem; font-weight:700; }
+  .trend-bars-wrap { margin-bottom:5px; }
+  .trend-sparkline { display:block; width:100%; }
+  .trend-day-labels { display:flex; margin-bottom:10px; }
+  .trend-day-labels span { font-size:.6rem; flex:1; text-align:center; }
+  .trend-day-labels span.today-lbl { color:#4f46e5; font-weight:700; }
+  .trend-day-labels span:not(.today-lbl) { color:var(--muted); }
+  .trend-footer { display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px solid var(--border); }
+  .trend-footer-item { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .trend-footer-val { font-size:.78rem; font-weight:700; color:var(--text); }
+  .trend-footer-lbl { font-size:.6rem; color:var(--muted); }
 
   /* ── MISSING BROADCASTS ALERT ── */
   #missing-alert-card { background:#fff7ed; border:1.5px solid #fed7aa; border-radius:var(--radius); padding:14px 18px; margin-bottom:18px; display:none; }
@@ -1255,9 +1264,12 @@
           <div class="card">
             <div class="card-header">
               <h3>📊 7-Day Template Trends</h3>
-              <span style="font-size:.72rem;color:var(--muted)">Sent per broadcast · last 7 days</span>
+              <span style="font-size:.72rem;color:var(--muted)">Last 7 days · Today highlighted in <span style="color:#4f46e5;font-weight:700">blue</span></span>
             </div>
-            <div class="card-body" style="padding-top:12px">
+            <div style="font-size:.75rem;color:var(--muted);padding:0 20px 12px">
+              Har broadcast ka aaj ka count, pichle hafte se comparison, delivery rate aur active days.
+            </div>
+            <div class="card-body" style="padding-top:0">
               <div class="trend-cards-wrap" id="template-trends-container">
                 <div class="empty">No data yet.</div>
               </div>
@@ -2319,52 +2331,106 @@ function renderTemplateTrends() {
   const container = document.getElementById('template-trends-container');
   if (!container) return;
 
+  const todayStr = today();
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate()-i);
     days.push(fmtLocalDate(d));
   }
+  // Last 7 days of previous week for trend comparison
+  const prevDays = [];
+  for (let i = 13; i >= 7; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    prevDays.push(fmtLocalDate(d));
+  }
   const dayLabels = days.map(d =>
     new Date(d+'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' })
   );
 
-  const recentRecs = (S.records||[]).filter(r => days.includes(r.date) && !r.noSheet);
+  const allRecs  = (S.records||[]).filter(r => !r.noSheet);
+  const recentRecs = allRecs.filter(r => days.includes(r.date));
+  const prevRecs   = allRecs.filter(r => prevDays.includes(r.date));
   const msgnames = [...new Set(recentRecs.map(r => r.msgname).filter(Boolean))].sort();
 
   if (!msgnames.length) {
-    container.innerHTML = '<div class="empty">No broadcast data for last 7 days.</div>';
+    container.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:32px;text-align:center">Last 7 days m koi broadcast record nahi mila.</div>';
     return;
   }
 
-  const isDark = document.body.classList.contains('dark');
-  const emptyBar = isDark ? '#334155' : '#e2e8f0';
+  const isDark   = document.body.classList.contains('dark');
+  const emptyBar = isDark ? '#1e293b' : '#f1f5f9';
+  const todayBar = '#4f46e5';
+  const pastBar  = isDark ? '#334155' : '#c7d2fe';
 
   container.innerHTML = msgnames.map(name => {
-    const nameRecs = recentRecs.filter(r => r.msgname === name);
+    const nameRecs  = recentRecs.filter(r => r.msgname === name);
+    const prevNameRecs = prevRecs.filter(r => r.msgname === name);
+
     const sentByDay = days.map(d => nameRecs.filter(r => r.date===d).reduce((s,r)=>s+(parseInt(r.sent)||0),0));
     const expByDay  = days.map(d => nameRecs.filter(r => r.date===d).reduce((s,r)=>s+(parseInt(r.expected)||0),0));
     const totalSent = sentByDay.reduce((a,b)=>a+b,0);
     const totalExp  = expByDay.reduce((a,b)=>a+b,0);
-    const rate = totalExp > 0 ? Math.round(totalSent/totalExp*100) : null;
-    const maxVal = Math.max(...sentByDay, 1);
+    const prevSent  = prevNameRecs.reduce((s,r)=>s+(parseInt(r.sent)||0),0);
 
-    const bW=10, bG=3, h=34, svgW=7*(bW+bG)-bG;
+    // Today's count (last bar)
+    const todayVal = sentByDay[6] || 0;
+    // Trend vs same day last week
+    const lastWeekSame = prevNameRecs.filter(r => r.date === prevDays[6]).reduce((s,r)=>s+(parseInt(r.sent)||0),0);
+    let trendHtml = '';
+    if (todayVal > 0 && lastWeekSame > 0) {
+      const diff = Math.round((todayVal - lastWeekSame) / lastWeekSame * 100);
+      trendHtml = diff >= 0
+        ? `<span class="trend-arrow-up">↑ ${diff}%</span>`
+        : `<span class="trend-arrow-down">↓ ${Math.abs(diff)}%</span>`;
+    }
+
+    const rate     = totalExp > 0 ? Math.round(totalSent/totalExp*100) : null;
+    const rateColor= rate===null?'var(--muted)':rate>=97?'#16a34a':rate>=90?'#d97706':'#dc2626';
+    const maxVal   = Math.max(...sentByDay, 1);
+
+    // SVG bars — full width responsive using viewBox
+    const bG=4, h=44, cols=7, bW=Math.floor((100-bG*(cols-1))/cols);
+    const svgW = cols*bW + (cols-1)*bG;
     const bars = sentByDay.map((v,i) => {
-      const bH = Math.max(2, Math.round(v/maxVal*h));
-      const x = i*(bW+bG), y = h-bH;
-      return `<rect x="${x}" y="${y}" width="${bW}" height="${bH}" rx="2" fill="${v>0?'#4f46e5':emptyBar}"/>`;
+      const isToday = i === 6;
+      const bH  = v > 0 ? Math.max(4, Math.round(v/maxVal*h)) : 3;
+      const x   = i*(bW+bG), y = h-bH;
+      const fill= v === 0 ? emptyBar : isToday ? todayBar : pastBar;
+      return `<rect x="${x}" y="${y}" width="${bW}" height="${bH}" rx="2" fill="${fill}"/>`;
     }).join('');
 
-    const rateColor = rate===null ? 'var(--muted)' : rate>=97 ? '#059669' : rate>=90 ? '#d97706' : '#dc2626';
+    const streak = sentByDay.filter(v=>v>0).length;
 
     return `<div class="trend-card">
       <div class="trend-card-name" title="${name}">${name}</div>
-      <div class="trend-card-stats">
-        <span class="trend-sent">${totalSent>0?totalSent.toLocaleString():'—'}</span>
-        ${rate!==null?`<span class="trend-rate" style="color:${rateColor}">${rate}%</span>`:''}
+      <div class="trend-today-row">
+        <div>
+          <div class="trend-today-val">${todayVal > 0 ? todayVal.toLocaleString() : '—'}</div>
+          <div class="trend-today-label">Today's Sent</div>
+        </div>
+        <div style="text-align:right">
+          ${trendHtml}
+          ${!trendHtml ? `<span style="font-size:.68rem;color:var(--muted)">vs last week</span>` : `<div style="font-size:.62rem;color:var(--muted)">vs last week</div>`}
+        </div>
       </div>
-      <svg class="trend-sparkline" viewBox="0 0 ${svgW} ${h}" width="${svgW}" height="${h}">${bars}</svg>
-      <div class="trend-day-labels">${dayLabels.map(l=>`<span>${l}</span>`).join('')}</div>
+      <div class="trend-bars-wrap">
+        <svg class="trend-sparkline" viewBox="0 0 ${svgW} ${h}" preserveAspectRatio="none" height="${h}">${bars}</svg>
+      </div>
+      <div class="trend-day-labels">${dayLabels.map((l,i)=>`<span class="${i===6?'today-lbl':''}">${l}</span>`).join('')}</div>
+      <div class="trend-footer">
+        <div class="trend-footer-item">
+          <span class="trend-footer-val">${totalSent>0?totalSent.toLocaleString():'—'}</span>
+          <span class="trend-footer-lbl">7-Day Sent</span>
+        </div>
+        <div class="trend-footer-item">
+          <span class="trend-footer-val" style="color:${rateColor}">${rate!==null?rate+'%':'—'}</span>
+          <span class="trend-footer-lbl">Delivery Rate</span>
+        </div>
+        <div class="trend-footer-item">
+          <span class="trend-footer-val">${streak}/7</span>
+          <span class="trend-footer-lbl">Active Days</span>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }

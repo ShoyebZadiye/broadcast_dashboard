@@ -1275,25 +1275,13 @@
                 <button class="cs-type-btn" onclick="setCsType('Night Absent',this)">Night Absent</button>
                 <button class="cs-type-btn" onclick="setCsType('Night Present',this)">Night Present</button>
                 <button class="cs-type-btn" onclick="setCsType('DS / Strong SE',this)">DS / Strong</button>
+                <button class="cs-type-btn" onclick="setCsType('Extra Session',this)">Extra Session</button>
               </div>
             </div>
             <div class="table-wrap">
               <table>
                 <thead id="cs-table-head"></thead>
                 <tbody id="cs-table-body"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="card" style="margin-top:16px">
-            <div class="card-header">
-              <h3>🔁 Extra Sessions</h3>
-              <span style="font-size:.72rem;color:var(--muted)" id="extra-sessions-period"></span>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead id="extra-sessions-head"></thead>
-                <tbody id="extra-sessions-body"></tbody>
               </table>
             </div>
           </div>
@@ -3957,6 +3945,7 @@ async function initCountSheet(force) {
 }
 
 function renderCountSheet() {
+  if (csTypeFilter === 'Extra Session') { renderExtraSessions(); return; }
   if (!csData) { initCountSheet(); return; }
   const { from, to, label } = getCsRange();
   ['cs-period-lbl','cs-period-h','cs-table-period'].forEach(id => {
@@ -4048,17 +4037,17 @@ function renderCountSheet() {
   }).filter(Boolean).join('');
 
   body.innerHTML = rows || `<tr><td colspan="${datesInRange.length+3}" style="text-align:center;color:var(--muted);padding:24px">No matching broadcasts for this period.</td></tr>`;
-  renderExtraSessions();
 }
 
 function renderExtraSessions() {
-  const head = document.getElementById('extra-sessions-head');
-  const body = document.getElementById('extra-sessions-body');
-  const periodEl = document.getElementById('extra-sessions-period');
+  const head = document.getElementById('cs-table-head');
+  const body = document.getElementById('cs-table-body');
   if (!head || !body) return;
 
   const { from, to, label } = getCsRange();
-  if (periodEl) periodEl.textContent = label || '';
+  ['cs-period-lbl','cs-period-h','cs-table-period'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = label;
+  });
 
   const records = (S.records || [])
     .filter(r => (r.subtype || '') === 'extra' && r.date >= from && r.date <= to)

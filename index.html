@@ -385,6 +385,17 @@
   .badge-night     { background: #1e1b4b; color: #a5b4fc; }
   .badge-extra     { background: #ccfbf1; color: #0f766e; }
 
+  /* ── MISSING BROADCASTS ALERT ── */
+  #missing-alert-card { background:#fff7ed; border:1.5px solid #fed7aa; border-radius:var(--radius); padding:14px 18px; margin-bottom:18px; display:none; }
+  .missing-alert-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .missing-alert-title { font-weight:700; font-size:.88rem; color:#9a3412; }
+  .missing-alert-sub { font-size:.75rem; color:#c2410c; margin-left:auto; }
+  .missing-alert-list { display:flex; flex-direction:column; gap:6px; }
+  .missing-alert-item { display:flex; align-items:center; gap:10px; background:#fff; border-radius:8px; padding:7px 12px; border:1px solid #fed7aa; }
+  .missing-name { font-weight:600; font-size:.83rem; color:var(--text); flex:1; }
+  .missing-time { font-size:.75rem; color:#ea580c; font-weight:600; }
+  .missing-days { font-size:.72rem; color:var(--muted); }
+
   /* ── DAYS PICKER ── */
   .days-picker { display: flex; flex-direction: column; gap: 8px; }
   .days-presets { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -892,6 +903,9 @@
               <div class="kpi-sub" id="kpi-prog-sub">—</div>
             </div>
           </div>
+
+          <!-- Missing Broadcasts Alert -->
+          <div id="missing-alert-card"></div>
 
           <!-- Performance by Broadcast Type -->
           <div class="card" id="perf-cat-card" style="margin-bottom:18px">
@@ -1410,6 +1424,7 @@ function _applyUpdate(data) {
     const scrollY = window.scrollY;
     try { renderRecords(); }        catch(e) { console.warn('renderRecords error', e); }
     try { renderDashboard(); }      catch(e) { console.warn('renderDashboard error', e); }
+    try { renderMissingAlert(); }   catch(e) { console.warn('renderMissingAlert error', e); }
     try { renderTodayLog(); }       catch(e) { console.warn('renderTodayLog error', e); }
     try { renderBroadcastList(); }  catch(e) { console.warn('renderBroadcastList error', e); }
     try { renderExtraSessions(); }  catch(e) { console.warn('renderExtraSessions error', e); }
@@ -2262,7 +2277,73 @@ function renderPerfByCategory(records, label) {
   }).join('');
 }
 
+function renderMissingAlert() {
+  const card = document.getElementById('missing-alert-card');
+  if (!card) return;
+  if (dashFilter !== 'today') { card.style.display = 'none'; return; }
+
+  const todayStr = today();
+  const todayRecs = (S.records||[]).filter(r => r.date === todayStr && !r.noSheet);
+  const savedToday = new Set(todayRecs.map(r => r.msgname));
+
+  const toMins = t => { if (!t) return -1; const [h,m]=(t||'00:00').split(':').map(Number); return h*60+m; };
+  const nowMins = new Date().getHours()*60 + new Date().getMinutes();
+
+  const past14 = [];
+  for (let i = 1; i <= 14; i++) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    past14.push(fmtLocalDate(d));
+  }
+
+  const pastRecs = (S.records||[]).filter(r => past14.includes(r.date) && !r.noSheet);
+
+  const nameData = {};
+  pastRecs.forEach(r => {
+    if (!r.msgname) return;
+    if (!nameData[r.msgname]) nameData[r.msgname] = { days: new Set(), times: [] };
+    nameData[r.msgname].days.add(r.date);
+    if (r.time) nameData[r.msgname].times.push(r.time);
+  });
+
+  const missing = [];
+  Object.entries(nameData).forEach(([name, data]) => {
+    if (data.days.size < 4) return;
+    if (savedToday.has(name)) return;
+    const avgMins = data.times.length
+      ? data.times.reduce((s,t) => s + toMins(t), 0) / data.times.length
+      : -1;
+    if (avgMins >= 0 && nowMins < avgMins - 45) return;
+    missing.push({ name, days: data.days.size, avgMins });
+  });
+
+  if (!missing.length) { card.style.display = 'none'; return; }
+  missing.sort((a,b) => (a.avgMins < 0 ? 9999 : a.avgMins) - (b.avgMins < 0 ? 9999 : b.avgMins));
+
+  const fmt12h = mins => {
+    if (mins < 0) return '';
+    const h = Math.floor(mins/60), m = Math.round(mins%60);
+    return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+  };
+
+  card.style.display = 'block';
+  card.innerHTML = `
+    <div class="missing-alert-header">
+      <span>⚠️</span>
+      <span class="missing-alert-title">${missing.length} broadcast${missing.length>1?'s':''} not saved yet</span>
+      <span class="missing-alert-sub">Based on last 14 days</span>
+    </div>
+    <div class="missing-alert-list">
+      ${missing.map(m => `
+        <div class="missing-alert-item">
+          <span class="missing-name">${m.name}</span>
+          ${m.avgMins >= 0 ? `<span class="missing-time">~${fmt12h(m.avgMins)}</span>` : ''}
+          <span class="missing-days">${m.days}/14 days</span>
+        </div>`).join('')}
+    </div>`;
+}
+
 function renderDashboard() {
+  renderMissingAlert();
   const { from: rangeFrom, to: rangeTo, label: rangeLabel } = getDashRange();
   const selDate = rangeFrom; // keep for single-day logic (scheduler, dow)
   const q = '';

@@ -1580,9 +1580,7 @@ function startApp() {
   // Show admin nav only for admin
   document.getElementById('admin-nav-section').style.display =
     currentUser === ADMIN_EMAIL ? 'block' : 'none';
-  renderAddBcFields();
   renderTrackForm();
-  renderBroadcastList();
   renderRecords();
   // Land on count sheet dashboard
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -1760,6 +1758,7 @@ const TIME_SLOTS_HTML = `
 
 function renderAddBcFields() {
   const el = document.getElementById('add-bc-fields');
+  if (!el) return;
   if (addBcCat === 'PAID') {
     el.innerHTML = `
       <div class="fg"><label>Program</label>
@@ -1898,6 +1897,7 @@ function setBcTodFilter(tod, btn) {
 }
 
 function renderBroadcastList() {
+  if (!document.getElementById('bc-tbody')) return;
   let data = bcListFilter==='ALL' ? S.broadcasts : S.broadcasts.filter(b=>b.category===bcListFilter);
   if (bcDayFilter) data = data.filter(b=> b.days && b.days.includes(bcDayFilter));
   if (bcTodFilter) data = data.filter(b => {

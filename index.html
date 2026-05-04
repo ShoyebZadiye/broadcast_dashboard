@@ -274,6 +274,15 @@
   .cs-search-wrap::before { content:'🔍'; position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:.8rem; pointer-events:none; }
   @media(max-width:600px){ .cs-search-input { width:100%; } .cs-search-bar { gap:8px; } }
   /* Performance by category */
+  .weekly-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .weekly-day { display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 4px; border-radius:10px; background:var(--light); }
+  .weekly-day.wk-today { background:var(--primary); color:#fff; }
+  .weekly-day .wk-label { font-size:.68rem; font-weight:700; opacity:.7; }
+  .weekly-day .wk-sent  { font-size:1rem; font-weight:800; }
+  .weekly-day .wk-date  { font-size:.62rem; opacity:.6; }
+  .weekly-types { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .weekly-type-pill { padding:4px 10px; border-radius:20px; font-size:.75rem; font-weight:700; background:var(--light); color:var(--text); display:flex; gap:6px; align-items:center; }
+  @media(max-width:600px){ .weekly-grid { grid-template-columns:repeat(7,1fr); gap:3px; } .weekly-day .wk-sent { font-size:.82rem; } }
   .perf-cat-list { display:flex; flex-direction:column; gap:14px; padding:4px 0; }
   .perf-cat-row { display:grid; grid-template-columns:150px 1fr 90px 56px; align-items:center; gap:12px; }
   .perf-cat-name { font-size:.82rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -374,6 +383,7 @@
   .badge-pause     { background: #f1f5f9; color: #334155; }
   .badge-reminder  { background: #fef9c3; color: #713f12; }
   .badge-night     { background: #1e1b4b; color: #a5b4fc; }
+  .badge-extra     { background: #ccfbf1; color: #0f766e; }
 
   /* ── DAYS PICKER ── */
   .days-picker { display: flex; flex-direction: column; gap: 8px; }
@@ -898,6 +908,18 @@
             </div>
           </div>
 
+          <!-- Weekly Summary -->
+          <div class="card" id="weekly-summary-card" style="margin-bottom:18px">
+            <div class="card-header">
+              <h3>📅 Weekly Summary</h3>
+              <span id="weekly-range-lbl" style="font-size:.72rem;color:var(--muted)"></span>
+            </div>
+            <div class="card-body" style="padding-top:8px">
+              <div id="weekly-summary-body"></div>
+              <div class="empty" id="weekly-empty" style="display:none">No records this week.</div>
+            </div>
+          </div>
+
           <!-- Performance Chart -->
           <div class="card" id="chart-card">
             <div class="card-header" style="flex-wrap:wrap;gap:10px">
@@ -1126,7 +1148,7 @@
               </div>
               <div class="rec-table-wrap table-wrap">
                 <table>
-                  <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Campaign</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Rate</th><th>Diff</th><th></th></tr></thead>
+                  <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Campaign</th><th>Saved By</th><th>Sent</th><th style="color:#f59e0b">Yesterday</th><th>Expected</th><th>Rate</th><th>Diff</th><th></th></tr></thead>
                   <tbody id="rec-tbody"></tbody>
                 </table>
               </div>
@@ -1140,7 +1162,11 @@
             <div class="card">
               <div class="card-header">
                 <h3>Activity Log</h3>
-                <div style="display:flex;gap:6px;align-items:center">
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                  <button class="dash-filter-btn active" id="ab-today"     onclick="setActFilter('today',this)">Today</button>
+                  <button class="dash-filter-btn"        id="ab-yesterday" onclick="setActFilter('yesterday',this)">Yesterday</button>
+                  <button class="dash-filter-btn"        id="ab-all"       onclick="setActFilter('all',this)">All</button>
+                  <input type="hidden" id="act-filter-date">
                   <input type="text" id="act-search" placeholder="🔍 Search..." oninput="renderActivityLog()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:160px;color:var(--text);background:var(--surface)" />
                 </div>
               </div>
@@ -1246,7 +1272,6 @@
                 <button class="cs-type-btn active" onclick="setCsType('all',this)">All</button>
                 <button class="cs-type-btn" onclick="setCsType('Yoga Reminder',this)">Yoga Reminder</button>
                 <button class="cs-type-btn" onclick="setCsType('Yoga Attendance',this)">Attendance</button>
-                <button class="cs-type-btn" onclick="setCsType('Night Message',this)">Night</button>
                 <button class="cs-type-btn" onclick="setCsType('Night Absent',this)">Night Absent</button>
                 <button class="cs-type-btn" onclick="setCsType('Night Present',this)">Night Present</button>
                 <button class="cs-type-btn" onclick="setCsType('DS / Strong SE',this)">DS / Strong</button>
@@ -1256,6 +1281,19 @@
               <table>
                 <thead id="cs-table-head"></thead>
                 <tbody id="cs-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:16px">
+            <div class="card-header">
+              <h3>🔁 Extra Sessions</h3>
+              <span style="font-size:.72rem;color:var(--muted)" id="extra-sessions-period"></span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead id="extra-sessions-head"></thead>
+                <tbody id="extra-sessions-body"></tbody>
               </table>
             </div>
           </div>
@@ -1451,10 +1489,11 @@ function _applyUpdate(data) {
   clearTimeout(_rtDebounce);
   _rtDebounce = setTimeout(() => {
     const scrollY = window.scrollY;
-    try { renderRecords(); }      catch(e) { console.warn('renderRecords error', e); }
-    try { renderDashboard(); }    catch(e) { console.warn('renderDashboard error', e); }
-    try { renderTodayLog(); }     catch(e) { console.warn('renderTodayLog error', e); }
-    try { renderBroadcastList(); }catch(e) { console.warn('renderBroadcastList error', e); }
+    try { renderRecords(); }        catch(e) { console.warn('renderRecords error', e); }
+    try { renderDashboard(); }      catch(e) { console.warn('renderDashboard error', e); }
+    try { renderTodayLog(); }       catch(e) { console.warn('renderTodayLog error', e); }
+    try { renderBroadcastList(); }  catch(e) { console.warn('renderBroadcastList error', e); }
+    try { renderExtraSessions(); }  catch(e) { console.warn('renderExtraSessions error', e); }
     window.scrollTo(0, scrollY);
   }, 250);
 }
@@ -1689,6 +1728,7 @@ function catBadge(r) {
   if (sub === 'pause/unpause')return `<span class="badge badge-pause">pause/unpause</span>`;
   if (sub === 'reminder')     return `<span class="badge badge-reminder">reminder</span>`;
   if (sub === 'night')        return `<span class="badge badge-night">night</span>`;
+  if (sub === 'extra')        return `<span class="badge badge-extra">extra</span>`;
   if (cat === 'PAID')         return `<span class="badge badge-blue">PAID</span>`;
   if (cat === 'FREE')         return `<span class="badge badge-green">FREE</span>`;
   return `<span class="badge badge-yellow">${cat}</span>`;
@@ -2581,6 +2621,7 @@ function renderDashboard() {
   }
 
   renderPerfByCategory(records, rangeLabel);
+  renderWeeklySummary();
 }
 
 
@@ -2703,6 +2744,67 @@ document.addEventListener('click', e => {
     pop.style.display = 'none'; rcPopupOpen = false;
   }
 });
+
+function renderWeeklySummary() {
+  const body  = document.getElementById('weekly-summary-body');
+  const empty = document.getElementById('weekly-empty');
+  const lbl   = document.getElementById('weekly-range-lbl');
+  if (!body) return;
+
+  // Current week Mon–Sun
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun
+  const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(now); monday.setDate(now.getDate() + mondayOffset);
+  const pad = n => String(n).padStart(2,'0');
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const fmtShort = d => `${pad(d.getDate())}/${pad(d.getMonth()+1)}`;
+  const days = Array.from({length:7}, (_,i) => { const d = new Date(monday); d.setDate(monday.getDate()+i); return d; });
+  const todayStr = fmt(now);
+
+  if (lbl) lbl.textContent = `${fmtShort(days[0])} – ${fmtShort(days[6])}`;
+
+  const weekDates = days.map(fmt);
+  const weekRecs  = (S.records||[]).filter(r => weekDates.includes(r.date));
+
+  if (!weekRecs.length) {
+    body.innerHTML = ''; if (empty) empty.style.display = 'block'; return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const sentByDay  = days.map(d => weekRecs.filter(r => r.date === fmt(d)).reduce((s,r) => s+(parseInt(r.sent)||0), 0));
+  const maxSent    = Math.max(...sentByDay, 1);
+
+  // Day columns
+  const gridHtml = days.map((d, i) => {
+    const isToday = fmt(d) === todayStr;
+    const sent    = sentByDay[i];
+    return `<div class="weekly-day${isToday ? ' wk-today' : ''}">
+      <div class="wk-label">${DAY_LABELS[i]}</div>
+      <div class="wk-sent">${sent > 0 ? sent >= 1000 ? (sent/1000).toFixed(1)+'k' : sent : '—'}</div>
+      <div class="wk-date">${fmtShort(d)}</div>
+    </div>`;
+  }).join('');
+
+  // Type breakdown pills
+  const typeMap = {};
+  weekRecs.forEach(r => {
+    const key = r.subtype || r.category || 'other';
+    typeMap[key] = (typeMap[key] || 0) + (parseInt(r.sent) || 0);
+  });
+  const COLORS = { attendance:'#6366f1', reminder:'#f59e0b', night:'#3b82f6', sunday:'#10b981', strong:'#8b5cf6', 'pause/unpause':'#ec4899', renewal:'#f97316', FREE:'#22d3ee', OTHER:'#94a3b8' };
+  const pillsHtml = Object.entries(typeMap).sort((a,b)=>b[1]-a[1]).map(([k,v]) => {
+    const col = COLORS[k] || '#64748b';
+    return `<div class="weekly-type-pill"><span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block"></span>${k}: <strong>${v.toLocaleString()}</strong></div>`;
+  }).join('');
+
+  const weekTotal = sentByDay.reduce((s,v) => s+v, 0);
+  body.innerHTML = `
+    <div class="weekly-grid">${gridHtml}</div>
+    <div style="margin-top:10px;font-size:.78rem;color:var(--muted)">Week Total: <strong style="color:var(--text)">${weekTotal.toLocaleString()}</strong></div>
+    <div class="weekly-types">${pillsHtml}</div>`;
+}
 
 function renderRcCal() {
   const pop = document.getElementById('rc-popup'); if (!pop) return;
@@ -2977,7 +3079,8 @@ function renderRecords() {
     <td>${r.date}</td>
     <td>${r.time ? fmt12(r.time) : '—'}</td>
     <td>${catBadge(r)}</td>
-    <td><strong>${r.msgname||'—'}</strong>${r.savedBy ? `<br><span style="font-size:.7rem;color:var(--muted)">${r.savedBy}${r.savedAt ? ' @ '+r.savedAt : ''}</span>` : ''}</td>
+    <td><strong>${r.msgname||'—'}</strong></td>
+    <td style="font-size:.75rem;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.savedBy||''}">${r.savedBy ? r.savedBy.split('@')[0] : '—'}${r.savedAt ? `<br><span style="font-size:.68rem">${r.savedAt}</span>` : ''}</td>
     <td style="cursor:pointer;text-decoration:underline dotted" onclick="editSent(${r.id})" title="Click to edit">${sent.toLocaleString()}</td>
     <td style="color:#f59e0b;font-weight:600">${yc !== null ? yc.toLocaleString() : '—'}</td>
     <td>${exp.toLocaleString()}</td>
@@ -3945,6 +4048,50 @@ function renderCountSheet() {
   }).filter(Boolean).join('');
 
   body.innerHTML = rows || `<tr><td colspan="${datesInRange.length+3}" style="text-align:center;color:var(--muted);padding:24px">No matching broadcasts for this period.</td></tr>`;
+  renderExtraSessions();
+}
+
+function renderExtraSessions() {
+  const head = document.getElementById('extra-sessions-head');
+  const body = document.getElementById('extra-sessions-body');
+  const periodEl = document.getElementById('extra-sessions-period');
+  if (!head || !body) return;
+
+  const { from, to, label } = getCsRange();
+  if (periodEl) periodEl.textContent = label || '';
+
+  const records = (S.records || [])
+    .filter(r => (r.subtype || '') === 'extra' && r.date >= from && r.date <= to)
+    .sort((a, b) => (a.date !== b.date ? (a.date < b.date ? -1 : 1) : (a.time || '') < (b.time || '') ? -1 : 1));
+
+  if (!records.length) {
+    head.innerHTML = '';
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;font-size:.85rem">No extra session records for this period.</td></tr>`;
+    return;
+  }
+
+  head.innerHTML = `<tr>
+    <th>Date</th><th>Time</th><th>Type</th><th>Message</th>
+    <th style="text-align:right">Sent</th><th style="text-align:right">Expected</th><th style="text-align:right">Diff</th>
+  </tr>`;
+
+  body.innerHTML = records.map(r => {
+    const n = (r.msgname || '').toLowerCase();
+    let typeBadge;
+    if (n.includes('water'))       typeBadge = '<span class="badge badge-extra">Water</span>';
+    else if (n.includes('email'))  typeBadge = '<span class="badge badge-blue">Email</span>';
+    else                           typeBadge = '<span class="badge badge-attendance">SE Att</span>';
+    const diff = r.expected ? Math.abs((r.expected || 0) - (r.sent || 0)) : '—';
+    return `<tr>
+      <td class="date">${r.date || '—'}</td>
+      <td>${fmt12(r.time)}</td>
+      <td>${typeBadge}</td>
+      <td style="font-size:.85rem">${r.msgname || '—'}</td>
+      <td style="text-align:right;font-weight:600">${(r.sent || 0).toLocaleString('en-IN')}</td>
+      <td style="text-align:right;color:var(--muted)">${r.expected ? r.expected.toLocaleString('en-IN') : '—'}</td>
+      <td style="text-align:right;color:var(--muted)">${diff !== '—' ? diff.toLocaleString('en-IN') : '—'}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════
@@ -3985,12 +4132,30 @@ function logActivity(type, detail, before, after) {
   if (document.getElementById('log-activity-section')?.style.display !== 'none') renderActivityLog();
 }
 
+let _actFilter = 'today';
+
+function setActFilter(f, el) {
+  _actFilter = f;
+  document.querySelectorAll('#log-activity-section .dash-filter-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderActivityLog();
+}
+
 function renderActivityLog() {
   const wrap = document.getElementById('act-log-body');
   const empty = document.getElementById('act-empty');
   if (!wrap) return;
   const q = (document.getElementById('act-search')?.value || '').toLowerCase();
   let logs = getActivityLog().slice().reverse();
+  // Date filter — convert UTC timestamp to local date before comparing
+  const tsLocalDate = ts => { const d = new Date(ts); const p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
+  if (_actFilter === 'today') {
+    const t = today();
+    logs = logs.filter(l => l.ts && tsLocalDate(l.ts) === t);
+  } else if (_actFilter === 'yesterday') {
+    const y = yesterday();
+    logs = logs.filter(l => l.ts && tsLocalDate(l.ts) === y);
+  }
   if (q) logs = logs.filter(l => l.detail.toLowerCase().includes(q) || l.user.toLowerCase().includes(q));
   if (!logs.length) {
     wrap.innerHTML = '';
@@ -4052,7 +4217,14 @@ function switchLogTab(tab, el) {
   if (el) el.classList.add('active');
   document.getElementById('log-broadcast-section').style.display = tab === 'broadcast' ? '' : 'none';
   document.getElementById('log-activity-section').style.display  = tab === 'activity'  ? '' : 'none';
-  if (tab === 'activity') { loadActivityLog().then(renderActivityLog); }
+  if (tab === 'activity') {
+    // Sync active filter button
+    ['ab-today','ab-yesterday','ab-all'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.classList.toggle('active', id === 'ab-'+_actFilter || (id === 'ab-today' && _actFilter === 'today'));
+    });
+    loadActivityLog().then(renderActivityLog);
+  }
 }
 </script>
 </body>

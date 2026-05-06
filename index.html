@@ -2696,12 +2696,14 @@ function closeTrendModal(e) {
 function renderMissingAlert() {
   const card = document.getElementById('missing-alert-card');
   if (!card) return;
-  // Missing broadcasts is always about today
+
+  if (!csData || !csData.rows) {
+    card.style.display = 'block';
+    card.innerHTML = `<div class="missing-alert-header"><span>⏳</span><span class="missing-alert-title" style="color:var(--muted)">Loading sheet data...</span></div>`;
+    return;
+  }
 
   const todayStr = today();
-  const todayRecs = (S.records||[]).filter(r => r.date === todayStr && !r.noSheet && !r.manual);
-  const savedToday = new Set(todayRecs.map(r => r.msgname));
-
   const toMins = t => { if (!t) return -1; const [h,m]=(t||'00:00').split(':').map(Number); return h*60+m; };
   const nowMins = new Date().getHours()*60 + new Date().getMinutes();
 
@@ -2711,26 +2713,14 @@ function renderMissingAlert() {
     past14.push(fmtLocalDate(d));
   }
 
-  const pastRecs = (S.records||[]).filter(r => past14.includes(r.date) && !r.noSheet);
-
-  const nameData = {};
-  pastRecs.forEach(r => {
-    if (!r.msgname) return;
-    if (!nameData[r.msgname]) nameData[r.msgname] = { days: new Set(), times: [] };
-    nameData[r.msgname].days.add(r.date);
-    if (r.time) nameData[r.msgname].times.push(r.time);
-  });
-
   const missing = [];
-  Object.entries(nameData).forEach(([name, data]) => {
-    if (data.days.size < 2) return;
-    if (savedToday.has(name)) return;
-    const bc = (S.broadcasts||[]).find(b => b.msgname === name);
-    const scheduledMins = bc && bc.time ? toMins(bc.time) : -1;
-    const avgMins = data.times.length ? Math.round(data.times.reduce((s,t) => s + toMins(t), 0) / data.times.length) : -1;
-    const displayMins = scheduledMins >= 0 ? scheduledMins : avgMins;
-    const isMissed = displayMins >= 0 && nowMins > displayMins;
-    missing.push({ name, days: data.days.size, scheduledMins: displayMins, isMissed });
+  csData.rows.forEach(row => {
+    const daysWithData = past14.filter(d => (row.vals[d]||0) > 0).length;
+    if (daysWithData < 2) return;
+    if ((row.vals[todayStr]||0) > 0) return; // already saved in sheet today
+    const scheduledMins = toMins(row.time);
+    const isMissed = scheduledMins >= 0 && nowMins > scheduledMins;
+    missing.push({ name: row.name, scheduledMins, isMissed, days: daysWithData });
   });
 
   missing.sort((a,b) => (a.scheduledMins < 0 ? 9999 : a.scheduledMins) - (b.scheduledMins < 0 ? 9999 : b.scheduledMins));

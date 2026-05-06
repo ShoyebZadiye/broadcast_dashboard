@@ -2451,13 +2451,17 @@ function renderTemplateTrends() {
   const container = document.getElementById('template-trends-container');
   if (!container) return;
 
-  const todayStr = today();
+  if (!csData) {
+    container.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:32px;text-align:center;color:var(--muted)">⏳ Loading sheet data...</div>';
+    initCountSheet();
+    return;
+  }
+
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate()-i);
     days.push(fmtLocalDate(d));
   }
-  // Last 7 days of previous week for trend comparison
   const prevDays = [];
   for (let i = 13; i >= 7; i--) {
     const d = new Date(); d.setDate(d.getDate()-i);
@@ -2467,26 +2471,32 @@ function renderTemplateTrends() {
     new Date(d+'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' })
   );
 
-  let allRecs  = (S.records||[]).filter(r => !r.noSheet);
-  if (trendTodFilter !== 'all') {
-    allRecs = allRecs.filter(r => {
-      const h = r.time ? parseInt(r.time.split(':')[0]) : -1;
-      if (h < 0) return false;
-      return trendTodFilter === 'morning' ? h < 14 : h >= 14;
-    });
-  }
-  const recentRecs = allRecs.filter(r => days.includes(r.date));
-  const prevRecs   = allRecs.filter(r => prevDays.includes(r.date));
-
-  // Group by stripping ordinal batch prefix (1ST/2ND/3RD/4TH/5TH)
   const groupKey = n => (n||'').replace(/^(1ST|2ND|3RD|4TH|5TH)\s+/i, '');
-  const recentGroups = {}, prevGroups = {};
-  recentRecs.forEach(r => { if (!r.msgname) return; const k=groupKey(r.msgname); (recentGroups[k]=recentGroups[k]||[]).push(r); });
-  prevRecs.forEach(r   => { if (!r.msgname) return; const k=groupKey(r.msgname); (prevGroups[k]=prevGroups[k]||[]).push(r); });
-  const msgnames = Object.keys(recentGroups).filter(n => {
-    const nl = n.toLowerCase();
-    return !nl.includes('hindi') && !nl.includes('milestone');
-  }).sort();
+
+  // Filter rows: exclude hindi/milestone, apply trendTodFilter
+  const sourceRows = csData.rows.filter(row => {
+    const nl = groupKey(row.name).toLowerCase();
+    if (nl.includes('hindi') || nl.includes('milestone')) return false;
+    if (trendTodFilter !== 'all') {
+      const mins = _csTimeMins(row.time);
+      if (mins < 0) return false;
+      if (trendTodFilter === 'morning' && mins >= 840) return false;
+      if (trendTodFilter === 'evening' && mins < 840)  return false;
+    }
+    return true;
+  });
+
+  // Group rows by stripped name
+  const recentGroups = {};
+  sourceRows.forEach(row => {
+    const k = groupKey(row.name);
+    if (!recentGroups[k]) recentGroups[k] = [];
+    recentGroups[k].push(row);
+  });
+
+  const msgnames = Object.keys(recentGroups).filter(k =>
+    recentGroups[k].some(row => days.some(d => (row.vals[d]||0) > 0))
+  ).sort();
 
   if (!msgnames.length) {
     container.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:32px;text-align:center">Last 7 days m koi broadcast record nahi mila.</div>';
@@ -2499,20 +2509,19 @@ function renderTemplateTrends() {
   const pastBar  = isDark ? '#334155' : '#c7d2fe';
 
   // ── Insights summary KPIs ──
-  const totalSent7All = recentRecs.reduce((s,r)=>s+(parseInt(r.sent)||0),0);
-  const totalExp7All  = recentRecs.reduce((s,r)=>s+(parseInt(r.expected)||0),0);
-  const rate7All = totalExp7All > 0 ? Math.round(totalSent7All/totalExp7All*100) : null;
+  let totalSent7All = 0;
+  msgnames.forEach(n => recentGroups[n].forEach(row => days.forEach(d => { totalSent7All += (row.vals[d]||0); })));
   let bestName7 = '—', bestSent7 = 0;
   msgnames.forEach(n => {
-    const s = recentGroups[n].reduce((t,r)=>t+(parseInt(r.sent)||0),0);
+    const s = recentGroups[n].reduce((t, row) => t + days.reduce((a, d) => a + (row.vals[d]||0), 0), 0);
     if (s > bestSent7) { bestSent7 = s; bestName7 = n; }
   });
   const _el = id => document.getElementById(id);
-  if (_el('ins-kpi-total'))    _el('ins-kpi-total').textContent    = totalSent7All>0?totalSent7All.toLocaleString():'0';
+  if (_el('ins-kpi-total'))    _el('ins-kpi-total').textContent    = totalSent7All > 0 ? totalSent7All.toLocaleString() : '0';
   if (_el('ins-kpi-active'))   _el('ins-kpi-active').textContent   = msgnames.length;
-  if (_el('ins-kpi-rate'))     _el('ins-kpi-rate').textContent     = rate7All!==null?rate7All+'%':'—';
+  if (_el('ins-kpi-rate'))     _el('ins-kpi-rate').textContent     = '—';
   if (_el('ins-kpi-best'))     _el('ins-kpi-best').textContent     = bestName7;
-  if (_el('ins-kpi-best-sub')) _el('ins-kpi-best-sub').textContent = bestSent7>0?bestSent7.toLocaleString()+' sent':'—';
+  if (_el('ins-kpi-best-sub')) _el('ins-kpi-best-sub').textContent = bestSent7 > 0 ? bestSent7.toLocaleString() + ' sent' : '—';
   if (_el('ins-hero-date')) {
     const d0 = new Date(); d0.setDate(d0.getDate()-6);
     const d1 = new Date();
@@ -2521,16 +2530,13 @@ function renderTemplateTrends() {
   }
 
   container.innerHTML = msgnames.map(name => {
-    const nameRecs     = recentGroups[name] || [];
-    const prevNameRecs = prevGroups[name]   || [];
+    const groupRows = recentGroups[name];
 
-    const sentByDay = days.map(d => nameRecs.filter(r => r.date===d).reduce((s,r)=>s+(parseInt(r.sent)||0),0));
-    const expByDay  = days.map(d => nameRecs.filter(r => r.date===d).reduce((s,r)=>s+(parseInt(r.expected)||0),0));
+    const sentByDay = days.map(d => groupRows.reduce((s, row) => s + (row.vals[d]||0), 0));
     const totalSent = sentByDay.reduce((a,b)=>a+b,0);
-    const totalExp  = expByDay.reduce((a,b)=>a+b,0);
 
     const todayVal     = sentByDay[6] || 0;
-    const lastWeekSame = prevNameRecs.filter(r => r.date === prevDays[6]).reduce((s,r)=>s+(parseInt(r.sent)||0),0);
+    const lastWeekSame = groupRows.reduce((s, row) => s + (row.vals[prevDays[6]]||0), 0);
     let trendHtml = '';
     if (todayVal > 0 && lastWeekSame > 0) {
       const diff = Math.round((todayVal - lastWeekSame) / lastWeekSame * 100);
@@ -2539,11 +2545,8 @@ function renderTemplateTrends() {
         : `<div class="trend-arrow-down">↓ ${Math.abs(diff)}%</div>`;
     }
 
-    const rate      = totalExp > 0 ? Math.round(totalSent/totalExp*100) : null;
-    const rateColor = rate===null?'var(--muted)':rate>=97?'#16a34a':rate>=90?'#d97706':'#dc2626';
-    const rateBadgeClass = rate===null?'rb-none':rate>=97?'rb-good':rate>=90?'rb-warn':'rb-bad';
-    const maxVal    = Math.max(...sentByDay, 1);
-    const streak    = sentByDay.filter(v=>v>0).length;
+    const maxVal = Math.max(...sentByDay, 1);
+    const streak = sentByDay.filter(v => v > 0).length;
 
     const bG=4, h=52, cols=7, bW=Math.floor((100-bG*(cols-1))/cols);
     const svgW = cols*bW + (cols-1)*bG;
@@ -2551,17 +2554,17 @@ function renderTemplateTrends() {
       const isToday = i === 6;
       const bH  = v > 0 ? Math.max(5, Math.round(v/maxVal*h)) : 3;
       const x   = i*(bW+bG), y = h-bH;
-      const fill= v === 0 ? emptyBar : isToday ? todayBar : pastBar;
-      const rx  = isToday ? 3 : 2;
+      const fill = v === 0 ? emptyBar : isToday ? todayBar : pastBar;
+      const rx   = isToday ? 3 : 2;
       return `<rect x="${x}" y="${y}" width="${bW}" height="${bH}" rx="${rx}" fill="${fill}"/>`;
     }).join('');
 
-    const tcClass = rate===null?'':rate>=97?'tc-good':rate>=90?'tc-warn':'tc-bad';
+    const totalBadge = totalSent > 0 ? totalSent.toLocaleString() : '—';
 
-    return `<div class="trend-card ${tcClass}" onclick="openTrendModal('${name.replace(/'/g,"\\'")}')">
+    return `<div class="trend-card" onclick="openTrendModal('${name.replace(/'/g,"\\'")}')">
       <div class="trend-card-header">
         <div class="trend-card-name" title="${name}">${name}</div>
-        <span class="trend-rate-badge ${rateBadgeClass}">${rate!==null?rate+'%':'—'}</span>
+        <span class="trend-rate-badge rb-none" title="7-day total">${totalBadge}</span>
       </div>
       <div class="trend-today-row">
         <div>
@@ -2579,12 +2582,8 @@ function renderTemplateTrends() {
       <div class="trend-day-labels">${dayLabels.map((l,i)=>`<span class="${i===6?'today-lbl':''}">${l}</span>`).join('')}</div>
       <div class="trend-footer">
         <div class="trend-footer-item">
-          <span class="trend-footer-val" style="font-size:.95rem;color:#4f46e5">${totalSent>0?totalSent.toLocaleString():'—'}</span>
+          <span class="trend-footer-val" style="font-size:.95rem;color:#4f46e5">${totalSent > 0 ? totalSent.toLocaleString() : '—'}</span>
           <span class="trend-footer-lbl">Total Sent</span>
-        </div>
-        <div class="trend-footer-item">
-          <span class="trend-footer-val" style="color:${rateColor}">${rate!==null?rate+'%':'—'}</span>
-          <span class="trend-footer-lbl">Rate</span>
         </div>
         <div class="trend-footer-item">
           <span class="trend-footer-val">${streak}/7</span>
@@ -2600,25 +2599,22 @@ function openTrendModal(name) {
   const overlay = document.getElementById('trend-modal-overlay');
   if (!overlay) return;
 
-  // Build 30-day data
+  // Build 30-day data from count sheet
   const days30 = [];
   for (let i = 29; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate()-i);
     days30.push(fmtLocalDate(d));
   }
-  const recs = (S.records||[]).filter(r => r.msgname === name && days30.includes(r.date) && !r.noSheet);
-  const sentByDay = days30.map(d => recs.filter(r=>r.date===d).reduce((s,r)=>s+(parseInt(r.sent)||0),0));
-  const expByDay  = days30.map(d => recs.filter(r=>r.date===d).reduce((s,r)=>s+(parseInt(r.expected)||0),0));
+  const groupKey = n => (n||'').replace(/^(1ST|2ND|3RD|4TH|5TH)\s+/i, '');
+  const matchRows = csData ? csData.rows.filter(row => groupKey(row.name) === name) : [];
+  const sentByDay = days30.map(d => matchRows.reduce((s, row) => s + (row.vals[d]||0), 0));
 
-  const totalSent = sentByDay.reduce((a,b)=>a+b,0);
-  const totalExp  = expByDay.reduce((a,b)=>a+b,0);
+  const totalSent  = sentByDay.reduce((a,b)=>a+b,0);
   const daysActive = sentByDay.filter(v=>v>0).length;
-  const maxSent = Math.max(...sentByDay, 1);
-  const bestDay = days30[sentByDay.indexOf(maxSent)];
-  const avgSent = daysActive > 0 ? Math.round(totalSent/daysActive) : 0;
-  const rate    = totalExp > 0 ? Math.round(totalSent/totalExp*100) : null;
-  const rateColor = rate===null?'var(--muted)':rate>=97?'#16a34a':rate>=90?'#d97706':'#dc2626';
-  const bestLabel = bestDay ? new Date(bestDay+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+  const maxSent    = Math.max(...sentByDay, 1);
+  const bestDay    = days30[sentByDay.indexOf(maxSent)];
+  const avgSent    = daysActive > 0 ? Math.round(totalSent/daysActive) : 0;
+  const bestLabel  = bestDay ? new Date(bestDay+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
 
   document.getElementById('trend-modal-name').textContent = name;
   document.getElementById('trend-modal-stats').innerHTML = `
@@ -2627,8 +2623,8 @@ function openTrendModal(name) {
       <div class="trend-modal-stat-lbl">Avg / Day</div>
     </div>
     <div class="trend-modal-stat">
-      <div class="trend-modal-stat-val" style="color:${rateColor}">${rate !== null ? rate+'%' : '—'}</div>
-      <div class="trend-modal-stat-lbl">Delivery Rate</div>
+      <div class="trend-modal-stat-val" style="color:#4f46e5">${totalSent > 0 ? totalSent.toLocaleString() : '—'}</div>
+      <div class="trend-modal-stat-lbl">Total Sent</div>
     </div>
     <div class="trend-modal-stat">
       <div class="trend-modal-stat-val">${daysActive}/30</div>
@@ -4362,7 +4358,7 @@ async function initCountSheet(force) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     csData = parseCountSheetCSV(await r.text());
     renderCountSheet();
-    if (document.getElementById('panel-insights')?.classList.contains('active')) renderMissingAlert();
+    if (document.getElementById('panel-insights')?.classList.contains('active')) { renderMissingAlert(); renderTemplateTrends(); }
   } catch(e) {
     if (list) list.innerHTML = `<div style="color:var(--danger);text-align:center;padding:28px;font-size:.85rem">❌ Load failed: ${e.message}</div>`;
   } finally {

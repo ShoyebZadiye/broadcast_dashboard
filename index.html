@@ -1367,9 +1367,8 @@
             <div class="card-header" style="flex-wrap:wrap;gap:8px">
               <h3>📊 7-Day Template Trends</h3>
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto">
-                <button class="cs-type-btn active" id="trend-tod-all"     onclick="setTrendTod('all',this)">All</button>
-                <button class="cs-type-btn"        id="trend-tod-morning" onclick="setTrendTod('morning',this)">🌅 Morning</button>
-                <button class="cs-type-btn"        id="trend-tod-evening" onclick="setTrendTod('evening',this)">🌙 Evening</button>
+                <button class="cs-type-btn" id="trend-tod-morning" onclick="setTrendTod('morning',this)">🌅 Morning</button>
+                <button class="cs-type-btn" id="trend-tod-evening" onclick="setTrendTod('evening',this)">🌙 Evening</button>
                 <span style="font-size:.72rem;color:var(--muted);padding-left:4px">Tap card for 30-day view</span>
               </div>
             </div>
@@ -4234,8 +4233,9 @@ function setCsTod(t, el) {
 }
 
 function setTrendTod(t, el) {
+  if (trendTodFilter === t) { trendTodFilter = 'all'; el.classList.remove('active'); renderTemplateTrends(); return; }
   trendTodFilter = t;
-  document.querySelectorAll('#trend-tod-all,#trend-tod-morning,#trend-tod-evening').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#trend-tod-morning,#trend-tod-evening').forEach(b => b.classList.remove('active'));
   if (el) el.classList.add('active');
   renderTemplateTrends();
 }

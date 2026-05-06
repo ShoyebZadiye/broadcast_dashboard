@@ -2712,23 +2712,26 @@ function renderMissingAlert() {
   }
 
   const pastRecs = (S.records||[]).filter(r => past14.includes(r.date) && !r.noSheet);
-  const pastDays = {};
+
+  const nameData = {};
   pastRecs.forEach(r => {
     if (!r.msgname) return;
-    if (!pastDays[r.msgname]) pastDays[r.msgname] = new Set();
-    pastDays[r.msgname].add(r.date);
+    if (!nameData[r.msgname]) nameData[r.msgname] = { days: new Set(), times: [] };
+    nameData[r.msgname].days.add(r.date);
+    if (r.time) nameData[r.msgname].times.push(r.time);
   });
 
-  // Use S.broadcasts as source of truth — show all configured broadcasts not saved today
-  const missing = (S.broadcasts||[])
-    .filter(b => b.msgname && !savedToday.has(b.msgname))
-    .map(b => {
-      const scheduledMins = b.time ? toMins(b.time) : -1;
-      const isMissed = scheduledMins >= 0 && nowMins > scheduledMins;
-      const days = pastDays[b.msgname] ? pastDays[b.msgname].size : 0;
-      return { name: b.msgname, scheduledMins, isMissed, days };
-    })
-    .filter(m => m.days > 0); // only show if it has appeared at least once in past 14 days
+  const missing = [];
+  Object.entries(nameData).forEach(([name, data]) => {
+    if (data.days.size < 2) return;
+    if (savedToday.has(name)) return;
+    const bc = (S.broadcasts||[]).find(b => b.msgname === name);
+    const scheduledMins = bc && bc.time ? toMins(bc.time) : -1;
+    const avgMins = data.times.length ? Math.round(data.times.reduce((s,t) => s + toMins(t), 0) / data.times.length) : -1;
+    const displayMins = scheduledMins >= 0 ? scheduledMins : avgMins;
+    const isMissed = displayMins >= 0 && nowMins > displayMins;
+    missing.push({ name, days: data.days.size, scheduledMins: displayMins, isMissed });
+  });
 
   missing.sort((a,b) => (a.scheduledMins < 0 ? 9999 : a.scheduledMins) - (b.scheduledMins < 0 ? 9999 : b.scheduledMins));
 

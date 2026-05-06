@@ -2749,7 +2749,11 @@ function renderMissingAlert() {
       ${missing.map(m => `
         <div class="missing-alert-item">
           <span class="missing-name">${m.name}</span>
-          ${m.scheduledMins >= 0 ? `<span class="missing-time" style="color:${m.isMissed?'#ef4444':'#f59e0b'}">${m.isMissed?'❌ ':' ⏳ '}${fmt12h(m.scheduledMins)}</span>` : ''}
+          ${m.scheduledMins >= 0 ? `
+            <span style="display:flex;align-items:center;gap:5px">
+              <span style="font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:10px;background:${m.scheduledMins<840?'rgba(99,102,241,.18)':'rgba(245,158,11,.18)'};color:${m.scheduledMins<840?'#818cf8':'#f59e0b'}">${m.scheduledMins<840?'🌅 Morning':'🌙 Evening'}</span>
+              <span class="missing-time" style="font-size:.8rem;font-weight:800;color:${m.isMissed?'#ef4444':'#f59e0b'};background:${m.isMissed?'rgba(239,68,68,.12)':'rgba(245,158,11,.12)'};padding:2px 8px;border-radius:8px">${m.isMissed?'❌':'⏳'} ${fmt12h(m.scheduledMins)}</span>
+            </span>` : ''}
           <span class="missing-days">${m.days}/7 days</span>
         </div>`).join('')}
     </div>`;

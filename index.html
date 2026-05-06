@@ -3449,9 +3449,6 @@ function renderRecords() {
 
   const ts = data.reduce((s,r)=>s+(parseInt(r.sent)||0),0);
   const te = data.reduce((s,r)=>s+(parseInt(r.expected)||0),0);
-  document.getElementById('rec-kpi-sent').textContent = ts.toLocaleString();
-  document.getElementById('rec-kpi-exp').textContent  = te.toLocaleString();
-  document.getElementById('rec-kpi-diff').textContent = (te-ts).toLocaleString();
 
   const tbody = document.getElementById('rec-tbody');
   const cards = document.getElementById('rec-cards');

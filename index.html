@@ -2733,7 +2733,6 @@ function renderMissingAlert() {
     missing.push({ name, days: data.days.size, scheduledMins: displayMins, isMissed });
   });
 
-  if (!missing.length) { card.style.display = 'none'; return; }
   missing.sort((a,b) => (a.scheduledMins < 0 ? 9999 : a.scheduledMins) - (b.scheduledMins < 0 ? 9999 : b.scheduledMins));
 
   const fmt12h = mins => {
@@ -2742,8 +2741,14 @@ function renderMissingAlert() {
     return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
   };
 
-  const missedCount = missing.filter(m => m.isMissed).length;
   card.style.display = 'block';
+
+  if (!missing.length) {
+    card.innerHTML = `<div class="missing-alert-header"><span>✅</span><span class="missing-alert-title" style="color:#16a34a">All broadcasts saved today!</span></div>`;
+    return;
+  }
+
+  const missedCount = missing.filter(m => m.isMissed).length;
   card.innerHTML = `
     <div class="missing-alert-header">
       <span>⚠️</span>

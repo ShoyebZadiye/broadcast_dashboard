@@ -4307,6 +4307,8 @@ function fmt12cs(t) {
 
 function csGroupLabel(name) {
   const n = (name||'').toLowerCase();
+  if (n.includes('email'))                                       return 'Extra Session';
+  if (n.includes('water') && n.includes('reminder'))            return 'Extra Session';
   if (n.includes('reminder message') || n.includes('routine'))  return 'Yoga Reminder';
   if (n.includes('attendance'))                                  return 'Yoga Attendance';
   if (n.includes('ds') || n.includes('strong'))                 return 'DS / Strong SE';

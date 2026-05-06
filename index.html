@@ -4360,10 +4360,35 @@ function renderCountSheet() {
     const el = document.getElementById(id); if (el) el.textContent = label;
   });
 
-  // Aggregate by group
+  const fmtIN = v => v >= 1e5 ? (v/1e5).toFixed(1)+'L' : v.toLocaleString('en-IN');
+  const el = (id) => document.getElementById(id);
+
+  // Detailed table
+  const datesInRange = [...new Set(
+    csData.rows.flatMap(r => Object.keys(r.vals).filter(d => d >= from && d <= to))
+  )].sort();
+
+  const head = el('cs-table-head'), body = el('cs-table-body');
+  if (!head || !body) return;
+
+  // Apply search + type + tod filters
+  const q = (el('cs-search')?.value || '').toLowerCase().trim();
+  const filteredRows = csData.rows.filter(row => {
+    if (q && !row.name.toLowerCase().includes(q) && !fmt12cs(row.time).toLowerCase().includes(q)) return false;
+    if (csTypeFilter !== 'all' && csGroupLabel(row.name) !== csTypeFilter) return false;
+    if (csTodFilter !== 'all') {
+      const t = row.time.trim().toLowerCase();
+      const isPm = t.includes('pm') || (/^\d{1,2}:\d{2}$/.test(t) && parseInt(t) >= 12);
+      if (csTodFilter === 'morning' && isPm)  return false;
+      if (csTodFilter === 'evening' && !isPm) return false;
+    }
+    return true;
+  });
+
+  // Aggregate by group from filtered rows
   const groups = {};
   let totalSent = 0, activeBc = 0;
-  csData.rows.forEach(row => {
+  filteredRows.forEach(row => {
     let rt = 0;
     Object.entries(row.vals).forEach(([d,v]) => { if (d >= from && d <= to) rt += v; });
     if (rt > 0) activeBc++;
@@ -4373,11 +4398,8 @@ function renderCountSheet() {
     groups[g].sent += rt;
   });
 
-  const fmtIN = v => v >= 1e5 ? (v/1e5).toFixed(1)+'L' : v.toLocaleString('en-IN');
-
   // KPIs
   const sorted = Object.entries(groups).filter(([,g])=>g.sent>0).sort((a,b)=>b[1].sent-a[1].sent);
-  const el = (id) => document.getElementById(id);
   if (el('cs-kpi-sent'))    el('cs-kpi-sent').textContent    = totalSent > 0 ? fmtIN(totalSent) : '0';
   if (el('cs-kpi-types'))   el('cs-kpi-types').textContent   = activeBc;
   if (el('cs-kpi-top'))     el('cs-kpi-top').textContent     = sorted[0]?.[0] || '—';
@@ -4398,28 +4420,6 @@ function renderCountSheet() {
       <div class="perf-cat-rate" style="color:${col}">${barW}%</div>
     </div>`;
   }).join('');
-
-  // Detailed table
-  const datesInRange = [...new Set(
-    csData.rows.flatMap(r => Object.keys(r.vals).filter(d => d >= from && d <= to))
-  )].sort();
-
-  const head = el('cs-table-head'), body = el('cs-table-body');
-  if (!head || !body) return;
-
-  // Apply search + type filters
-  const q = (el('cs-search')?.value || '').toLowerCase().trim();
-  const filteredRows = csData.rows.filter(row => {
-    if (q && !row.name.toLowerCase().includes(q) && !fmt12cs(row.time).toLowerCase().includes(q)) return false;
-    if (csTypeFilter !== 'all' && csGroupLabel(row.name) !== csTypeFilter) return false;
-    if (csTodFilter !== 'all') {
-      const t = row.time.trim().toLowerCase();
-      const isPm = t.includes('pm') || (/^\d{1,2}:\d{2}$/.test(t) && parseInt(t) >= 12);
-      if (csTodFilter === 'morning' && isPm)  return false;
-      if (csTodFilter === 'evening' && !isPm) return false;
-    }
-    return true;
-  });
 
   head.innerHTML = `<tr>
     <th style="min-width:180px">Broadcast</th>

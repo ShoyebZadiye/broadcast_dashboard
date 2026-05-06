@@ -2478,7 +2478,13 @@ function renderTemplateTrends() {
   }
   const recentRecs = allRecs.filter(r => days.includes(r.date));
   const prevRecs   = allRecs.filter(r => prevDays.includes(r.date));
-  const msgnames = [...new Set(recentRecs.map(r => r.msgname).filter(Boolean))].sort();
+
+  // Group by stripping ordinal batch prefix (1ST/2ND/3RD/4TH/5TH)
+  const groupKey = n => (n||'').replace(/^(1ST|2ND|3RD|4TH|5TH)\s+/i, '');
+  const recentGroups = {}, prevGroups = {};
+  recentRecs.forEach(r => { if (!r.msgname) return; const k=groupKey(r.msgname); (recentGroups[k]=recentGroups[k]||[]).push(r); });
+  prevRecs.forEach(r   => { if (!r.msgname) return; const k=groupKey(r.msgname); (prevGroups[k]=prevGroups[k]||[]).push(r); });
+  const msgnames = Object.keys(recentGroups).sort();
 
   if (!msgnames.length) {
     container.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:32px;text-align:center">Last 7 days m koi broadcast record nahi mila.</div>';
@@ -2496,7 +2502,7 @@ function renderTemplateTrends() {
   const rate7All = totalExp7All > 0 ? Math.round(totalSent7All/totalExp7All*100) : null;
   let bestName7 = '—', bestSent7 = 0;
   msgnames.forEach(n => {
-    const s = recentRecs.filter(r=>r.msgname===n).reduce((t,r)=>t+(parseInt(r.sent)||0),0);
+    const s = recentGroups[n].reduce((t,r)=>t+(parseInt(r.sent)||0),0);
     if (s > bestSent7) { bestSent7 = s; bestName7 = n; }
   });
   const _el = id => document.getElementById(id);
@@ -2513,8 +2519,8 @@ function renderTemplateTrends() {
   }
 
   container.innerHTML = msgnames.map(name => {
-    const nameRecs     = recentRecs.filter(r => r.msgname === name);
-    const prevNameRecs = prevRecs.filter(r => r.msgname === name);
+    const nameRecs     = recentGroups[name] || [];
+    const prevNameRecs = prevGroups[name]   || [];
 
     const sentByDay = days.map(d => nameRecs.filter(r => r.date===d).reduce((s,r)=>s+(parseInt(r.sent)||0),0));
     const expByDay  = days.map(d => nameRecs.filter(r => r.date===d).reduce((s,r)=>s+(parseInt(r.expected)||0),0));

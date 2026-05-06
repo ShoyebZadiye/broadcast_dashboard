@@ -2729,7 +2729,7 @@ function renderMissingAlert() {
     const scheduledMins = bc && bc.time ? toMins(bc.time) : -1;
     const avgMins = data.times.length ? Math.round(data.times.reduce((s,t) => s + toMins(t), 0) / data.times.length) : -1;
     const displayMins = scheduledMins >= 0 ? scheduledMins : avgMins;
-    if (displayMins >= 0 && nowMins < displayMins) return;
+    if (displayMins >= 0 && nowMins < displayMins - 60) return;
     missing.push({ name, days: data.days.size, scheduledMins: displayMins });
   });
 

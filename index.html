@@ -2752,7 +2752,9 @@ function renderDashboard() {
   const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(selDate+'T00:00:00').getDay()];
 
   // Records for selected period
-  const records = (S.records||[]).filter(r => r.date >= rangeFrom && r.date <= rangeTo);
+  let records = (S.records||[]).filter(r => r.date >= rangeFrom && r.date <= rangeTo);
+  if (csTodFilter === 'morning') records = records.filter(r => { const h = r.time ? parseInt(r.time.split(':')[0]) : -1; return h >= 0 && h < 14; });
+  if (csTodFilter === 'evening') records = records.filter(r => { const h = r.time ? parseInt(r.time.split(':')[0]) : -1; return h >= 14; });
 
   let broadcasts = (S.broadcasts||[]).filter(b =>
     !b.days || b.days.length === 0 || b.days.includes(dow)
@@ -4200,7 +4202,7 @@ function setCsType(t, el) {
 }
 
 function setCsTod(t, el) {
-  if (csTodFilter === t) { csTodFilter = 'all'; el.classList.remove('active','ct-orng'); renderCountSheet(); return; }
+  if (csTodFilter === t) { csTodFilter = 'all'; el.classList.remove('active','ct-orng'); renderCountSheet(); renderDashboard(); return; }
   csTodFilter = t;
   csTodToggle++;
   document.querySelectorAll('#cs-tod-morning,#cs-tod-evening').forEach(b => { b.classList.remove('active','ct-orng'); });
@@ -4209,6 +4211,7 @@ function setCsTod(t, el) {
     if (csTodToggle % 2 === 0) el.classList.add('ct-orng');
   }
   renderCountSheet();
+  renderDashboard();
 }
 
 function setCsFilter(f, el) {

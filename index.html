@@ -2729,8 +2729,8 @@ function renderMissingAlert() {
     const scheduledMins = bc && bc.time ? toMins(bc.time) : -1;
     const avgMins = data.times.length ? Math.round(data.times.reduce((s,t) => s + toMins(t), 0) / data.times.length) : -1;
     const displayMins = scheduledMins >= 0 ? scheduledMins : avgMins;
-    if (displayMins >= 0 && nowMins < displayMins - 60) return;
-    missing.push({ name, days: data.days.size, scheduledMins: displayMins });
+    const isMissed = displayMins >= 0 && nowMins > displayMins;
+    missing.push({ name, days: data.days.size, scheduledMins: displayMins, isMissed });
   });
 
   if (!missing.length) { card.style.display = 'none'; return; }
@@ -2742,18 +2742,19 @@ function renderMissingAlert() {
     return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
   };
 
+  const missedCount = missing.filter(m => m.isMissed).length;
   card.style.display = 'block';
   card.innerHTML = `
     <div class="missing-alert-header">
       <span>⚠️</span>
       <span class="missing-alert-title">${missing.length} broadcast${missing.length>1?'s':''} not saved yet</span>
-      <span class="missing-alert-sub">Based on last 14 days</span>
+      <span class="missing-alert-sub">${missedCount > 0 ? missedCount+' missed · ' : ''}Based on last 14 days</span>
     </div>
     <div class="missing-alert-list">
       ${missing.map(m => `
         <div class="missing-alert-item">
           <span class="missing-name">${m.name}</span>
-          ${m.scheduledMins >= 0 ? `<span class="missing-time">${fmt12h(m.scheduledMins)}</span>` : ''}
+          ${m.scheduledMins >= 0 ? `<span class="missing-time" style="color:${m.isMissed?'#ef4444':'#f59e0b'}">${m.isMissed?'❌ ':' ⏳ '}${fmt12h(m.scheduledMins)}</span>` : ''}
           <span class="missing-days">${m.days}/14 days</span>
         </div>`).join('')}
     </div>`;

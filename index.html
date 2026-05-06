@@ -2699,7 +2699,7 @@ function renderMissingAlert() {
   // Missing broadcasts is always about today
 
   const todayStr = today();
-  const todayRecs = (S.records||[]).filter(r => r.date === todayStr && !r.noSheet);
+  const todayRecs = (S.records||[]).filter(r => r.date === todayStr && !r.noSheet && !r.manual);
   const savedToday = new Set(todayRecs.map(r => r.msgname));
 
   const toMins = t => { if (!t) return -1; const [h,m]=(t||'00:00').split(':').map(Number); return h*60+m; };

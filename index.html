@@ -470,19 +470,17 @@
   .trend-modal-chart-wrap canvas { border-radius:10px; }
 
   /* ── MISSING BROADCASTS ALERT ── */
-  #missing-alert-card { background:#fff7ed; border:1.5px solid #fed7aa; border-radius:var(--radius); padding:14px 18px; margin-bottom:18px; display:none; }
+  #missing-alert-card { background:var(--surface); border:1.5px solid var(--border); border-left:4px solid #f59e0b; border-radius:var(--radius); padding:14px 18px; margin-bottom:18px; display:none; }
   .missing-alert-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
-  .missing-alert-title { font-weight:700; font-size:.88rem; color:#9a3412; }
-  .missing-alert-sub { font-size:.75rem; color:#c2410c; margin-left:auto; }
-  .missing-alert-list { display:flex; flex-direction:column; gap:6px; }
-  .missing-alert-item { display:flex; align-items:center; gap:10px; background:#fff; border-radius:8px; padding:7px 12px; border:1px solid #fed7aa; }
+  .missing-alert-title { font-weight:700; font-size:.88rem; color:#92400e; }
+  .missing-alert-sub { font-size:.75rem; color:var(--muted); margin-left:auto; }
+  .missing-alert-list { display:flex; flex-direction:column; gap:5px; }
+  .missing-alert-item { display:flex; align-items:center; gap:10px; background:var(--bg); border-radius:8px; padding:7px 12px; border:1px solid var(--border); }
   .missing-name { font-weight:600; font-size:.83rem; color:var(--text); flex:1; }
-  .missing-time { font-size:.75rem; color:#ea580c; font-weight:600; }
+  .missing-time { font-size:.75rem; color:#d97706; font-weight:600; }
   .missing-days { font-size:.72rem; color:var(--muted); }
-  body.dark #missing-alert-card { background:var(--surface); border-color:#f59e0b; }
   body.dark .missing-alert-title { color:#fbbf24; }
-  body.dark .missing-alert-sub { color:var(--muted); }
-  body.dark .missing-alert-item { background:var(--surface2); border-color:var(--border); }
+  body.dark .missing-alert-item { background:var(--surface2); }
   body.dark .missing-time { color:#fbbf24; }
 
   /* ── DAYS PICKER ── */
@@ -2709,8 +2707,10 @@ function renderMissingAlert() {
     if (savedToday.has(name)) return;
     const bc = (S.broadcasts||[]).find(b => b.msgname === name);
     const scheduledMins = bc && bc.time ? toMins(bc.time) : -1;
-    if (scheduledMins >= 0 && nowMins < scheduledMins - 45) return;
-    missing.push({ name, days: data.days.size, scheduledMins });
+    const avgMins = data.times.length ? Math.round(data.times.reduce((s,t) => s + toMins(t), 0) / data.times.length) : -1;
+    const displayMins = scheduledMins >= 0 ? scheduledMins : avgMins;
+    if (displayMins >= 0 && nowMins < displayMins - 45) return;
+    missing.push({ name, days: data.days.size, scheduledMins: displayMins });
   });
 
   if (!missing.length) { card.style.display = 'none'; return; }

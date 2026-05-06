@@ -1794,7 +1794,7 @@ function goTo(name, btn) {
   if (name==='records') { renderRecords(); if (activeLogTab === 'activity') renderActivityLog(); }
   if (name==='calendar') renderCalendar();
   if (name==='countsheet') initCountSheet();
-  if (name==='insights') { renderMissingAlert(); renderTemplateTrends(); }
+  if (name==='insights') { if (!csData) initCountSheet(); renderMissingAlert(); renderTemplateTrends(); }
   if (name==='admin') { if(currentUser!==ADMIN_EMAIL){return;} renderAdminPanel(); }
   if (name==='tracking') { renderTrackForm(); renderTodayLog(); }
 }
@@ -2743,7 +2743,7 @@ function renderMissingAlert() {
     <div class="missing-alert-header">
       <span>⚠️</span>
       <span class="missing-alert-title">${missing.length} broadcast${missing.length>1?'s':''} not saved yet</span>
-      <span class="missing-alert-sub">${missedCount > 0 ? missedCount+' missed · ' : ''}Based on last 7 days</span>
+      <span class="missing-alert-sub">${missedCount > 0 ? missedCount+' missed · ' : ''}${new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}</span>
     </div>
     <div class="missing-alert-list">
       ${missing.map(m => `
@@ -4367,6 +4367,7 @@ async function initCountSheet(force) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     csData = parseCountSheetCSV(await r.text());
     renderCountSheet();
+    if (document.getElementById('panel-insights')?.classList.contains('active')) renderMissingAlert();
   } catch(e) {
     if (list) list.innerHTML = `<div style="color:var(--danger);text-align:center;padding:28px;font-size:.85rem">❌ Load failed: ${e.message}</div>`;
   } finally {

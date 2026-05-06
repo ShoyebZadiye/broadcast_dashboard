@@ -2707,15 +2707,15 @@ function renderMissingAlert() {
   const toMins = t => { if (!t) return -1; const [h,m]=(t||'00:00').split(':').map(Number); return h*60+m; };
   const nowMins = new Date().getHours()*60 + new Date().getMinutes();
 
-  const past14 = [];
-  for (let i = 1; i <= 14; i++) {
+  const past7 = [];
+  for (let i = 1; i <= 7; i++) {
     const d = new Date(); d.setDate(d.getDate()-i);
-    past14.push(fmtLocalDate(d));
+    past7.push(fmtLocalDate(d));
   }
 
   const missing = [];
   csData.rows.forEach(row => {
-    const daysWithData = past14.filter(d => (row.vals[d]||0) > 0).length;
+    const daysWithData = past7.filter(d => (row.vals[d]||0) > 0).length;
     if (daysWithData < 2) return;
     if ((row.vals[todayStr]||0) > 0) return; // already saved in sheet today
     const scheduledMins = toMins(row.time);
@@ -2743,14 +2743,14 @@ function renderMissingAlert() {
     <div class="missing-alert-header">
       <span>⚠️</span>
       <span class="missing-alert-title">${missing.length} broadcast${missing.length>1?'s':''} not saved yet</span>
-      <span class="missing-alert-sub">${missedCount > 0 ? missedCount+' missed · ' : ''}Based on last 14 days</span>
+      <span class="missing-alert-sub">${missedCount > 0 ? missedCount+' missed · ' : ''}Based on last 7 days</span>
     </div>
     <div class="missing-alert-list">
       ${missing.map(m => `
         <div class="missing-alert-item">
           <span class="missing-name">${m.name}</span>
           ${m.scheduledMins >= 0 ? `<span class="missing-time" style="color:${m.isMissed?'#ef4444':'#f59e0b'}">${m.isMissed?'❌ ':' ⏳ '}${fmt12h(m.scheduledMins)}</span>` : ''}
-          <span class="missing-days">${m.days}/14 days</span>
+          <span class="missing-days">${m.days}/7 days</span>
         </div>`).join('')}
     </div>`;
 }

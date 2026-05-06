@@ -1364,9 +1364,14 @@
 
           <!-- 7-Day Template Trends -->
           <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="flex-wrap:wrap;gap:8px">
               <h3>📊 7-Day Template Trends</h3>
-              <span style="font-size:.72rem;color:var(--muted)">Last 7 days · <span style="color:#4f46e5;font-weight:700">Today</span> highlighted · Tap card for 30-day view</span>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto">
+                <button class="cs-type-btn active" id="trend-tod-all"     onclick="setTrendTod('all',this)">All</button>
+                <button class="cs-type-btn"        id="trend-tod-morning" onclick="setTrendTod('morning',this)">🌅 Morning</button>
+                <button class="cs-type-btn"        id="trend-tod-evening" onclick="setTrendTod('evening',this)">🌙 Evening</button>
+                <span style="font-size:.72rem;color:var(--muted);padding-left:4px">Tap card for 30-day view</span>
+              </div>
             </div>
             <div class="card-body" style="padding-top:12px">
               <div class="trend-cards-wrap" id="template-trends-container">
@@ -2463,7 +2468,14 @@ function renderTemplateTrends() {
     new Date(d+'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' })
   );
 
-  const allRecs  = (S.records||[]).filter(r => !r.noSheet);
+  let allRecs  = (S.records||[]).filter(r => !r.noSheet);
+  if (trendTodFilter !== 'all') {
+    allRecs = allRecs.filter(r => {
+      const h = r.time ? parseInt(r.time.split(':')[0]) : -1;
+      if (h < 0) return false;
+      return trendTodFilter === 'morning' ? h < 14 : h >= 14;
+    });
+  }
   const recentRecs = allRecs.filter(r => days.includes(r.date));
   const prevRecs   = allRecs.filter(r => prevDays.includes(r.date));
   const msgnames = [...new Set(recentRecs.map(r => r.msgname).filter(Boolean))].sort();
@@ -2559,8 +2571,8 @@ function renderTemplateTrends() {
       <div class="trend-day-labels">${dayLabels.map((l,i)=>`<span class="${i===6?'today-lbl':''}">${l}</span>`).join('')}</div>
       <div class="trend-footer">
         <div class="trend-footer-item">
-          <span class="trend-footer-val">${totalSent>0?totalSent.toLocaleString():'—'}</span>
-          <span class="trend-footer-lbl">7-Day</span>
+          <span class="trend-footer-val" style="font-size:.95rem;color:#4f46e5">${totalSent>0?totalSent.toLocaleString():'—'}</span>
+          <span class="trend-footer-lbl">Total Sent</span>
         </div>
         <div class="trend-footer-item">
           <span class="trend-footer-val" style="color:${rateColor}">${rate!==null?rate+'%':'—'}</span>
@@ -4186,6 +4198,7 @@ let csData        = null;
 let csFilter      = 'today';
 let csTypeFilter  = 'all';
 let csTodFilter   = 'all';
+let trendTodFilter = 'all';
 let csColorToggle = 0;
 let csDayToggle   = 0;
 let csTodToggle   = 0;
@@ -4212,6 +4225,13 @@ function setCsTod(t, el) {
   }
   renderCountSheet();
   renderDashboard();
+}
+
+function setTrendTod(t, el) {
+  trendTodFilter = t;
+  document.querySelectorAll('#trend-tod-all,#trend-tod-morning,#trend-tod-evening').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderTemplateTrends();
 }
 
 function setCsFilter(f, el) {

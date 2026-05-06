@@ -2483,7 +2483,10 @@ function renderTemplateTrends() {
   const recentGroups = {}, prevGroups = {};
   recentRecs.forEach(r => { if (!r.msgname) return; const k=groupKey(r.msgname); (recentGroups[k]=recentGroups[k]||[]).push(r); });
   prevRecs.forEach(r   => { if (!r.msgname) return; const k=groupKey(r.msgname); (prevGroups[k]=prevGroups[k]||[]).push(r); });
-  const msgnames = Object.keys(recentGroups).sort();
+  const msgnames = Object.keys(recentGroups).filter(n => {
+    const nl = n.toLowerCase();
+    return !nl.includes('hindi') && !nl.includes('milestone');
+  }).sort();
 
   if (!msgnames.length) {
     container.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:32px;text-align:center">Last 7 days m koi broadcast record nahi mila.</div>';
@@ -2726,7 +2729,7 @@ function renderMissingAlert() {
     const scheduledMins = bc && bc.time ? toMins(bc.time) : -1;
     const avgMins = data.times.length ? Math.round(data.times.reduce((s,t) => s + toMins(t), 0) / data.times.length) : -1;
     const displayMins = scheduledMins >= 0 ? scheduledMins : avgMins;
-    if (displayMins >= 0 && nowMins < displayMins - 45) return;
+    if (displayMins >= 0 && nowMins < displayMins) return;
     missing.push({ name, days: data.days.size, scheduledMins: displayMins });
   });
 

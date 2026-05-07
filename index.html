@@ -1190,6 +1190,27 @@
             </div>
           </div>
 
+          <!-- FREE BROADCASTS sub-section -->
+          <div id="log-free-section">
+            <div class="card" style="margin-top:16px">
+              <div class="card-header">
+                <h3>🟢 Free Broadcast Logs</h3>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                  <button class="dash-filter-btn active" id="rfb-today"     onclick="setFreeRecFilter('today',this)">Today</button>
+                  <button class="dash-filter-btn"        id="rfb-yesterday" onclick="setFreeRecFilter('yesterday',this)">Yesterday</button>
+                  <button class="dash-filter-btn"        id="rfb-week"      onclick="setFreeRecFilter('week',this)">7 Days</button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Date</th><th>Time</th><th>CID</th><th>Type</th><th>WATI</th><th>Sent</th><th>Expected</th><th>Diff</th></tr></thead>
+                  <tbody id="free-rec-tbody"></tbody>
+                </table>
+              </div>
+              <div class="empty" id="free-rec-empty" style="display:none">🔍 No free broadcast records found.</div>
+            </div>
+          </div>
+
           <!-- ACTIVITY sub-section -->
           <div id="log-activity-section" style="display:none">
             <div class="card">
@@ -1589,6 +1610,7 @@ function _applyUpdate(data) {
   _rtDebounce = setTimeout(() => {
     const scrollY = window.scrollY;
     try { renderRecords(); }          catch(e) { console.warn('renderRecords error', e); }
+    try { renderFreeRecords(); }      catch(e) { console.warn('renderFreeRecords error', e); }
     try { renderDashboard(); }        catch(e) { console.warn('renderDashboard error', e); }
     try { renderCountSheet(); }       catch(e) { console.warn('renderCountSheet error', e); }
     if (document.getElementById('panel-insights')?.classList.contains('active')) {
@@ -3136,6 +3158,59 @@ function setRecFilter(f, el) {
   else if (f === 'month') { const d=new Date(); d.setDate(d.getDate()-29); fromEl.value=fmtD(d); toEl.value=t; }
   else if (f === 'all')   { fromEl.value=''; toEl.value=''; }
   renderRecords();
+}
+
+// ── Free Broadcast Logs ───────────────────────
+let freeRecFrom = today(), freeRecTo = today();
+
+function setFreeRecFilter(f, el) {
+  const pad2 = n => String(n).padStart(2,'0');
+  const fmtD = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const t = today(), y = yesterday();
+  document.querySelectorAll('#log-free-section .dash-filter-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (f === 'today')     { freeRecFrom = t; freeRecTo = t; }
+  else if (f === 'yesterday') { freeRecFrom = y; freeRecTo = y; }
+  else if (f === 'week') { const d=new Date(); d.setDate(d.getDate()-6); freeRecFrom=fmtD(d); freeRecTo=t; }
+  renderFreeRecords();
+}
+
+function parseFreeRecord(r) {
+  const m = (r.msgname || '').replace(/^FREE_CID_/, '');
+  const parts = m.split('_');
+  const cid  = parts[0] || '?';
+  const rest = parts.slice(1).join(' ');
+  const wati = r._wati || '';
+  return { cid, label: rest || '—', wati };
+}
+
+function renderFreeRecords() {
+  const tbody = document.getElementById('free-rec-tbody');
+  const empty = document.getElementById('free-rec-empty');
+  if (!tbody) return;
+  const recs = (S.records||[]).filter(r =>
+    (r.msgname||'').startsWith('FREE_') &&
+    r.date >= freeRecFrom && r.date <= freeRecTo
+  ).sort((a,b) => b.date.localeCompare(a.date) || (b.time||'').localeCompare(a.time||''));
+
+  if (!recs.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML = recs.map(r => {
+    const { cid, label, wati } = parseFreeRecord(r);
+    const sent = parseInt(r.sent)||0;
+    const exp  = parseInt(r.expected)||0;
+    const diff = r.diff != null ? parseInt(r.diff) : (exp - sent);
+    return `<tr>
+      <td>${r.date}</td>
+      <td>${r.time ? fmt12(r.time) : '—'}</td>
+      <td><span class="badge badge-green" style="font-size:.78rem">${cid}</span></td>
+      <td style="font-size:.82rem">${label}</td>
+      <td style="font-size:.78rem;color:var(--muted)">${wati || '—'}</td>
+      <td>${sent.toLocaleString()}</td>
+      <td>${exp.toLocaleString()}</td>
+      <td><span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span></td>
+    </tr>`;
+  }).join('');
 }
 
 // ── Custom calendar popup ──────────────────────

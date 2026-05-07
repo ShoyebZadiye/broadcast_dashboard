@@ -2729,25 +2729,43 @@ function renderMissingAlert() {
     return;
   }
 
-  const missedCount = missing.filter(m => m.isMissed).length;
+  const missed   = missing.filter(m => m.isMissed);
+  const upcoming = missing.filter(m => !m.isMissed);
+  const dateStr  = new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+
+  const itemHtml = (m, isMissedSection) => {
+    const todBg    = m.scheduledMins < 840 ? 'rgba(99,102,241,.18)' : 'rgba(245,158,11,.18)';
+    const todColor = m.scheduledMins < 840 ? '#818cf8' : '#f59e0b';
+    const timeBg   = isMissedSection ? 'rgba(239,68,68,.12)' : 'rgba(245,158,11,.12)';
+    const timeColor= isMissedSection ? '#ef4444' : '#f59e0b';
+    const icon     = isMissedSection ? '❌' : '⏳';
+    return `<div class="missing-alert-item">
+      <span class="missing-name">${m.name}</span>
+      ${m.scheduledMins >= 0 ? `
+        <span style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:10px;background:${todBg};color:${todColor}">${m.scheduledMins<840?'🌅 Morning':'🌙 Evening'}</span>
+          <span class="missing-time" style="font-size:.8rem;font-weight:800;color:${timeColor};background:${timeBg};padding:2px 8px;border-radius:8px">${icon} ${fmt12h(m.time)}</span>
+        </span>` : ''}
+      <span class="missing-days">${m.days}/7 days</span>
+    </div>`;
+  };
+
   card.innerHTML = `
+    ${missed.length ? `
     <div class="missing-alert-header">
       <span>⚠️</span>
-      <span class="missing-alert-title">${missing.length} broadcast${missing.length>1?'s':''} not saved yet</span>
-      <span class="missing-alert-sub">${missedCount > 0 ? missedCount+' missed · ' : ''}${new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}</span>
+      <span class="missing-alert-title">${missed.length} broadcast${missed.length>1?'s':''} not saved yet</span>
+      <span class="missing-alert-sub">${dateStr}</span>
     </div>
-    <div class="missing-alert-list">
-      ${missing.map(m => `
-        <div class="missing-alert-item">
-          <span class="missing-name">${m.name}</span>
-          ${m.scheduledMins >= 0 ? `
-            <span style="display:flex;align-items:center;gap:5px">
-              <span style="font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:10px;background:${m.scheduledMins<840?'rgba(99,102,241,.18)':'rgba(245,158,11,.18)'};color:${m.scheduledMins<840?'#818cf8':'#f59e0b'}">${m.scheduledMins<840?'🌅 Morning':'🌙 Evening'}</span>
-              <span class="missing-time" style="font-size:.8rem;font-weight:800;color:${m.isMissed?'#ef4444':'#f59e0b'};background:${m.isMissed?'rgba(239,68,68,.12)':'rgba(245,158,11,.12)'};padding:2px 8px;border-radius:8px">${m.isMissed?'❌':'⏳'} ${fmt12h(m.time)}</span>
-            </span>` : ''}
-          <span class="missing-days">${m.days}/7 days</span>
-        </div>`).join('')}
-    </div>`;
+    <div class="missing-alert-list">${missed.map(m => itemHtml(m, true)).join('')}</div>` : ''}
+    ${upcoming.length ? `
+    <div class="missing-alert-header" style="margin-top:${missed.length?'10px':'0'}">
+      <span>⏰</span>
+      <span class="missing-alert-title" style="color:#f59e0b">Upcoming (${upcoming.length})</span>
+      <span class="missing-alert-sub">${dateStr}</span>
+    </div>
+    <div class="missing-alert-list">${upcoming.map(m => itemHtml(m, false)).join('')}</div>` : ''}
+    ${!missed.length && !upcoming.length ? `<div class="missing-alert-header"><span>✅</span><span class="missing-alert-title" style="color:#16a34a">All broadcasts saved today!</span></div>` : ''}`;
 }
 
 function renderDashboard() {

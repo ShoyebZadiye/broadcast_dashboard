@@ -5935,56 +5935,15 @@ Return ONLY valid JSON with no markdown:
 {"category":"Marketing or Utility","rejectionRisk":"Low or Medium or High","rejectionRiskPercent":50,"explanation":"2-3 sentences explaining the intent and why Meta would classify it this way","riskyPhrases":["exact phrase from template that is risky"],"rejectionReasons":["specific Meta policy reason 1","reason 2"]}`;
 
     let rawText = null;
-
-    // 3 keys × 3 models = 9 quota buckets → 750 req/day free
-    const API_KEYS = [
-      'AIzaSyAbNEVYq_Zwz-_OyG_NI1sSe-_WkWaPfIQ',
-      'AIzaSyBa15olh1WTeowtaWQsrEFUzXwd-wGmEUQ',
-      'AIzaSyBcCP8o_ag2EAMY0hTBvfImYO1l_Vs1HJg',
-    ];
-    const MODELS = ['gemini-2.5-flash'];
-    const reqBody = JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0, maxOutputTokens: 4096 } });
-    let data = null;
-    const DELAYS = [0, 2000, 4000, 7000, 11000, 16000];
-    const exhausted = new Set(); // "keyIndex:model" — tracks quota-exceeded combos
-    let globalAttempt = 0;
-
-    while (!data && globalAttempt < 18) {
-      // Find next non-exhausted key+model combo
-      let found = null;
-      outer: for (let mi = 0; mi < MODELS.length; mi++) {
-        const model = MODELS[(globalAttempt + mi) % MODELS.length];
-        for (let ki = 0; ki < API_KEYS.length; ki++) {
-          const keyIdx = (globalAttempt + ki) % API_KEYS.length;
-          if (!exhausted.has(keyIdx + ':' + model)) { found = { key: API_KEYS[keyIdx], keyIdx, model }; break outer; }
-        }
-      }
-      if (!found) break; // all 9 combos exhausted
-
-      const delay = DELAYS[Math.min(globalAttempt, DELAYS.length - 1)];
-      if (globalAttempt > 0) {
-        btn.textContent = '✨ Connecting to AI' + '.'.repeat((globalAttempt % 3) + 1);
-        await new Promise(function(r) { setTimeout(r, delay); });
-      }
-      globalAttempt++;
-
-      let resp;
-      try { resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + found.model + ':generateContent?key=' + found.key, { method:'POST', headers:{'Content-Type':'application/json'}, body:reqBody }); }
-      catch(fe) { continue; }
-
-      if (resp.status === 429) { exhausted.add(found.keyIdx + ':' + found.model); continue; }
-      if (resp.status === 503) { continue; }
-      if (!resp.ok) { const eb = await resp.json().catch(function(){return {};}); throw new Error('Gemini ' + resp.status + ': ' + (eb.error?.message || resp.statusText)); }
-      data = await resp.json();
-    }
-
-    if (data) {
-      const parts = data.candidates?.[0]?.content?.parts || [];
-      const textPart = parts.find(function(p) { return !p.thought && p.text; }) || parts[parts.length - 1] || {};
-      const t = (textPart.text || '').trim();
-      if (t) rawText = t;
-    }
-
+    const proxyResp = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, temperature: 0, maxOutputTokens: 4096 }),
+    });
+    if (proxyResp.status === 503) throw new Error('__BUSY__');
+    const proxyData = await proxyResp.json().catch(() => ({}));
+    if (!proxyResp.ok) throw new Error(proxyData.error || ('Gemini ' + proxyResp.status));
+    rawText = (proxyData.text || '').trim();
     if (!rawText) throw new Error('__BUSY__');
     rawText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
     const ai = JSON.parse(rawText);
@@ -6277,34 +6236,16 @@ ${baseBody}
 
 Rephrased Utility variant:`;
 
-  const API_KEYS = [
-    'AIzaSyAbNEVYq_Zwz-_OyG_NI1sSe-_WkWaPfIQ',
-    'AIzaSyBa15olh1WTeowtaWQsrEFUzXwd-wGmEUQ',
-    'AIzaSyBcCP8o_ag2EAMY0hTBvfImYO1l_Vs1HJg',
-  ];
-  const MODEL = 'gemini-2.5-flash';
-  const reqBody = JSON.stringify({
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.9, maxOutputTokens: 1024 }
-  });
-
   let rawText = null;
   try {
-    for (let i = 0; i < API_KEYS.length; i++) {
-      let resp;
-      try {
-        resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent?key=' + API_KEYS[i], {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody
-        });
-      } catch(_) { continue; }
-      if (resp.status === 429 || resp.status === 503) continue;
-      if (!resp.ok) continue;
-      const data = await resp.json();
-      const parts = data.candidates?.[0]?.content?.parts || [];
-      const textPart = parts.find(p => !p.thought && p.text) || parts[parts.length - 1] || {};
-      const t = (textPart.text || '').trim();
-      if (t) { rawText = t; break; }
-    }
+    const proxyResp = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, temperature: 0.9, maxOutputTokens: 1024 }),
+    });
+    const proxyData = await proxyResp.json().catch(() => ({}));
+    if (!proxyResp.ok) throw new Error(proxyData.error || 'AI busy — try again');
+    rawText = (proxyData.text || '').trim();
     if (!rawText) throw new Error('AI busy — try again');
 
     // Clean up: strip code fences if any

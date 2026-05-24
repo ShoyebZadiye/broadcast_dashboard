@@ -17,17 +17,28 @@ export default async function handler(req, res) {
 
   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
 
-  const keys = [
-    process.env.GEMINI_KEY_1,
-    process.env.GEMINI_KEY_2,
-    process.env.GEMINI_KEY_3,
-    process.env.first,
-    process.env.second,
-    process.env.third,
-  ].filter(Boolean);
+  // Accept any env var whose value looks like a Gemini API key (starts with "AIza").
+  // This avoids naming mismatches between code and Vercel dashboard.
+  const keys = [];
+  const matchedNames = [];
+  for (const [name, val] of Object.entries(process.env)) {
+    if (typeof val === 'string' && /^AIza[A-Za-z0-9_-]{20,}$/.test(val)) {
+      keys.push(val);
+      matchedNames.push(name);
+    }
+  }
 
   if (!keys.length) {
-    return res.status(500).json({ error: 'Server misconfigured: no Gemini API key env vars set' });
+    // Helpful debug — show env var NAMES (not values) that exist, so we can
+    // see if the user's names made it into the runtime at all.
+    const userVisible = Object.keys(process.env).filter((k) =>
+      !/^(AWS_|VERCEL|PATH|HOME|NODE|LANG|LC_|PWD|HOSTNAME|TZ|SHLVL|_|TERM)/i.test(k)
+    );
+    return res.status(500).json({
+      error: 'No Gemini API key found in env vars. Visible custom env var names: ' +
+        (userVisible.length ? userVisible.join(', ') : '(none)') +
+        '. Make sure the VALUE you saved actually starts with "AIza".'
+    });
   }
 
   const reqBody = JSON.stringify({

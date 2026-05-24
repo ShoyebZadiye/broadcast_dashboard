@@ -21,10 +21,13 @@ export default async function handler(req, res) {
     process.env.GEMINI_KEY_1,
     process.env.GEMINI_KEY_2,
     process.env.GEMINI_KEY_3,
+    process.env.first,
+    process.env.second,
+    process.env.third,
   ].filter(Boolean);
 
   if (!keys.length) {
-    return res.status(500).json({ error: 'Server misconfigured: no GEMINI_KEY_* env vars set' });
+    return res.status(500).json({ error: 'Server misconfigured: no Gemini API key env vars set' });
   }
 
   const reqBody = JSON.stringify({

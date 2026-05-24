@@ -5852,6 +5852,20 @@ async function taiAnalyze() {
   const btn = document.getElementById('tai-btn');
   if (!template) { errEl.textContent = 'Please enter a template to analyze.'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
+
+  // Cache lookup — same template input returns identical result, no AI re-roll.
+  // Bust by editing the template even by one character.
+  const cacheKey = 'tai_cache_v1::' + template;
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      _taiResult = parsed;
+      taiRender(parsed);
+      return;
+    }
+  } catch(_) {}
+
   btn.disabled = true;
   btn.textContent = '✨ AI Analyzing…';
   const overlay = document.getElementById('tai-loading-overlay');
@@ -5930,6 +5944,19 @@ ${template}
 Analyze the INTENT of the PRIMARY content. Focus on whether the template's main purpose is informational (Utility) or promotional (Marketing).
 
 Important: {{variable}} placeholders are already-replaced safe variables — never include them in riskyPhrases. Only flag actual visible words.
+
+═══ DO NOT FLAG THESE AS RISKY (never include in riskyPhrases) ═══
+- Greetings: "Hello", "Hi", "Good morning", "Thank you for joining", "Welcome"
+- Section headers / labels (even in ALL CAPS): "WEEKLY HABIT TRACKER", "ORDER DETAILS", "NEXT STEPS", "TODAY'S SESSION"
+- Instructions: "Please...", "Kindly...", "Refer to...", "Click...", "Select...", "Choose...", "Confirm..."
+- References to UI elements: "the above image", "the link below", "the button below", "the form"
+- Generic transactional phrases: "your session", "your booking", "your order", "your account", "your response"
+- Confirmation prompts: "to confirm your response", "to verify your details", "to complete your booking"
+- Polite closings: "Thank you", "Regards", "Team Habuild"
+
+Only flag phrases that are clearly PROMOTIONAL, EMOTIONAL, GAMIFIED, FOMO-driven, or push NEW behavior. When in doubt, do NOT flag — let utility-looking text stay as-is.
+
+Be MINIMAL with riskyPhrases. Quality over quantity. An empty riskyPhrases array is correct when the template is clean utility.
 
 Return ONLY valid JSON with no markdown:
 {"category":"Marketing or Utility","rejectionRisk":"Low or Medium or High","rejectionRiskPercent":50,"explanation":"2-3 sentences explaining the intent and why Meta would classify it this way","riskyPhrases":["exact phrase from template that is risky"],"rejectionReasons":["specific Meta policy reason 1","reason 2"]}`;
@@ -6040,6 +6067,7 @@ Return ONLY valid JSON with no markdown:
       merged.sampleContent = newSamples;
     }
     _taiResult = merged;
+    try { sessionStorage.setItem(cacheKey, JSON.stringify(merged)); } catch(_) {}
     taiRender(merged);
   } catch(e) {
     console.error('Gemini error:', e.message);

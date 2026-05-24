@@ -1,10 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Broadcast Tracking Dashboard</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%234f46e5'/><circle cx='16' cy='16' r='5' fill='white'/><path d='M16 4 A12 12 0 0 1 28 16' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round'/><path d='M16 4 A12 12 0 0 0 4 16' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>" type="image/svg+xml">
+<title>Broadcast Hub | HaBuild</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='white'/><polyline points='8,4 23,13 8,13' fill='none' stroke='%237c3aed' stroke-width='2.8' stroke-linejoin='round'/><line x1='8' y1='4' x2='8' y2='28' stroke='%237c3aed' stroke-width='2.8' stroke-linecap='round'/><polyline points='8,13 21,20 8,20' fill='none' stroke='%237c3aed' stroke-width='2.8' stroke-linejoin='round'/><line x1='8' y1='20' x2='8' y2='28' stroke='%237c3aed' stroke-width='2.8' stroke-linecap='round'/></svg>" type="image/svg+xml">
+<link rel="icon" href="Broadcast.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -30,78 +33,86 @@
 
   /* ── LOGIN ── */
   #login-screen {
-    min-height: 100vh; display: flex; align-items: stretch;
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+    background:
+      radial-gradient(ellipse 65% 90% at 18% 50%, #c8b3f5 0%, transparent 58%),
+      radial-gradient(ellipse 65% 90% at 82% 50%, #f5c5a0 0%, transparent 58%),
+      #e8d8f8;
   }
-  .login-left {
-    flex: 1; background: linear-gradient(145deg, #3730a3 0%, #4f46e5 45%, #7c3aed 100%);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 60px 48px; position: relative; overflow: hidden;
+  .login-card {
+    background:rgba(255,255,255,.92); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px);
+    border-radius:44px; padding:52px 40px 46px; width:100%; max-width:420px;
+    text-align:center;
+    box-shadow:0 28px 72px rgba(80,50,200,.14), 0 2px 8px rgba(0,0,0,.04),
+               inset 0 1px 0 rgba(255,255,255,.8);
   }
-  .login-left::before {
-    content: ''; position: absolute; width: 420px; height: 420px; border-radius: 50%;
-    background: rgba(255,255,255,.05); top: -80px; right: -100px;
+  .lc-logo { display:flex; align-items:center; justify-content:center; margin-bottom:28px; }
+  .lc-logo-icon {
+    width:72px; height:72px;
+    background:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%);
+    border-radius:20px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 22px rgba(124,58,237,.18), inset 0 1px 0 rgba(255,255,255,.7);
   }
-  .login-left::after {
-    content: ''; position: absolute; width: 280px; height: 280px; border-radius: 50%;
-    background: rgba(255,255,255,.06); bottom: -60px; left: -60px;
+  .lc-heading {
+    font-size:2.1rem; font-weight:900; color:#1a0f6b; line-height:1.15;
+    text-transform:uppercase; letter-spacing:.01em; margin-bottom:14px; position:relative;
   }
-  .login-left-content { position: relative; z-index: 1; text-align: center; color: #fff; max-width: 380px; }
-  .login-left-content .app-icon {
-    width: 72px; height: 72px; border-radius: 20px;
-    background: rgba(255,255,255,.15); backdrop-filter: blur(10px);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 2rem; margin: 0 auto 24px; border: 1.5px solid rgba(255,255,255,.2);
+  .lc-badge {
+    display:inline-block; background:#F5C518; color:#1a0f6b;
+    font-size:.7rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase;
+    padding:5px 13px; border-radius:7px; transform:rotate(-5deg);
+    position:relative; top:-2px; margin:0 3px;
+    box-shadow:2px 3px 10px rgba(0,0,0,.15);
   }
-  .login-left-content h1 { font-size: 2rem; font-weight: 800; margin-bottom: 12px; line-height: 1.2; }
-  .login-left-content p  { font-size: 0.95rem; opacity: .75; line-height: 1.6; margin-bottom: 36px; }
-  .login-features { display: flex; flex-direction: column; gap: 14px; text-align: left; }
-  .login-feature  { display: flex; align-items: center; gap: 12px; font-size: 0.875rem; opacity: .85; }
-  .login-feature .dot {
-    width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,.15);
-    display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;
+  .lc-sub { font-size:.86rem; color:#9d94c0; line-height:1.65; margin-bottom:28px; }
+  .btn-google {
+    width:100%; padding:15px 22px; border-radius:50px;
+    font-size:.9rem; font-weight:700; letter-spacing:.01em;
+    cursor:pointer; border:1.5px solid #e8e2ff;
+    background:#fff; color:#1a0f6b;
+    display:flex; align-items:center; justify-content:center; gap:12px;
+    box-shadow:0 4px 18px rgba(100,80,200,.1);
+    transition:transform .15s, box-shadow .2s, border-color .2s;
+    font-family:inherit; margin-bottom:12px;
   }
-
-  .login-right {
-    width: 460px; background: #fff; display: flex; align-items: center; justify-content: center;
-    padding: 48px 40px;
+  .btn-google:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(100,80,200,.2); border-color:#c4b8ff; }
+  .btn-google:active { transform:scale(.98); }
+  .btn-google:disabled { opacity:.55; cursor:not-allowed; transform:none; }
+  .lc-input-row {
+    display:flex; align-items:center; gap:12px;
+    background:#f6f3ff; border:1.5px solid #e8e2ff; border-radius:50px;
+    padding:14px 22px; margin-bottom:14px;
+    box-shadow:0 4px 18px rgba(100,80,200,.08);
+    transition:border-color .2s, box-shadow .2s;
   }
-  .login-form-wrap { width: 100%; max-width: 360px; }
-  .login-form-wrap .welcome { margin-bottom: 36px; }
-  .login-form-wrap .welcome h2 { font-size: 1.6rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
-  .login-form-wrap .welcome p  { color: var(--muted); font-size: 0.875rem; }
-
-  .login-group { margin-bottom: 18px; }
-  .login-group label {
-    display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted);
-    margin-bottom: 7px; text-transform: uppercase; letter-spacing: .05em;
+  .lc-input-row:focus-within { border-color:#6b4ae0; box-shadow:0 4px 22px rgba(107,74,224,.2); }
+  .lc-input-row input {
+    flex:1; border:none; background:transparent; font-size:.9rem;
+    color:#1a0f6b; outline:none; font-family:inherit;
   }
-  .login-input-wrap { position: relative; }
-  .login-input-wrap .input-icon {
-    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-    font-size: 1rem; pointer-events: none;
-  }
-  .login-group input {
-    width: 100%; padding: 12px 14px 12px 40px; border: 1.5px solid var(--border); border-radius: 10px;
-    font-size: 0.9rem; outline: none; transition: all .2s; color: var(--text); background: var(--light);
-  }
-  .login-group input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+  .lc-input-row input::placeholder { color:#c5bde8; }
   .login-err {
-    display: none; background: #fee2e2; color: var(--danger); font-size: 0.8rem;
-    font-weight: 600; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px;
+    display:none; color:#ef4444; font-size:.78rem; font-weight:600;
+    padding:8px 16px; margin-bottom:12px; border-radius:25px;
+    background:rgba(239,68,68,.07); border:1px solid rgba(239,68,68,.18);
   }
   .btn-login {
-    width: 100%; padding: 13px; border-radius: 10px; font-size: 0.95rem; font-weight: 700;
-    cursor: pointer; border: none; margin-top: 4px;
-    background: linear-gradient(135deg, #4f46e5, #7c3aed);
-    color: #fff; transition: opacity .2s, transform .1s;
-    box-shadow: 0 4px 14px rgba(79,70,229,.35);
+    width:100%; padding:17px; border-radius:50px; font-size:.82rem; font-weight:900;
+    letter-spacing:.12em; text-transform:uppercase; cursor:pointer; border:none;
+    background:linear-gradient(135deg,#4a2dbe 0%,#6b4ae0 100%); color:#fff; margin-top:4px;
+    box-shadow:0 10px 30px rgba(74,45,190,.44); transition:transform .15s, box-shadow .2s;
+    font-family:inherit;
   }
-  .btn-login:hover { opacity: .92; }
-  .btn-login:active { transform: scale(.98); }
+  .btn-login:hover { transform:translateY(-2px); box-shadow:0 14px 38px rgba(74,45,190,.54); }
+  .btn-login:active { transform:scale(.98); }
+  .lc-footer { margin-top:24px; font-size:.74rem; color:#c5bde8; line-height:1.6; }
+  .lc-footer a { color:#4a2dbe; text-decoration:none; font-weight:700; }
+  .lc-footer a:hover { text-decoration:underline; }
 
-  @media(max-width: 768px) {
-    .login-left { display: none; }
-    .login-right { width: 100%; }
+  @media(max-width:480px) {
+    .login-card { border-radius:36px; padding:44px 28px 40px; }
+    .lc-heading { font-size:1.75rem; }
   }
 
   /* ── APP ── */
@@ -114,15 +125,19 @@
     display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50;
   }
   .sidebar-brand {
-    padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 10px;
+    padding: 18px 16px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
   }
   .sidebar-brand .logo {
-    width: 34px; height: 34px; border-radius: 9px;
-    background: linear-gradient(135deg, var(--accent), #7c3aed);
-    display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+    width: 60px; height: 60px; border-radius: 17px;
+    background: linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%) !important;
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 5px 18px rgba(124,58,237,.18), inset 0 1px 0 rgba(255,255,255,.7);
   }
-  .sidebar-brand span { font-weight: 800; font-size: 0.95rem; color: var(--text); }
+  .sidebar-brand .brand-text { display:flex; flex-direction:column; gap:1px; }
+  .sidebar-brand .brand-name { font-weight: 800; font-size: 1rem; color: var(--text); letter-spacing:-.01em; }
+  .sidebar-brand .brand-sub { font-size: .62rem; font-weight: 600; color: var(--accent); text-transform:uppercase; letter-spacing:.08em; opacity:.8; }
   .sidebar-nav { padding: 12px 10px; flex: 1; overflow-y: auto; }
   .nav-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); padding: 10px 12px 5px; }
   .nav-item {
@@ -182,6 +197,54 @@
   /* ── PANELS ── */
   .panel { display: none; }
   .panel.active { display: block; }
+
+  /* ── TEMPLATE AI ── */
+  #tai-input{width:100%;background:#1e2533;border:1.5px solid #2d3748;border-radius:12px;padding:12px 14px;font-size:.85rem;color:#e2e8f0;resize:none;overflow:hidden;outline:none;font-family:inherit;transition:border-color .2s;min-height:100px}
+  #tai-input:focus{border-color:var(--accent)}
+  .tai-status{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 14px;background:#1a2035;border-radius:12px;border:1px solid #2d3748}
+  .tai-badge{padding:3px 10px;border-radius:999px;font-size:.72rem;font-weight:700;border:1.5px solid}
+  .tai-badge-utility{color:#60a5fa;background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.3)}
+  .tai-badge-marketing{color:#c084fc;background:rgba(192,132,252,.1);border-color:rgba(192,132,252,.3)}
+  .tai-badge-low{color:#34d399;background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3)}
+  .tai-badge-medium{color:#fbbf24;background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3)}
+  .tai-badge-high{color:#f87171;background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3)}
+  .tai-risk-bar-wrap{flex:1;min-width:120px;display:flex;align-items:center;gap:8px}
+  .tai-risk-bar-bg{flex:1;height:6px;background:#2d3748;border-radius:99px;overflow:hidden}
+  .tai-risk-bar-fill{height:100%;border-radius:99px;transition:width .4s}
+  .tai-tabs{display:flex;gap:4px;background:#1a2035;border:1px solid #2d3748;border-radius:12px;padding:4px}
+  .tai-tab{flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:#64748b;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s}
+  .tai-tab.active{background:#2d3748;color:#e2e8f0}
+  .tai-pane{display:none;flex-direction:column;gap:10px}
+  .tai-pane.active{display:flex}
+  .tai-card{background:#1a2035;border:1px solid #2d3748;border-radius:12px;padding:14px 16px}
+  .tai-card-green{border-color:rgba(52,211,153,.35)}
+  .tai-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:10px}
+  .tai-label-red{color:#f87171}
+  .tai-label-green{color:#34d399}
+  .tai-risk-item{display:flex;gap:8px;font-size:.82rem;color:#94a3b8;line-height:1.4}
+  .tai-risky-tag{display:inline-block;padding:2px 8px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);border-radius:6px;font-size:.75rem;font-family:monospace;color:#f87171;margin:2px}
+  .tai-step{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .tai-step-num{width:22px;height:22px;border-radius:50%;background:#2d3748;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:#94a3b8;flex-shrink:0}
+  .tai-step-num-green{background:rgba(52,211,153,.2);color:#34d399}
+  .tai-step-title{font-size:.85rem;font-weight:600;color:#e2e8f0}
+  .tai-copy-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#131a2e;border:1px solid #2d3748;border-radius:10px}
+  .tai-copy-row-label{font-size:.78rem;font-family:monospace;color:#94a3b8}
+  .tai-copy-btn{padding:4px 12px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:8px;color:#34d399;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+  .tai-copy-btn:hover{background:rgba(52,211,153,.2)}
+  .tai-body-pre{background:#131a2e;border-radius:10px;padding:12px 14px;font-size:.82rem;color:#e2e8f0;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+  .tai-risky-hi{background:rgba(251,146,60,.18);color:#fb923c;border-radius:3px;padding:0 2px;font-weight:600}
+  .tai-sv-var{color:#34d399;font-family:monospace}
+  .tai-sample-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#131a2e;border:1px solid #2d3748;border-radius:10px;cursor:pointer;transition:background .15s}
+  .tai-sample-row:hover{background:#1e2a42}
+  .tai-var-name{font-size:.75rem;font-family:monospace;color:#34d399;flex-shrink:0;width:90px;overflow:hidden;text-overflow:ellipsis}
+  .tai-sample-text{flex:1;font-size:.78rem;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tai-copy-hint{font-size:.7rem;color:#475569;flex-shrink:0}
+  .tai-analyze-btn{padding:8px 20px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;transition:opacity .2s}
+  .tai-analyze-btn:disabled{opacity:.4;cursor:not-allowed}
+  .tai-header-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}
+  .tai-detected-cta{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;border:1px solid;font-size:.78rem}
+  .tai-detected-utility{background:rgba(96,165,250,.05);border-color:rgba(96,165,250,.2)}
+  .tai-detected-marketing{background:rgba(192,132,252,.05);border-color:rgba(192,132,252,.2)}
 
   /* ── CARDS ── */
   .card {
@@ -788,6 +851,46 @@
     background: var(--accent); border-radius: 0 0 4px 4px;
   }
 
+  /* ── AI LOADING OVERLAY ── */
+  #tai-loading-overlay {
+    display:none; position:fixed; inset:0; z-index:9999;
+    background:linear-gradient(160deg,#0d0824 0%,#140d35 45%,#0a1628 100%);
+    flex-direction:column; align-items:center; justify-content:center; gap:36px;
+  }
+  #tai-loading-overlay.active { display:flex; }
+  .tai-breath-wrap { position:relative; width:200px; height:200px; display:flex; align-items:center; justify-content:center; }
+  .tai-breath-ring { position:absolute; border-radius:50%; }
+  .tai-br1 { width:200px;height:200px; background:radial-gradient(circle,rgba(99,102,241,.08) 0%,transparent 70%); animation:tai-breathe 4s ease-in-out infinite; }
+  .tai-br2 { width:150px;height:150px; background:radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 70%); animation:tai-breathe 4s ease-in-out infinite .3s; }
+  .tai-br3 { width:100px;height:100px; background:radial-gradient(circle,rgba(192,132,252,.22) 0%,transparent 70%); animation:tai-breathe 4s ease-in-out infinite .6s; }
+  .tai-breath-core { width:64px;height:64px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#a78bfa); box-shadow:0 0 30px rgba(99,102,241,.7),0 0 60px rgba(139,92,246,.3); animation:tai-breathe 4s ease-in-out infinite; display:flex; align-items:center; justify-content:center; font-size:1.6rem; z-index:1; }
+  .tai-breath-label { position:absolute; bottom:-32px; font-size:.7rem; font-weight:600; color:#818cf8; letter-spacing:.12em; text-transform:uppercase; animation:tai-breath-text 4s ease-in-out infinite; }
+  @keyframes tai-breathe    { 0%,100%{transform:scale(1);opacity:.7} 50%{transform:scale(1.18);opacity:1} }
+  @keyframes tai-breath-text{ 0%,100%{content:'BREATHE IN';opacity:.5} 50%{opacity:1} }
+  .tai-load-info { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .tai-load-text { color:#e2e8f0; font-size:1rem; font-weight:700; letter-spacing:.02em; text-align:center; }
+  .tai-load-sub { color:#818cf8; font-size:.75rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+  .tai-load-bar { width:170px; height:3px; background:rgba(99,102,241,.15); border-radius:999px; overflow:hidden; }
+  .tai-load-bar-fill { height:100%; width:45%; background:linear-gradient(90deg,#6366f1,#c084fc); border-radius:999px; animation:tai-shimmer 1.6s ease-in-out infinite; }
+  @keyframes tai-shimmer { 0%{transform:translateX(-150%)} 100%{transform:translateX(400%)} }
+  @keyframes tai-twinkle { 0%,100%{opacity:.15} 50%{opacity:1} }
+  @keyframes tai-dots { 0%,100%{opacity:.3} 50%{opacity:1} }
+  .tai-dot1{animation:tai-dots 1.2s .0s infinite} .tai-dot2{animation:tai-dots 1.2s .4s infinite} .tai-dot3{animation:tai-dots 1.2s .8s infinite}
+
+  /* ── EXTENSION VERSION BADGE ── */
+  .ext-ver-ok { display:flex; align-items:center; gap:6px; padding:7px 10px; border-radius:8px; background:rgba(34,197,94,.08); border:1px solid rgba(34,197,94,.2); font-size:.75rem; color:#16a34a; font-weight:600; }
+  .ext-ver-ok .ver-dot { width:7px; height:7px; border-radius:50%; background:#22c55e; flex-shrink:0; }
+  .ext-dl-bar { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(99,102,241,.08); border:1px solid rgba(99,102,241,.2); }
+  .ext-dl-bar .ext-dl-label { font-size:.7rem; color:var(--muted); font-weight:500; }
+  .ext-dl-bar .ext-dl-btn { display:flex; align-items:center; gap:4px; padding:3px 9px; border-radius:6px; background:var(--accent); color:#fff; font-size:.68rem; font-weight:700; text-decoration:none; transition:opacity .15s; }
+  .ext-dl-bar .ext-dl-btn:hover { opacity:.85; }
+  @keyframes pulse-badge { 0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.4)} 50%{box-shadow:0 0 0 6px rgba(249,115,22,0)} }
+  .ext-ver-update { display:flex; flex-direction:column; gap:5px; padding:9px 10px; border-radius:10px; background:linear-gradient(135deg,rgba(249,115,22,.12),rgba(239,68,68,.08)); border:1.5px solid rgba(249,115,22,.35); animation:pulse-badge 2s infinite; }
+  .ext-ver-update .ver-top { display:flex; align-items:center; gap:6px; font-size:.72rem; font-weight:700; color:#ea580c; }
+  .ext-ver-update .ver-top .ver-icon { font-size:.9rem; }
+  .ext-ver-update .ver-dl { display:block; text-align:center; padding:4px 0; border-radius:6px; background:linear-gradient(135deg,#f97316,#ef4444); color:#fff; font-size:.72rem; font-weight:700; text-decoration:none; cursor:pointer; transition:opacity .2s; }
+  .ext-ver-update .ver-dl:hover { opacity:.85; }
+
   /* ── MOBILE ── */
   @media(max-width:768px) {
     .sidebar { display: none !important; }
@@ -836,52 +939,50 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
 <!-- ════════ LOGIN ════════ -->
-<div id="login-screen">
+<div id="login-screen" style="display:none">
+  <div class="login-card">
 
-  <!-- Left panel -->
-  <div class="login-left">
-    <div class="login-left-content">
-      <img src="data:image/webp;base64,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" alt="Habuild" style="height:36px;margin:0 auto 20px;display:block;filter:brightness(0) invert(1);opacity:.9" />
-      <h1>Broadcast Tracking Dashboard</h1>
-      <p>Manage daily broadcast counts, track delivery rates, and generate update messages — all in one place.</p>
-      <div class="login-features">
-        <div class="login-feature"><div class="dot">📊</div><span>Track Sent &amp; Expected counts daily</span></div>
-        <div class="login-feature"><div class="dot">✅</div><span>Auto-generate WhatsApp update messages</span></div>
-        <div class="login-feature"><div class="dot">🗂</div><span>Manage PAID, FREE &amp; Other broadcasts</span></div>
-        <div class="login-feature"><div class="dot">🛡</div><span>Admin-controlled access management</span></div>
+    <!-- Logo -->
+    <!-- Logo -->
+    <div class="lc-logo">
+      <div class="lc-logo-icon">
+        <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+          <polyline points="7,4 22,13 7,13" fill="none" stroke="#7c3aed" stroke-width="3" stroke-linejoin="round"/>
+          <line x1="7" y1="4" x2="7" y2="28" stroke="#7c3aed" stroke-width="3" stroke-linecap="round"/>
+          <polyline points="7,13 20,20 7,20" fill="none" stroke="#7c3aed" stroke-width="3" stroke-linejoin="round"/>
+          <line x1="7" y1="20" x2="7" y2="28" stroke="#7c3aed" stroke-width="3" stroke-linecap="round"/>
+        </svg>
       </div>
     </div>
-  </div>
 
-  <!-- Right panel -->
-  <div class="login-right">
-    <div class="login-form-wrap">
-      <div style="margin-bottom:28px"><img src="data:image/webp;base64,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" alt="Habuild" style="height:30px" /></div><div class="welcome">
-        <h2>Welcome back 👋</h2>
-        <p>Sign in with your registered email to continue.</p>
-      </div>
-      <div class="login-group">
-        <label>Email Address</label>
-        <div class="login-input-wrap">
-          <span class="input-icon">✉️</span>
-          <input type="email" id="login-email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()" />
-        </div>
-      </div>
-      <div class="login-err" id="login-err">Email not recognised. Please request access.</div>
-      <button class="btn-login" onclick="doLogin()">Sign In →</button>
-      <p style="text-align:center;margin-top:20px;font-size:0.78rem;color:var(--muted)">
-        Don't have access? Sign in with your email to request it.
-      </p>
+    <!-- Heading -->
+    <div class="lc-heading">
+      BROADCAST<br><span class="lc-badge">HUB</span> HABUILD
     </div>
-  </div>
+    <p class="lc-sub">Track sent counts, monitor delivery and generate WhatsApp update messages — all in one place.</p>
 
+    <button class="btn-google" onclick="doGoogleLogin()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Sign in with Google
+    </button>
+
+    <div class="login-err" id="login-err">Sign-in failed. Please try again.</div>
+
+    <p class="lc-footer">By signing in you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a></p>
+
+  </div>
 </div>
-
 <!-- ════════ REQUEST ACCESS ════════ -->
 <div id="request-screen">
   <div class="req-card">
@@ -904,15 +1005,26 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <div class="logo">📡</div>
-        <span>Broadcast</span>
+        <div class="logo">
+          <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
+            <polyline points="7,4 22,13 7,13" fill="none" stroke="#7c3aed" stroke-width="2.6" stroke-linejoin="round"/>
+            <line x1="7" y1="4" x2="7" y2="28" stroke="#7c3aed" stroke-width="2.6" stroke-linecap="round"/>
+            <polyline points="7,13 20,20 7,20" fill="none" stroke="#7c3aed" stroke-width="2.6" stroke-linejoin="round"/>
+            <line x1="7" y1="20" x2="7" y2="28" stroke="#7c3aed" stroke-width="2.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-name">HaBuild</div>
+          <div class="brand-sub">Broadcast Hub</div>
+        </div>
       </div>
       <nav class="sidebar-nav">
         <div class="nav-label">Main</div>
-        <button class="nav-item active" onclick="goTo('countsheet',this)"><span class="icon">🏠</span> Dashboard</button>
+        <button class="nav-item active" onclick="goTo('countsheet',this)"><span class="icon">🏠</span> Paid Dashboard</button>
+        <button class="nav-item" id="nav-free" onclick="goToFreeRecords(this)"><span class="icon">🆓</span> FREE Dashboard</button>
         <button class="nav-item" onclick="goTo('insights',this)"><span class="icon">📈</span> Insights</button>
         <button class="nav-item" onclick="goTo('records',this)"><span class="icon">🗂</span> Logs</button>
-        <button class="nav-item" onclick="goTo('calendar',this)"><span class="icon">📅</span> Calendar</button>
+        <button class="nav-item" onclick="goTo('templateai',this)"><span class="icon">📝</span> TemplateAI</button>
         <div id="admin-nav-section" style="display:none">
           <div class="nav-label" style="margin-top:8px">Admin</div>
           <button class="nav-item" onclick="goTo('admin',this)" id="admin-nav-btn">
@@ -922,6 +1034,7 @@
         </div>
       </nav>
       <div class="sidebar-footer">
+        <div id="ext-version-bar" style="margin-bottom:8px"></div>
         <div class="user-info">
           <div class="user-avatar" id="user-avatar">U</div>
           <div class="user-email" id="user-email-display">user@example.com</div>
@@ -1160,7 +1273,8 @@
         <!-- ── RECORDS / LOGS ── -->
         <div class="panel active" id="panel-records">
           <div class="log-tabs">
-            <button class="log-tab active" id="lt-broadcast" onclick="switchLogTab('broadcast',this)">📤 Broadcast</button>
+            <button class="log-tab active" id="lt-broadcast" onclick="switchLogTab('broadcast',this)">📤 Paid Records</button>
+            <button class="log-tab"        id="lt-free"      onclick="switchLogTab('free',this)">🆓 Free Records</button>
             <button class="log-tab"        id="lt-activity"  onclick="switchLogTab('activity',this)">🕐 Activity</button>
           </div>
 
@@ -1194,7 +1308,7 @@
           <div id="log-free-section">
             <div class="card" style="margin-top:16px">
               <div class="card-header">
-                <h3>🟢 Free Broadcast Logs</h3>
+                <h3>🆓 Free Broadcast Logs</h3>
                 <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
                   <button class="dash-filter-btn active" id="rfb-today"     onclick="setFreeRecFilter('today',this)">Today</button>
                   <button class="dash-filter-btn"        id="rfb-yesterday" onclick="setFreeRecFilter('yesterday',this)">Yesterday</button>
@@ -1203,7 +1317,7 @@
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th>Date</th><th>Time</th><th>CID</th><th>Type</th><th>WATI</th><th>Sent</th><th>Expected</th><th>Diff</th></tr></thead>
+                  <thead><tr><th>Date</th><th>Time</th><th>CID</th><th>Type</th><th>WATI</th><th>Saved By</th><th>Sent</th><th>Expected</th><th>Diff</th></tr></thead>
                   <tbody id="free-rec-tbody"></tbody>
                 </table>
               </div>
@@ -1220,6 +1334,10 @@
                   <button class="dash-filter-btn active" id="ab-today"     onclick="setActFilter('today',this)">Today</button>
                   <button class="dash-filter-btn"        id="ab-yesterday" onclick="setActFilter('yesterday',this)">Yesterday</button>
                   <button class="dash-filter-btn"        id="ab-all"       onclick="setActFilter('all',this)">All</button>
+                  <span style="color:var(--border);font-size:1.1rem;margin:0 2px">|</span>
+                  <button class="dash-filter-btn active" id="ac-all"  onclick="setActCat('all',this)">All Types</button>
+                  <button class="dash-filter-btn"        id="ac-paid" onclick="setActCat('paid',this)" style="color:#7c3aed">PAID</button>
+                  <button class="dash-filter-btn"        id="ac-free" onclick="setActCat('free',this)" style="color:#059669">FREE</button>
                   <input type="hidden" id="act-filter-date">
                   <input type="text" id="act-search" placeholder="🔍 Search..." oninput="renderActivityLog()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:160px;color:var(--text);background:var(--surface)" />
                 </div>
@@ -1235,36 +1353,168 @@
           </div>
         </div>
 
-        <!-- ── CALENDAR ── -->
-        <div class="panel" id="panel-calendar">
-          <div class="card">
-            <div class="card-body">
-              <div class="cal-header">
-                <button class="cal-nav-btn" onclick="calPrev()">‹</button>
-                <h3 id="cal-title">—</h3>
-                <button class="cal-nav-btn" onclick="calNext()">›</button>
-              </div>
-              <div class="cal-legend">
-                <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#d1fae5;border:1.5px solid #6ee7b7"></div>All done</div>
-                <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#fef3c7;border:1.5px solid #fcd34d"></div>Partial</div>
-                <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--surface);border:1.5px solid var(--border)"></div>Scheduled / No records</div>
-                <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--accent);border-radius:50%"></div>Today</div>
-              </div>
-              <div class="cal-range-hint" id="cal-range-hint">1st date click karo phir 2nd date → range select hogi</div>
-              <div class="cal-dow-row">
-                <div class="cal-dow-cell">Sun</div><div class="cal-dow-cell">Mon</div><div class="cal-dow-cell">Tue</div>
-                <div class="cal-dow-cell">Wed</div><div class="cal-dow-cell">Thu</div><div class="cal-dow-cell">Fri</div>
-                <div class="cal-dow-cell">Sat</div>
-              </div>
-              <div class="cal-grid" id="cal-grid"></div>
+        <!-- ── FREE DASHBOARD ── -->
+        <div class="panel" id="panel-free">
+          <div class="dash-filter-bar">
+            <button class="dash-filter-btn active" id="fd-today"     onclick="setFreeDashFilter('today',this)">Today</button>
+            <button class="dash-filter-btn"        id="fd-yesterday" onclick="setFreeDashFilter('yesterday',this)">Yesterday</button>
+            <button class="dash-filter-btn"        id="fd-week"      onclick="setFreeDashFilter('week',this)">7 Days</button>
+            <button class="dash-filter-btn"        id="fd-month"     onclick="setFreeDashFilter('month',this)">30 Days</button>
+            <button class="dash-filter-btn"        id="fd-cal-btn"   onclick="toggleFdCal(event)">📅</button>
+            <input type="hidden" id="fd-date-from">
+            <input type="hidden" id="fd-date-to">
+            <div id="fd-popup" style="display:none;position:fixed;z-index:9999;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:16px 14px 12px;width:266px;user-select:none"></div>
+            <div style="width:1px;height:20px;background:var(--border);margin:0 2px"></div>
+            <button class="cs-type-btn" id="fd-tod-morning" onclick="setFreeDashTod('morning',this)">🌅 Morning</button>
+            <button class="cs-type-btn" id="fd-tod-evening" onclick="setFreeDashTod('evening',this)">🌙 Evening</button>
+            <span class="dash-period-lbl" id="fd-period-lbl"></span>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi blue">
+              <div class="label">📤 Total Sent</div>
+              <div class="val" id="fd-kpi-sent">0</div>
+              <div class="kpi-sub" id="fd-kpi-sub">—</div>
+            </div>
+            <div class="kpi green">
+              <div class="label">📋 FREE Broadcasts</div>
+              <div class="val" id="fd-kpi-count">0</div>
+              <div class="kpi-sub">in this period</div>
+            </div>
+            <div class="kpi yellow">
+              <div class="label">📈 Avg Delivery</div>
+              <div class="val" id="fd-kpi-rate">—</div>
+              <div class="kpi-sub">sent / expected</div>
             </div>
           </div>
-          <div class="card cal-detail" id="cal-detail" style="display:none">
+          <div class="card" style="margin-bottom:18px">
             <div class="card-header">
-              <h3 id="cal-detail-title">—</h3>
-              <div id="cal-detail-badges" style="display:flex;gap:6px"></div>
+              <h3>📊 Performance by CID</h3>
+              <span style="font-size:.72rem;color:var(--muted)" id="fd-period-h"></span>
             </div>
-            <div id="cal-detail-body"></div>
+            <div class="card-body" style="padding-top:8px">
+              <div class="perf-cat-list" id="fd-perf-list">
+                <div style="color:var(--muted);text-align:center;padding:24px">No data yet.</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>📋 FREE Broadcast Records</h3>
+            </div>
+            <div class="cs-search-bar">
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="cs-type-btn active" id="fd-type-all"     onclick="setFreeDashType('all',this)">All</button>
+                <button class="cs-type-btn"        id="fd-type-yoga"    onclick="setFreeDashType('Yoga',this)">Yoga Reminder</button>
+                <button class="cs-type-btn"        id="fd-type-att"     onclick="setFreeDashType('Attendance',this)">Attendance</button>
+                <button class="cs-type-btn"        id="fd-type-night"   onclick="setFreeDashType('Night',this)">Night</button>
+                <button class="cs-type-btn"        id="fd-type-quiz"    onclick="setFreeDashType('Quiz',this)">Quiz</button>
+                <button class="cs-type-btn"        id="fd-type-bonus"   onclick="setFreeDashType('Bonus',this)">Bonus</button>
+                <button class="cs-type-btn"        id="fd-type-ori"     onclick="setFreeDashType('Orientation',this)">Orientation</button>
+                <button class="cs-type-btn"        id="fd-type-payment" onclick="setFreeDashType('Payment',this)">Payment</button>
+                <input type="text" id="fd-search" placeholder="🔍 Search..." oninput="renderFreeDashboard()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:140px;color:var(--text);background:var(--surface)">
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Date</th><th>Time</th><th>CID</th><th>Type</th><th>WATI</th><th>Sent</th><th>Expected</th><th>Diff</th></tr></thead>
+                <tbody id="fd-tbody"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="fd-empty" style="display:none">📭 No FREE records for this period.</div>
+          </div>
+        </div>
+
+        <!-- ── TEMPLATE AI ── -->
+        <div class="panel" id="panel-templateai">
+
+          <!-- Input -->
+          <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div class="tai-label" style="margin-bottom:0">WhatsApp Template</div>
+            <textarea id="tai-input" rows="5" placeholder="Paste your WhatsApp template message here..."></textarea>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span id="tai-chars" style="font-size:.75rem;color:#475569">0 characters</span>
+              <button class="tai-analyze-btn" id="tai-btn" onclick="taiAnalyze()">Analyze Template</button>
+            </div>
+          </div>
+
+          <!-- Error -->
+          <div id="tai-error" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:10px 14px;font-size:.82rem;color:#f87171"></div>
+
+          <!-- Results (hidden until analyzed) -->
+          <div id="tai-results" style="display:none;flex-direction:column;gap:10px">
+
+            <!-- Status strip -->
+            <div class="tai-status">
+              <span id="tai-cat-badge" class="tai-badge"></span>
+              <span id="tai-risk-badge" class="tai-badge"></span>
+              <span id="tai-ai-badge" style="display:none;font-size:.7rem;padding:2px 8px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-weight:600;letter-spacing:.3px">✨ AI</span>
+              <span id="tai-rule-badge" style="display:none;font-size:.7rem;padding:2px 8px;border-radius:10px;background:#334155;color:#94a3b8;font-weight:600;letter-spacing:.3px;cursor:pointer" onclick="taiAnalyze()" title="AI busy — click to retry">⟳ Retry AI</span>
+              <div class="tai-risk-bar-wrap">
+                <div class="tai-risk-bar-bg"><div id="tai-risk-fill" class="tai-risk-bar-fill"></div></div>
+                <span id="tai-risk-pct" style="font-size:.8rem;font-weight:700;min-width:32px;text-align:right"></span>
+              </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tai-tabs">
+              <button class="tai-tab active" onclick="taiTab('analysis',this)">🔍 Analysis</button>
+              <button class="tai-tab" onclick="taiTab('submit',this)">📋 Submit to WATI</button>
+            </div>
+
+            <!-- Analysis pane -->
+            <div class="tai-pane active" id="tai-pane-analysis">
+              <div class="tai-card" id="tai-explanation-card"></div>
+              <div class="tai-card" id="tai-risks-card" style="display:none;border-color:rgba(248,113,113,.25)"></div>
+              <div class="tai-card" id="tai-words-card" style="display:none"></div>
+              <div class="tai-card" id="tai-ctas-card" style="display:none"></div>
+            </div>
+
+            <!-- Submit pane -->
+            <div class="tai-pane" id="tai-pane-submit">
+              <!-- Step 1: Name -->
+              <div class="tai-card">
+                <div class="tai-step"><div class="tai-step-num">1</div><div class="tai-step-title">Template Name</div></div>
+                <div id="tai-names" style="display:flex;flex-direction:column;gap:6px"></div>
+              </div>
+              <!-- Step 2: Header -->
+              <div class="tai-card">
+                <div class="tai-step"><div class="tai-step-num">2</div><div class="tai-step-title">Header Image</div></div>
+                <div class="tai-copy-row">
+                  <span class="tai-copy-row-label" style="font-size:.7rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">habuildassets.s3…Utility_image.jpeg</span>
+                  <button class="tai-copy-btn" onclick="taiCopy('https://habuildassets.s3.ap-south-1.amazonaws.com/Utility_image.jpeg',this)">Copy Link</button>
+                </div>
+              </div>
+              <!-- Step 3: Body -->
+              <div class="tai-card tai-card-green" style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div class="tai-step" style="margin-bottom:0"><div class="tai-step-num tai-step-num-green">3</div><div class="tai-step-title">Message Body <span style="font-size:.75rem;font-weight:400;color:#34d399">(Safe)</span></div></div>
+                  <button class="tai-copy-btn" id="tai-copy-body-btn" onclick="taiCopyBody()">Copy</button>
+                </div>
+                <div class="tai-body-pre" id="tai-body-pre"></div>
+              </div>
+              <!-- Step 4: Sample -->
+              <div class="tai-card" id="tai-sample-card" style="display:none">
+                <div class="tai-step"><div class="tai-step-num">4</div><div class="tai-step-title">Sample Content</div></div>
+                <p style="font-size:.72rem;color:#475569;margin:0 0 8px 30px">Paste into WATI's Sample Content fields when submitting</p>
+                <div id="tai-samples" style="display:flex;flex-direction:column;gap:6px"></div>
+              </div>
+              <!-- Step 5: Similar Variant -->
+              <div class="tai-card" id="tai-variant-card" style="display:none">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <div class="tai-step" style="margin-bottom:0"><div class="tai-step-num">5</div><div class="tai-step-title">Similar Variant <span style="font-size:.72rem;font-weight:400;color:#94a3b8">(same variables, rephrased)</span></div></div>
+                  <button class="tai-copy-btn" id="tai-variant-btn" onclick="taiGenerateSimilar()">✨ Generate</button>
+                </div>
+                <div id="tai-variant-empty" style="font-size:.78rem;color:#64748b;margin-left:30px">Click Generate to get an alternative phrasing with the same variables.</div>
+                <div id="tai-variant-result" style="display:none;margin-top:6px">
+                  <div class="tai-body-pre" id="tai-variant-pre" style="margin-bottom:8px"></div>
+                  <div style="display:flex;gap:8px;justify-content:flex-end">
+                    <button class="tai-copy-btn" onclick="taiGenerateSimilar()">🔄 Regenerate</button>
+                    <button class="tai-copy-btn" onclick="taiCopyVariant()">Copy</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -1422,6 +1672,19 @@
               <button class="btn btn-primary" onclick="adminAddUser()">Add & Approve</button>
             </div>
           </div>
+          <div class="card" style="margin-top:20px">
+            <div class="card-header"><h3>📦 Extension Release</h3></div>
+            <div class="card-body">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+                <div>
+                  <div style="font-size:.78rem;color:var(--muted);margin-bottom:4px">Current Latest Version</div>
+                  <div style="font-size:1.2rem;font-weight:800;color:var(--accent)" id="admin-ext-ver-display">v1.2.0</div>
+                  <div style="font-size:.72rem;color:var(--muted);margin-top:3px">Users with older version will see update banner</div>
+                </div>
+                <button class="btn btn-primary" onclick="openReleaseModal()">🚀 Release New Version</button>
+              </div>
+            </div>
+          </div>
         </div>
 
       </div><!-- /content -->
@@ -1439,13 +1702,34 @@
       <button class="bn-item" id="bn-records" onclick="goToMobile('records')">
         <span class="bn-icon">🗂</span><span>Logs</span>
       </button>
-      <button class="bn-item" id="bn-calendar" onclick="goToMobile('calendar')">
-        <span class="bn-icon">📅</span><span>Calendar</span>
+      <button class="bn-item" id="bn-templateai" onclick="goToMobile('templateai')">
+        <span class="bn-icon">📝</span><span>TemplateAI</span>
       </button>
     </div>
   </nav>
 
 </div><!-- /app -->
+
+<!-- Release Modal -->
+<div class="modal-overlay" id="release-modal" style="display:none" onclick="if(event.target===this)closeReleaseModal()">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3>🚀 Release New Extension Version</h3>
+      <button class="modal-close" onclick="closeReleaseModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:24px">
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:20px">Enter the new version number. All users will immediately see the update banner with a download link.</p>
+      <div class="fg">
+        <label>New Version</label>
+        <input type="text" id="release-ver-input" placeholder="e.g. 1.3.0" style="font-size:1.1rem;font-weight:700;letter-spacing:.05em" onkeydown="if(event.key==='Enter')confirmRelease()" />
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-primary" style="flex:1" onclick="confirmRelease()">Confirm Release</button>
+        <button class="btn" style="flex:1;background:var(--light);color:var(--muted)" onclick="closeReleaseModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Edit Modal -->
 <div class="modal-overlay" id="edit-modal" style="display:none" onclick="if(event.target===this)closeEditModal()">
@@ -1571,6 +1855,18 @@ async function loadS() {
   }
 }
 
+async function loadConfig() {
+  try {
+    const doc = await db.collection('appData').doc('config').get();
+    if (doc.exists && doc.data().latestExtVersion) {
+      LATEST_VERSION = doc.data().latestExtVersion;
+      const el = document.getElementById('admin-ext-ver-display');
+      if (el) el.textContent = 'v' + LATEST_VERSION;
+      showExtDownloadBar();
+    }
+  } catch(e) { console.warn('Config load failed', e); }
+}
+
 function toggleStatus(category, msgname, bcTime) {
   const selDate = document.getElementById('dash-date')?.value || today();
   const toMins  = t => { if (!t) return -1; const [h,m] = t.split(':').map(Number); return h*60+(m||0); };
@@ -1599,6 +1895,7 @@ let _rtLastFire = 0;
 function _applyUpdate(data) {
   const oldIds = new Set((S.records||[]).map(r=>r.id));
   S = data;
+  if (data.extVersion) checkExtVersion(data.extVersion);
   if (currentUser) {
     (S.records||[]).forEach(r => {
       if (!oldIds.has(r.id) && r.savedBy) {
@@ -1611,6 +1908,7 @@ function _applyUpdate(data) {
     const scrollY = window.scrollY;
     try { renderRecords(); }          catch(e) { console.warn('renderRecords error', e); }
     try { renderFreeRecords(); }      catch(e) { console.warn('renderFreeRecords error', e); }
+    try { renderFreeDashboard(); }    catch(e) { console.warn('renderFreeDashboard error', e); }
     try { renderDashboard(); }        catch(e) { console.warn('renderDashboard error', e); }
     try { renderCountSheet(); }       catch(e) { console.warn('renderCountSheet error', e); }
     if (document.getElementById('panel-insights')?.classList.contains('active')) {
@@ -1663,7 +1961,63 @@ async function loadRequests() {
 // ══════════════════════════════════════════════
 // AUTH (simple)
 // ══════════════════════════════════════════════
-const ADMIN_EMAIL = 'shoyebzadiye.habuild@gmail.com';
+const ADMIN_EMAIL    = 'shoyebzadiye.habuild@gmail.com';
+let LATEST_VERSION   = '1.2.0';
+const DOWNLOAD_URL   = 'https://broadcast-dashboard-one.vercel.app/extension.zip';
+
+function openReleaseModal() {
+  const inp = document.getElementById('release-ver-input');
+  if (inp) inp.value = LATEST_VERSION;
+  document.getElementById('release-modal').style.display = 'flex';
+  setTimeout(() => inp?.select(), 50);
+}
+function closeReleaseModal() {
+  document.getElementById('release-modal').style.display = 'none';
+}
+async function confirmRelease() {
+  const inp = document.getElementById('release-ver-input');
+  const ver = (inp?.value || '').trim();
+  if (!ver || !/^\d+\.\d+\.\d+$/.test(ver)) { toast('Enter a valid version like 1.3.0', 'error'); return; }
+  try {
+    await db.collection('appData').doc('config').set({ latestExtVersion: ver }, { merge: true });
+    LATEST_VERSION = ver;
+    document.getElementById('admin-ext-ver-display').textContent = 'v' + ver;
+    showExtDownloadBar();
+    closeReleaseModal();
+    toast('Extension v' + ver + ' released! Users will see update banner.', 'success');
+  } catch(e) {
+    toast('Failed to update version: ' + e.message, 'error');
+  }
+}
+
+function showExtDownloadBar() {
+  const bar = document.getElementById('ext-version-bar');
+  if (!bar) return;
+  bar.innerHTML = `<div class="ext-dl-bar">
+    <span class="ext-dl-label">Extension v${LATEST_VERSION}</span>
+    <a class="ext-dl-btn" href="${DOWNLOAD_URL}" target="_blank">⬇ Download</a>
+  </div>`;
+}
+
+function checkExtVersion(extVersion) {
+  const bar = document.getElementById('ext-version-bar');
+  if (!bar) return;
+  const parseV = v => (v||'0').split('.').map(Number);
+  const [la,lb,lc] = parseV(LATEST_VERSION);
+  const [ea,eb,ec] = parseV(extVersion);
+  const isOld = !extVersion || ea<la || (ea===la&&eb<lb) || (ea===la&&eb===lb&&ec<lc);
+  if (isOld) {
+    bar.style.display = 'block';
+    bar.innerHTML = `<div class="ext-ver-update">
+      <div class="ver-top"><span class="ver-icon">🔔</span>Extension Update Available!</div>
+      <div style="font-size:.68rem;color:var(--muted);margin:-2px 0 2px">${extVersion ? `v${extVersion} → v${LATEST_VERSION}` : `Latest: v${LATEST_VERSION}`}</div>
+      <a class="ver-dl" href="${DOWNLOAD_URL}" target="_blank">⬇ Download v${LATEST_VERSION}</a>
+    </div>`;
+  } else {
+    bar.style.display = 'block';
+    bar.innerHTML = `<div class="ext-ver-ok"><span class="ver-dot"></span>Extension v${extVersion} ✓</div>`;
+  }
+}
 
 function getRequests() { return requestsCache; }
 
@@ -1682,8 +2036,71 @@ function isApproved(email) {
   return getRequests().some(r => r.email === email && r.status === 'approved');
 }
 
+async function doGoogleLogin() {
+  const btn = document.querySelector('.btn-google');
+  const errEl = document.getElementById('login-err');
+  errEl.style.display = 'none';
+  const origHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span style="opacity:.6;font-size:.85rem">Signing in...</span>';
+
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const result = await firebase.auth().signInWithPopup(provider);
+    const email = result.user.email.toLowerCase();
+    firebase.auth().signOut().catch(() => {});
+
+    if (isApproved(email)) {
+      currentUser = email;
+      localStorage.setItem('bcast_user', email);
+      logActivity('login', 'Logged in via Google', null, null);
+      startApp();
+      return;
+    }
+
+    // Not approved — show request screen
+    const reqs = getRequests();
+    const existing = reqs.find(r => r.email === email);
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('request-screen').style.display = 'flex';
+    document.getElementById('request-screen').dataset.email = email;
+
+    const statusBox = document.getElementById('req-status-box');
+    const reqBtn    = document.getElementById('req-btn');
+    const reqMsg    = document.getElementById('req-msg');
+
+    if (existing && existing.status === 'pending') {
+      statusBox.style.display = 'block';
+      statusBox.className = 'req-status pending';
+      statusBox.textContent = '⏳ Your request is pending admin approval.';
+      reqBtn.style.display = 'none';
+      reqMsg.textContent = `Access request sent for ${email}`;
+    } else if (existing && existing.status === 'revoked') {
+      statusBox.style.display = 'block';
+      statusBox.className = 'req-status denied';
+      statusBox.textContent = '🚫 Your access has been revoked. Contact the admin.';
+      reqBtn.style.display = 'none';
+      reqMsg.textContent = `Access revoked for ${email}`;
+    } else {
+      statusBox.style.display = 'none';
+      reqBtn.style.display = 'block';
+      reqMsg.textContent = `"${email}" is not registered. Request access from the admin.`;
+    }
+
+  } catch(e) {
+    console.error('Google login error:', e.code, e.message);
+    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      errEl.style.display = 'block';
+      errEl.textContent = 'Error: ' + (e.code || e.message || 'unknown');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
+}
+
 function doLogin() {
-  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const email = document.getElementById('login-email')?.value.trim().toLowerCase();
   if (!email) return;
   document.getElementById('login-err').style.display = 'none';
 
@@ -1695,12 +2112,10 @@ function doLogin() {
     return;
   }
 
-  // Not approved — show request screen
   const reqs = getRequests();
   const existing = reqs.find(r => r.email === email);
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('request-screen').style.display = 'flex';
-  // Store the attempted email so we can submit request
   document.getElementById('request-screen').dataset.email = email;
 
   const statusBox = document.getElementById('req-status-box');
@@ -1750,9 +2165,9 @@ function backToLogin() {
 function logout() {
   localStorage.removeItem('bcast_user');
   currentUser = null;
+  firebase.auth().signOut().catch(() => {});
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('login-email').value = '';
 }
 
 function startApp() {
@@ -1791,9 +2206,9 @@ const pageTitles = {
   'tracking': 'Daily Tracking',
   'insights': 'Insights',
   'records': 'Logs',
-  'calendar': 'Calendar',
   'countsheet': 'Dashboard',
-  'calendar': 'Calendar',
+  'free': 'FREE Dashboard',
+  'templateai': 'TemplateAI',
   'admin': 'Access Control'
 };
 
@@ -1813,12 +2228,245 @@ function goTo(name, btn) {
   if (bnItem) bnItem.classList.add('active');
   if (name==='dashboard') renderDashboard();
   if (name==='broadcasts') renderBroadcastList();
-  if (name==='records') { renderRecords(); if (activeLogTab === 'activity') renderActivityLog(); }
+  if (name==='records') { switchLogTab('broadcast', document.getElementById('lt-broadcast')); renderRecords(); }
+  if (name==='free') renderFreeDashboard();
   if (name==='calendar') renderCalendar();
   if (name==='countsheet') initCountSheet();
   if (name==='insights') { if (!csData) initCountSheet(); renderMissingAlert(); renderTemplateTrends(); }
   if (name==='admin') { if(currentUser!==ADMIN_EMAIL){return;} renderAdminPanel(); }
   if (name==='tracking') { renderTrackForm(); renderTodayLog(); }
+}
+
+function goToFreeRecords(btn) {
+  goTo('free', btn);
+}
+
+let freeDashFilter = 'today';
+let freeDashTypeFilter = 'all';
+let freeDashTodFilter = 'all';
+let freeDashDayToggle = 0;
+let freeDashTypeToggle = 0;
+let freeDashTodToggle = 0;
+
+function setFreeDashFilter(f, el) {
+  freeDashFilter = f;
+  freeDashDayToggle++;
+  document.querySelectorAll('#panel-free .dash-filter-btn').forEach(b => b.classList.remove('active','ct-orng'));
+  if (el) { el.classList.add('active'); if (freeDashDayToggle % 2 === 0) el.classList.add('ct-orng'); }
+  const fdp = document.getElementById('fd-popup'); if (fdp) fdp.style.display = 'none'; fdPopupOpen = false;
+  renderFreeDashboard();
+}
+
+// ── FREE DASHBOARD CALENDAR ──────────────────────────────────────────────
+let fdPopupOpen = false, fdCalM = new Date().getMonth(), fdCalY = new Date().getFullYear();
+let fdStart = null, fdEnd = null, fdSingle = false, fdPickerMode = false, fdPickerY = new Date().getFullYear();
+
+function toggleFdCal(e) {
+  if (e) e.stopPropagation();
+  fdPopupOpen = !fdPopupOpen;
+  const pop = document.getElementById('fd-popup'); if (!pop) return;
+  pop.style.display = fdPopupOpen ? 'block' : 'none';
+  if (fdPopupOpen) {
+    const btn = document.getElementById('fd-cal-btn');
+    if (btn) {
+      const r = btn.getBoundingClientRect(), popW = 266;
+      let left = r.left;
+      if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+      pop.style.top = (r.bottom + 8) + 'px'; pop.style.left = left + 'px';
+    }
+    renderFdCal();
+  }
+}
+document.addEventListener('click', e => {
+  const pop = document.getElementById('fd-popup');
+  if (pop && fdPopupOpen && !pop.contains(e.target) && e.target.id !== 'fd-cal-btn') { pop.style.display='none'; fdPopupOpen=false; }
+});
+function renderFdCal() {
+  const pop = document.getElementById('fd-popup'); if (!pop) return;
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const MO3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DOWS=['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const p2 = n => String(n).padStart(2,'0');
+  const header = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <button style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--muted);padding:2px 6px" onclick="fdPrev(event)">‹</button>
+    <span class="rc-month-lbl" onclick="fdTogglePicker(event)">${MONTHS[fdCalM]} ${fdCalY}</span>
+    <button style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--muted);padding:2px 6px" onclick="fdNext(event)">›</button>
+  </div>`;
+  if (fdPickerMode) {
+    const months = MO3.map((m,i)=>`<div class="rc-picker-month${i===fdCalM&&fdPickerY===fdCalY?' rc-pm-active':''}" onclick="fdPickMonth(${i},event)">${m}</div>`).join('');
+    pop.innerHTML = header+`<div class="rc-picker-year"><button style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--muted)" onclick="fdPickerYPrev(event)">‹</button><span>${fdPickerY}</span><button style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--muted)" onclick="fdPickerYNext(event)">›</button></div><div class="rc-picker-grid">${months}</div>`;
+    return;
+  }
+  const todayStr=today(), first=new Date(fdCalY,fdCalM,1).getDay(), dim=new Date(fdCalY,fdCalM+1,0).getDate();
+  let grid='';
+  for(let i=0;i<first;i++) grid+=`<div class="rc-day rc-other"></div>`;
+  for(let d=1;d<=dim;d++){
+    const ds=`${fdCalY}-${p2(fdCalM+1)}-${p2(d)}`;
+    let cls='rc-day';
+    if(ds===todayStr) cls+=' rc-today';
+    const inRange=fdStart&&fdEnd&&ds>fdStart&&ds<fdEnd;
+    if(fdSingle&&ds===fdStart&&ds===fdEnd) cls+=' rc-single';
+    else if(ds===fdStart) cls+=' rc-start';
+    else if(ds===fdEnd)   cls+=' rc-end';
+    else if(inRange)      cls+=' rc-mid';
+    grid+=`<div class="${cls}" onclick="fdCalClick('${ds}',event)">${d}</div>`;
+  }
+  const fmtLbl=()=>{ if(!fdStart) return 'Select date'; if(!fdEnd||fdSingle) return fdStart; return `${fdStart} → ${fdEnd}`; };
+  pop.innerHTML=header+`<div class="rc-grid" style="margin-bottom:4px">${DOWS.map(d=>`<div style="text-align:center;font-size:.72rem;font-weight:600;color:var(--muted);padding:2px 0">${d}</div>`).join('')}</div><div class="rc-grid">${grid}</div><div class="rc-footer"><button class="rc-clear-btn" onclick="fdClearSel(event)">Clear</button><span style="font-size:.72rem;color:var(--muted)">${fmtLbl()}</span><button class="rc-today-btn" onclick="fdSetToday(event)">Today</button></div>`;
+}
+function fdTogglePicker(e){e.stopPropagation();fdPickerMode=!fdPickerMode;fdPickerY=fdCalY;renderFdCal();}
+function fdPickMonth(m,e){e.stopPropagation();fdCalM=m;fdCalY=fdPickerY;fdPickerMode=false;renderFdCal();}
+function fdPickerYPrev(e){e.stopPropagation();fdPickerY--;renderFdCal();}
+function fdPickerYNext(e){e.stopPropagation();fdPickerY++;renderFdCal();}
+function fdPrev(e){e.stopPropagation();fdCalM--;if(fdCalM<0){fdCalM=11;fdCalY--;}renderFdCal();}
+function fdNext(e){e.stopPropagation();fdCalM++;if(fdCalM>11){fdCalM=0;fdCalY++;}renderFdCal();}
+function fdClearSel(e){e.stopPropagation();fdStart=null;fdEnd=null;fdSingle=false;renderFdCal();}
+function fdSetToday(e){e.stopPropagation();fdStart=today();fdEnd=today();fdSingle=true;applyFdFilter();}
+function fdCalClick(ds,e){
+  if(e) e.stopPropagation();
+  if(!fdStart||(fdStart&&fdEnd)){ fdStart=ds;fdEnd=null;fdSingle=false; }
+  else if(ds===fdStart){ fdEnd=ds;fdSingle=true;applyFdFilter(); }
+  else { if(ds<fdStart){fdEnd=fdStart;fdStart=ds;}else{fdEnd=ds;} fdSingle=false;applyFdFilter(); }
+  renderFdCal();
+}
+function applyFdFilter(){
+  freeDashFilter='custom'; freeDashDayToggle++;
+  document.querySelectorAll('#panel-free .dash-filter-btn').forEach(b=>b.classList.remove('active','ct-orng'));
+  const btn=document.getElementById('fd-cal-btn');
+  if(btn){btn.classList.add('active');if(freeDashDayToggle%2===0)btn.classList.add('ct-orng');}
+  document.getElementById('fd-date-from').value=fdStart||'';
+  document.getElementById('fd-date-to').value=fdEnd||fdStart||'';
+  renderFreeDashboard();
+  setTimeout(()=>{const p=document.getElementById('fd-popup');if(p){p.style.display='none';fdPopupOpen=false;}},300);
+}
+
+function setFreeDashType(t, el) {
+  freeDashTypeFilter = t;
+  freeDashTypeToggle++;
+  document.querySelectorAll('#panel-free .cs-type-btn[id^="fd-type"]').forEach(b => b.classList.remove('active','ct-orng'));
+  if (el) { el.classList.add('active'); if (freeDashTypeToggle % 2 === 0) el.classList.add('ct-orng'); }
+  renderFreeDashboard();
+}
+
+function setFreeDashTod(t, el) {
+  if (freeDashTodFilter === t) { freeDashTodFilter = 'all'; el.classList.remove('active','ct-orng'); renderFreeDashboard(); return; }
+  freeDashTodFilter = t;
+  freeDashTodToggle++;
+  document.querySelectorAll('#fd-tod-morning,#fd-tod-evening').forEach(b => b.classList.remove('active','ct-orng'));
+  if (el) { el.classList.add('active'); if (freeDashTodToggle % 2 === 0) el.classList.add('ct-orng'); }
+  renderFreeDashboard();
+}
+
+function getFreeDashRange() {
+  const pad2 = n => String(n).padStart(2,'0');
+  const fmt  = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const t = today();
+  if (freeDashFilter === 'today')     return { from: t, to: t, label: 'Today' };
+  if (freeDashFilter === 'yesterday') { const y = yesterday(); return { from: y, to: y, label: 'Yesterday' }; }
+  if (freeDashFilter === 'week')  { const d = new Date(); d.setDate(d.getDate()-6);  return { from: fmt(d), to: t, label: 'Last 7 Days' }; }
+  if (freeDashFilter === 'month') { const d = new Date(); d.setDate(d.getDate()-29); return { from: fmt(d), to: t, label: 'Last 30 Days' }; }
+  if (freeDashFilter === 'custom') {
+    const from = document.getElementById('fd-date-from')?.value || t;
+    const to   = document.getElementById('fd-date-to')?.value   || t;
+    return { from, to, label: from === to ? from : `${from} → ${to}` };
+  }
+  return { from: t, to: t, label: 'Today' };
+}
+
+function renderFreeDashboard() {
+  const { from, to, label } = getFreeDashRange();
+  ['fd-period-lbl','fd-period-h'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = label; });
+
+  const search = (document.getElementById('fd-search')?.value || '').toLowerCase().trim();
+  const fmtIN = v => v >= 1e5 ? (v/1e5).toFixed(1)+'L' : v.toLocaleString('en-IN');
+  const el = id => document.getElementById(id);
+
+  // All FREE recs in date range (for KPIs + perf bars — before type/search filter)
+  let allRecs = (S.records||[]).filter(r =>
+    ((r.msgname||'').startsWith('FREE_') || r.category === 'FREE') &&
+    r.date >= from && r.date <= to
+  );
+  if (freeDashTodFilter !== 'all') {
+    allRecs = allRecs.filter(r => {
+      const h = r.time ? parseInt(r.time.split(':')[0]) : -1;
+      return freeDashTodFilter === 'morning' ? (h >= 0 && h < 14) : (h >= 14);
+    });
+  }
+
+  // KPIs from all recs
+  const tSent = allRecs.reduce((s,r) => s+(parseInt(r.sent)||0), 0);
+  const tExp  = allRecs.reduce((s,r) => s+(parseInt(r.expected)||0), 0);
+  const rate  = tExp > 0 ? ((tSent/tExp)*100).toFixed(1)+'%' : '—';
+  if (el('fd-kpi-sent'))  el('fd-kpi-sent').textContent  = fmtIN(tSent);
+  if (el('fd-kpi-sub'))   el('fd-kpi-sub').textContent   = `of ${fmtIN(tExp)} expected`;
+  if (el('fd-kpi-count')) el('fd-kpi-count').textContent = allRecs.length;
+  if (el('fd-kpi-rate'))  el('fd-kpi-rate').textContent  = rate;
+
+  // Performance by CID bars
+  const perfList = el('fd-perf-list');
+  if (perfList) {
+    const cidGroups = {};
+    allRecs.forEach(r => {
+      const { cid } = parseFreeRecord(r);
+      if (!cidGroups[cid]) cidGroups[cid] = 0;
+      cidGroups[cid] += parseInt(r.sent)||0;
+    });
+    const sorted = Object.entries(cidGroups).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    if (!sorted.length) {
+      perfList.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">No data for this period.</div>';
+    } else {
+      const maxV = sorted[0][1];
+      perfList.innerHTML = sorted.map(([cid, sent]) => {
+        const barW = Math.round(sent/maxV*100);
+        const col  = barW===100?'#6366f1':barW>60?'#10b981':'#f59e0b';
+        return `<div class="perf-cat-row">
+          <div class="perf-cat-name">CID ${cid}</div>
+          <div class="perf-cat-bar-wrap"><div class="perf-cat-bar-fill" style="width:${barW}%;background:${col}"></div></div>
+          <div class="perf-cat-sent">${fmtIN(sent)}</div>
+          <div class="perf-cat-rate" style="color:${col}">${barW}%</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Table: apply type + search filter on top
+  let recs = [...allRecs];
+  if (freeDashTypeFilter !== 'all') {
+    recs = recs.filter(r => {
+      const mt = (r._msgType || r.msgname || '').toLowerCase();
+      if (freeDashTypeFilter === 'Night') return mt.includes('night_present') || mt.includes('night_absent') || mt.includes('night present') || mt.includes('night absent');
+      if (freeDashTypeFilter === 'Yoga')  return mt.includes('morning') || mt.includes('evening');
+      return mt.includes(freeDashTypeFilter.toLowerCase());
+    });
+  }
+  if (search) recs = recs.filter(r =>
+    (r.msgname||'').toLowerCase().includes(search) ||
+    (r._msgType||'').toLowerCase().includes(search) ||
+    (r._wati||'').toLowerCase().includes(search)
+  );
+  recs = recs.sort((a,b) => b.date.localeCompare(a.date) || (b.time||'').localeCompare(a.time||''));
+
+  const tbody = el('fd-tbody'), empty = el('fd-empty');
+  if (!tbody) return;
+  if (!recs.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  tbody.innerHTML = recs.map(r => {
+    const { cid, label: lbl, wati } = parseFreeRecord(r);
+    const sent = parseInt(r.sent)||0;
+    const exp  = parseInt(r.expected)||0;
+    const diff = r.diff != null ? parseInt(r.diff) : (exp - sent);
+    return `<tr>
+      <td>${r.date}</td>
+      <td>${r.time ? fmt12(r.time) : '—'}</td>
+      <td><span class="badge badge-green" style="font-size:.78rem">${cid}</span></td>
+      <td style="font-size:.82rem">${lbl}</td>
+      <td style="font-size:.78rem;color:var(--muted)">${wati||'—'}</td>
+      <td>${sent.toLocaleString()}</td>
+      <td>${exp.toLocaleString()}</td>
+      <td><span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span></td>
+    </tr>`;
+  }).join('');
 }
 
 function goToMobile(name) {
@@ -2883,9 +3531,9 @@ function renderDashboard() {
 
   // Sent + trend vs yesterday
   const ySent = (S.records||[]).filter(r=>r.date===yesterday()).reduce((s,r)=>s+(parseInt(r.sent)||0),0);
-  document.getElementById('kpi-today-sent').textContent = tSent.toLocaleString();
+  const sentEl = document.getElementById('kpi-today-sent'); if(sentEl) sentEl.textContent = tSent.toLocaleString();
   const sentSubEl = document.getElementById('kpi-sent-sub');
-  sentSubEl.innerHTML = (tExp > 0 ? `Expected: ${tExp.toLocaleString()}` : 'No records yet') + trendHTML(tSent, ySent);
+  if(sentSubEl) sentSubEl.innerHTML = (tExp > 0 ? `Expected: ${tExp.toLocaleString()}` : 'No records yet') + trendHTML(tSent, ySent);
 
   // Completed trend
   const yCompleted = (() => {
@@ -3200,12 +3848,14 @@ function renderFreeRecords() {
     const sent = parseInt(r.sent)||0;
     const exp  = parseInt(r.expected)||0;
     const diff = r.diff != null ? parseInt(r.diff) : (exp - sent);
+    const savedBy = r.savedBy ? r.savedBy.split('@')[0] : '—';
     return `<tr>
       <td>${r.date}</td>
       <td>${r.time ? fmt12(r.time) : '—'}</td>
       <td><span class="badge badge-green" style="font-size:.78rem">${cid}</span></td>
       <td style="font-size:.82rem">${label}</td>
       <td style="font-size:.78rem;color:var(--muted)">${wati || '—'}</td>
+      <td style="font-size:.78rem;color:var(--muted)" title="${r.savedBy||''}">${savedBy}</td>
       <td>${sent.toLocaleString()}</td>
       <td>${exp.toLocaleString()}</td>
       <td><span class="badge ${diff>0?'badge-red':'badge-green'}">${diff}</span></td>
@@ -3534,7 +4184,7 @@ function renderRecords() {
   const search  = (document.getElementById('rec-search')?.value || '').toLowerCase();
   const subtype = document.getElementById('rec-filter-subtype')?.value || '';
   const tod     = document.getElementById('rec-filter-tod')?.value || '';
-  let data = S.records;
+  let data = (S.records||[]).filter(r => !(r.msgname||'').startsWith('FREE_') && r.category !== 'FREE');
   if (from && to)   data = data.filter(r => r.date >= from && r.date <= to);
   else if (from)    data = data.filter(r => r.date >= from);
   else if (to)      data = data.filter(r => r.date <= to);
@@ -4270,13 +4920,13 @@ async function initApp() {
 
   const savedUser = localStorage.getItem('bcast_user');
 
-  // Hide login immediately if we already know the user — no Firestore wait needed
-  if (savedUser) {
-    document.getElementById('login-screen').style.display = 'none';
+  if (!savedUser) {
+    document.getElementById('login-screen').style.display = 'flex';
   }
 
-  await loadS();
-  await loadRequests();
+  showExtDownloadBar();
+  await Promise.all([loadS(), loadConfig(), loadRequests()]);
+  checkExtVersion(S.extVersion);
 
   if (savedUser) { currentUser = savedUser; startApp(); }
 }
@@ -4522,7 +5172,12 @@ function renderCountSheet() {
   // Performance bars
   const list = el('cs-perf-list');
   if (!list) return;
-  if (!sorted.length) { list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">No data for this period.</div>'; return; }
+  if (!sorted.length) {
+    list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">No data for this period.</div>';
+    head.innerHTML = `<tr><th style="min-width:180px">Broadcast</th><th>Time</th><th style="text-align:right">Total</th></tr>`;
+    body.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:24px">No matching broadcasts for this period.</td></tr>`;
+    return;
+  }
   const maxSent = sorted[0][1].sent;
   list.innerHTML = sorted.map(([name, g]) => {
     const barW = Math.round(g.sent / maxSent * 100);
@@ -4628,8 +5283,7 @@ function saveActivityLog(logs) {
 }
 
 function logActivity(type, detail, before, after) {
-  const logs = getActivityLog().slice();
-  logs.push({
+  const entry = {
     id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
     ts: new Date().toISOString(),
     type,
@@ -4638,17 +5292,32 @@ function logActivity(type, detail, before, after) {
     before: before || null,
     after: after || null,
     undone: false
-  });
-  saveActivityLog(logs);
+  };
+  _activityLogCache.push(entry);
+  db.collection('appData').doc('activityLog')
+    .set({ logs: firebase.firestore.FieldValue.arrayUnion(entry) }, { merge: true })
+    .catch(console.error);
   if (document.getElementById('log-activity-section')?.style.display !== 'none') renderActivityLog();
 }
 
 let _actFilter = 'today';
+let _actCategory = 'all';
 
 function setActFilter(f, el) {
   _actFilter = f;
-  document.querySelectorAll('#log-activity-section .dash-filter-btn').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
+  ['ab-today','ab-yesterday','ab-all'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.classList.toggle('active', id === 'ab-' + f);
+  });
+  renderActivityLog();
+}
+
+function setActCat(c, el) {
+  _actCategory = c;
+  ['ac-all','ac-paid','ac-free'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.classList.toggle('active', id === 'ac-' + c);
+  });
   renderActivityLog();
 }
 
@@ -4667,6 +5336,11 @@ function renderActivityLog() {
     const y = yesterday();
     logs = logs.filter(l => l.ts && tsLocalDate(l.ts) === y);
   }
+  // Category filter for ext_save entries
+  const isFreeLog = l => l.type === 'ext_save' && /Extension: "FREE_/.test(l.detail);
+  if (_actCategory === 'paid') logs = logs.filter(l => l.type !== 'ext_save' || !isFreeLog(l));
+  else if (_actCategory === 'free') logs = logs.filter(l => isFreeLog(l));
+
   if (q) logs = logs.filter(l => l.detail.toLowerCase().includes(q) || l.user.toLowerCase().includes(q));
   if (!logs.length) {
     wrap.innerHTML = '';
@@ -4684,18 +5358,24 @@ function renderActivityLog() {
     const [icon, label, cls] = typeInfo[l.type] || ['•', l.type, ''];
     const canUndo = !l.undone && currentUser === ADMIN_EMAIL && (l.type === 'edit_sent' || l.type === 'delete_record');
     const ts = new Date(l.ts).toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    const catBadge = l.type === 'ext_save'
+      ? (isFreeLog(l)
+          ? `<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:.68rem;font-weight:700;background:#d1fae5;color:#065f46;margin-left:4px">FREE</span>`
+          : `<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:.68rem;font-weight:700;background:#ede9fe;color:#7c3aed;margin-left:4px">PAID</span>`)
+      : '';
     return `<tr class="${l.undone ? 'act-undone' : ''}">
       <td style="white-space:nowrap;font-size:.75rem;color:var(--muted)">${ts}</td>
       <td style="font-size:.78rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.user}">${l.user}</td>
-      <td><span class="act-type-badge ${cls}">${icon} ${label}</span></td>
+      <td><span class="act-type-badge ${cls}">${icon} ${label}</span>${catBadge}</td>
       <td style="font-size:.8rem;color:var(--text)">${l.detail}</td>
       <td>${l.undone ? `<span style="color:var(--muted);font-size:.72rem">↩ Undone</span>` : canUndo ? `<button class="del-btn" title="Undo" onclick="undoActivity('${l.id}')">↩</button>` : ''}</td>
     </tr>`;
   }).join('');
 }
 
-function undoActivity(actId) {
+async function undoActivity(actId) {
   if (currentUser !== ADMIN_EMAIL) return;
+  await loadActivityLog();
   const logs = getActivityLog();
   const entry = logs.find(l => l.id === actId);
   if (!entry || entry.undone) return;
@@ -4727,16 +5407,970 @@ function switchLogTab(tab, el) {
   document.querySelectorAll('.log-tab').forEach(b => b.classList.remove('active'));
   if (el) el.classList.add('active');
   document.getElementById('log-broadcast-section').style.display = tab === 'broadcast' ? '' : 'none';
+  document.getElementById('log-free-section').style.display      = tab === 'free'      ? '' : 'none';
   document.getElementById('log-activity-section').style.display  = tab === 'activity'  ? '' : 'none';
   if (tab === 'activity') {
-    // Sync active filter button
     ['ab-today','ab-yesterday','ab-all'].forEach(id => {
       const btn = document.getElementById(id);
-      if (btn) btn.classList.toggle('active', id === 'ab-'+_actFilter || (id === 'ab-today' && _actFilter === 'today'));
+      if (btn) btn.classList.toggle('active', id === 'ab-' + _actFilter);
+    });
+    ['ac-all','ac-paid','ac-free'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.classList.toggle('active', id === 'ac-' + _actCategory);
     });
     loadActivityLog().then(renderActivityLog);
   }
 }
+
+// ══════════════════════════════════════════════
+// TEMPLATE AI
+// ══════════════════════════════════════════════
+
+const TAI_RISKY_PHRASES = [
+  'fill out form below to get','limited time offer',"don't miss out",
+  'click here to','act now','sign up now','claim your',
+  'get your free','21 day free','sorry for the wait','means a lot',
+  'thank you for filling','buy now','purchase now','today only',
+  "don't delay",'limited seats','limited stock','expires today',
+  'flat discount','best deal','hot deal','mega sale','flash sale',
+  'check out our','visit our website','save up to',
+  'invite leaderboard','invite journey','secured your place','spread the word',
+  'refer a friend','refer and earn','top spreader','yoga share',
+  'ranks are now final','your place among',
+  'inspiring people','inspire others','change your life','change lives',
+  'transform your','life-changing','be the change','you are amazing',
+  'you inspire','so proud of you','proud of you',
+  'special offer','big sale','join now',
+  'congratulations','congrats','free','gift','gifts','offer','discount','win',
+  'winner','reward','prize','promo','promotion','deal','sale','earn',
+  'exclusive','hurry','limited','unlock','bonus','subscribe','upgrade',
+  'cashback','voucher','coupon','lucky','selected','invitation',
+  'festive','celebrate','celebration','amazing','incredible',
+  'inspiring','inspired','inspire','motivation','motivate','motivated',
+  'transform','transformation','empower','empowering','proud',
+  'wellness','sleep tips','health tips','fitness tips','lifestyle tips',
+  'meet your','session, you','session you',
+];
+
+const TAI_STRONG_UTILITY = [
+  'otp','order','delivery','shipped','invoice','receipt','payment',
+  'refund','transaction','booking','appointment','verify','verification',
+  'confirmation','confirmed','cancelled','reschedule','ticket','tracking',
+  'opt-in','opt-out','unsubscribe','password','account',
+  'reminder','subscription','billing','enrolled','enrollment','registration',
+  'registered','post-purchase','feedback','survey',
+];
+const TAI_WEAK_UTILITY = [
+  'update','status','due','expires','scheduled',
+  'session','batch','link','rank','leaderboard','class','join',
+  'access','enroll','attend',
+];
+const TAI_UTILITY_VAR_NAMES = [
+  'update','note','reminder','quote','info','message',
+  'detail','content','status','ref','data','msg','text','item',
+];
+const TAI_VARIABLE_SAMPLES = {
+  update:'Your session has been updated. Please check the new timings.',
+  note:'Please try to join 5 minutes before the class.',
+  reminder:'This is a reminder for your confirmed session.',
+  quote:'Link will be shared before the class.',
+  info:'Your class is scheduled for tomorrow morning.',
+  message:'Thank you for being part of our wellness community.',
+  detail:'Your session details have been confirmed.',
+  content:'We look forward to seeing you in class!',
+  status:'Your enrollment has been confirmed.',
+  ref:'Session ID: HAB2024',
+  data:'Session info will be shared with you shortly.',
+  msg:'Important update about your upcoming session.',
+  text:'Please check your schedule for today.',
+  item:'Your class details are ready.',
+  name:'Shoyeb','1':'Shoyeb','2':'HAB12345','3':'tomorrow morning','4':'7:00 AM','5':'Yoga with Summi',
+};
+const TAI_SAMPLE_POOL = [
+  'Your class is scheduled for tomorrow morning.',
+  'Please try to join 5 minutes before the class.',
+  'This is a reminder for your confirmed session.',
+  'Your session has been updated. Please check the new timings.',
+  'Thank you for being part of our wellness community.',
+  'Your session details have been confirmed.',
+  'We look forward to seeing you in class!',
+  'Your enrollment has been confirmed.',
+  'Session info will be shared with you shortly.',
+  'Important update about your upcoming session.',
+  'Please check your schedule for today.',
+  'Your class details are ready.',
+];
+function taiGetSample(vName, bsi) {
+  const vLower = vName.toLowerCase();
+  const base = vLower.replace(/_?\d+$/, '');
+  if (bsi[base] === undefined) bsi[base] = 0;
+  const idx = bsi[base]++;
+  const specific = TAI_VARIABLE_SAMPLES[vLower] || TAI_VARIABLE_SAMPLES[vName] || (idx === 0 ? TAI_VARIABLE_SAMPLES[base] : null);
+  return specific || TAI_SAMPLE_POOL[idx % TAI_SAMPLE_POOL.length];
+}
+const TAI_MARKETING_LINE_SIGNALS = [
+  // Referral / spread
+  'because of your invite','because of you','spread','spreader',
+  'thank you for spreading','thank you for referring',
+  'your referral code','your invite link','invite your friends',
+  'people began','people joined','more people',
+  // "You + positive verb" patterns — catches motivational lines regardless of specific words
+  "you're already","you are already","you've already",
+  "you're inspiring","you are inspiring",
+  "you're helping","you are helping",
+  "you're making","you are making",
+  "you're changing","you are changing",
+  "you're motivating","you are motivating",
+  "you've inspired","you have inspired",
+  "you've helped","you have helped",
+  "you've motivated","you have motivated",
+  "you've changed","you have changed",
+  "you've made a difference","making a difference",
+  "thanks to you","because of your",
+  // Wellness journey / motivational
+  'yoga journey','wellness journey','fitness journey',
+  'your journey','this journey',
+  // Pride / praise lines
+  'so proud','we are proud',"we're proud",
+  'keep it up','keep going','well done',
+  'great job','good job','amazing work','wonderful',
+  // Awareness / engagement
+  'spread awareness','share this','tell your friends',
+  // Benefit-listing patterns (coaching/session templates)
+  "you'll:","you will:","you'll learn","you'll also","you'll be","you'll get","you'll understand",
+  "you will learn","you will get","you will understand",
+  "in this session, you","in this session you",
+  "in this session, we","in this session we",
+];
+
+// Emoji classification — Meta flags hype/celebration emojis as promotional
+const TAI_MARKETING_EMOJIS = ['🎉','🏆','🎁','💛','✨','🚀','🔥','❤️','🌟','🥹','💪','🎊','🎈','💖','💯','⭐','🥳','😍','🤩'];
+const TAI_UTILITY_EMOJIS   = ['⏰','📄','📍','🔗','📊','🧾','📅','✅','⚠️','ℹ️','👇','🙏','📞','📱','🕐','🔔','📋','💬'];
+
+function taiGetUrlRanges(text) {
+  const ranges = [];
+  const re = /https?:\/\/[^\s]+/g;
+  let m;
+  while ((m = re.exec(text)) !== null) ranges.push([m.index, m.index + m[0].length]);
+  return ranges;
+}
+
+function taiAnalyzeTemplate(text) {
+  const strippedText = text.replace(/\{\{[^}]+\}\}/g, '');
+  const lower = strippedText.toLowerCase();
+  const urlRanges = taiGetUrlRanges(lower);
+  const inUrl = (s, e) => urlRanges.some(([us, ue]) => s < ue && e > us);
+
+  const foundRisky = [];
+  const usedRanges = [];
+  for (const phrase of TAI_RISKY_PHRASES) {
+    const isSingleWord = !phrase.includes(' ');
+    const pl = phrase.toLowerCase();
+    let idx = lower.indexOf(pl);
+    while (idx !== -1) {
+      const end = idx + pl.length;
+      if (isSingleWord) {
+        const before = idx > 0 ? lower[idx - 1] : ' ';
+        const after = end < lower.length ? lower[end] : ' ';
+        if (!/[^a-z0-9]/.test(before) || !/[^a-z0-9]/.test(after)) { idx = lower.indexOf(pl, idx + 1); continue; }
+      }
+      const overlaps = usedRanges.some(([s, e]) => idx < e && end > s);
+      if (!overlaps && !inUrl(idx, end)) {
+        foundRisky.push({ phrase, original: strippedText.slice(idx, end), start: idx, end });
+        usedRanges.push([idx, end]);
+      }
+      idx = lower.indexOf(pl, idx + 1);
+    }
+  }
+  const riskyWords = [...new Set(foundRisky.map(f => f.original))];
+
+  const originalUrlRanges = taiGetUrlRanges(text);
+  const inOriginalUrl = (s, e) => originalUrlRanges.some(([us, ue]) => s < ue && e > us);
+
+  function insideVariable(txt, idx, len) {
+    const re = /\{\{[^}]*\}\}/g;
+    let m;
+    while ((m = re.exec(txt)) !== null) {
+      if (idx >= m.index && idx + len <= m.index + m[0].length) return true;
+    }
+    return false;
+  }
+
+  const existingVarNames = new Set(
+    (text.match(/\{\{([^}]+)\}\}/g) || []).map(v => v.slice(2, -2).toLowerCase().trim())
+  );
+  const generatedVarNames = new Set();
+  function nextVarName() {
+    for (const name of TAI_UTILITY_VAR_NAMES) {
+      if (!existingVarNames.has(name) && !generatedVarNames.has(name)) {
+        generatedVarNames.add(name);
+        return name;
+      }
+    }
+    let n = 1;
+    while (true) {
+      const name = 'line' + n;
+      if (!existingVarNames.has(name) && !generatedVarNames.has(name)) {
+        generatedVarNames.add(name);
+        return name;
+      }
+      n++;
+    }
+  }
+  const phraseVarCache = new Map();
+  function varNameForPhrase(phrase) {
+    const key = phrase.toLowerCase();
+    if (!phraseVarCache.has(key)) phraseVarCache.set(key, nextVarName());
+    return phraseVarCache.get(key);
+  }
+
+  function findRiskyInLine(lineText) {
+    const stripped = lineText.replace(/\{\{[^}]+\}\}/g, ' ').toLowerCase();
+    const lineUrls = taiGetUrlRanges(stripped);
+    const inLineUrl = (s, e) => lineUrls.some(([us, ue]) => s < ue && e > us);
+    const found = [];
+    const usedR = [];
+    for (const phrase of TAI_RISKY_PHRASES) {
+      const p = phrase.toLowerCase();
+      const isSW = !p.includes(' ');
+      let idx = stripped.indexOf(p);
+      while (idx !== -1) {
+        const end = idx + p.length;
+        if (isSW) {
+          const before = idx > 0 ? stripped[idx - 1] : ' ';
+          const after = end < stripped.length ? stripped[end] : ' ';
+          if (!/[^a-z0-9]/.test(before) || !/[^a-z0-9]/.test(after)) { idx = stripped.indexOf(p, idx + 1); continue; }
+        }
+        if (!usedR.some(([s, e]) => idx < e && end > s) && !inLineUrl(idx, end)) {
+          found.push(phrase);
+          usedR.push([idx, end]);
+        }
+        idx = stripped.indexOf(p, idx + 1);
+      }
+    }
+    return found;
+  }
+
+  const seen = new Set();
+  let safeVariant = text.split('\n').map(line => {
+    const trimmed = line.trim();
+    if (!trimmed || /^\[.+\]$/.test(trimmed) || /^<[^>]+>$/.test(trimmed) || /https?:\/\//.test(line)) return line;
+    const lineRisky = findRiskyInLine(line);
+    if (lineRisky.length === 0) return line;
+    const hasExistingVars = /\{\{[^}]+\}\}/.test(line);
+    if (lineRisky.length >= 2 && !hasExistingVars) return '{{' + nextVarName() + '}}';
+    let result = line;
+    for (const phrase of lineRisky.sort((a, b) => b.length - a.length)) {
+      const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const isSW = !phrase.includes(' ');
+      const re = new RegExp(isSW ? '\\b' + escaped + '\\b' : escaped, 'gi');
+      let out = '', last = 0;
+      re.lastIndex = 0;
+      let m2;
+      while ((m2 = re.exec(result)) !== null) {
+        const ms = m2.index, me = ms + m2[0].length;
+        if (!inOriginalUrl(ms, me) && !insideVariable(result, ms, m2[0].length)) {
+          out += result.slice(last, ms) + '{{' + varNameForPhrase(phrase) + '}}';
+          last = me;
+        }
+      }
+      result = out + result.slice(last);
+    }
+    return result;
+  }).join('\n');
+
+  safeVariant = safeVariant.split('\n').map(line => {
+    const trimmed = line.trim();
+    if (!trimmed || /^\{\{[^}]+\}\}$/.test(trimmed) || /https?:\/\//.test(line) || /^\[.+\]$/.test(trimmed) || /^<[^>]+>$/.test(trimmed)) return line;
+    if (!line.replace(/\{\{[^}]+\}\}/g, '').toLowerCase().trim()) return line;
+    if (TAI_MARKETING_LINE_SIGNALS.some(s => line.toLowerCase().includes(s))) return '{{' + nextVarName() + '}}';
+    return line;
+  }).join('\n');
+
+  {
+    const nameCount = new Map();
+    safeVariant = safeVariant.replace(/\{\{([^}]+)\}\}/g, (_, name) => {
+      const n = (nameCount.get(name) || 0) + 1;
+      nameCount.set(name, n);
+      return n === 1 ? '{{' + name + '}}' : '{{' + name + '_' + n + '}}';
+    });
+  }
+
+  // Strip WhatsApp formatting markers (_..._  *...*  ~...~) from whole lines
+  safeVariant = safeVariant.split('\n').map(line => {
+    let l = line;
+    // Iteratively strip wrapping pairs so _*text*_ becomes text
+    let changed = true;
+    while (changed) {
+      changed = false;
+      const s1 = l.replace(/^_([^_].*)_$/, '$1');
+      const s2 = s1.replace(/^\*([^*].*)\*$/, '$1');
+      const s3 = s2.replace(/^~([^~].*)~$/, '$1');
+      if (s3 !== l) { l = s3; changed = true; }
+    }
+    return l;
+  }).join('\n');
+
+  {
+    const lastIsVar = safeVariant.trim().endsWith('}}');
+    const varMatches = safeVariant.match(/\{\{[^}]+\}\}/g) || [];
+    const staticChars = safeVariant.replace(/\{\{[^}]+\}\}/g, '').replace(/\s+/g, '').length;
+    const tooManyVars = varMatches.length >= 5 && staticChars < varMatches.length * 12;
+    if (lastIsVar && tooManyVars) safeVariant = safeVariant.trimEnd() + '\nThis is a system generated message.';
+    else if (lastIsVar) safeVariant = safeVariant.trimEnd() + '\n_Team Habuild_';
+  }
+
+  const SHORT_URL_RE = /\b(bit\.ly|goo\.gl|tinyurl\.com|t\.co|ow\.ly|is\.gd|buff\.ly|rb\.gy)\b/i;
+  const hasShortUrl = SHORT_URL_RE.test(text);
+  const strongUtilityCount = TAI_STRONG_UTILITY.filter(s => lower.includes(s)).length;
+  const weakUtilityCount = TAI_WEAK_UTILITY.filter(s => lower.includes(s)).length;
+  const foundMarketingEmojis = TAI_MARKETING_EMOJIS.filter(e => text.includes(e));
+  const foundUtilityEmojis   = TAI_UTILITY_EMOJIS.filter(e => text.includes(e));
+  const marketingEmojiCount  = foundMarketingEmojis.length;
+  const utilityEmojiCount    = foundUtilityEmojis.length;
+  const riskyCount = riskyWords.length;
+  const rawRisk = riskyCount * 18 - strongUtilityCount * 12 - weakUtilityCount * 4 + (hasShortUrl ? 25 : 0) + marketingEmojiCount * 8 - utilityEmojiCount * 3 + (strongUtilityCount === 0 && weakUtilityCount === 0 ? 15 : 0);
+  let riskPercent = Math.min(100, Math.max(riskyCount * 8, rawRisk));
+  riskPercent = Math.max(0, riskPercent);
+  const rejectionRisk = riskPercent >= 55 ? 'High' : riskPercent >= 25 ? 'Medium' : 'Low';
+
+  const isPureMarketing = (riskyCount >= 2 || marketingEmojiCount >= 2) && strongUtilityCount === 0;
+  const isMixedContent = (riskyCount >= 1 || marketingEmojiCount >= 2) && strongUtilityCount >= 1;
+  const category = isPureMarketing ? 'Marketing'
+    : isMixedContent ? 'Marketing'
+    : strongUtilityCount > 0 ? 'Utility'
+    : weakUtilityCount > 0 ? 'Utility'
+    : (riskyCount === 0 && marketingEmojiCount === 0) ? 'Utility'
+    : 'Marketing';
+
+  const rejectionReasons = [];
+  if (riskyWords.length) rejectionReasons.push('Contains promotional words: ' + riskyWords.slice(0, 3).join(', ') + ' — wrap in {{}} to make safe');
+  if (lower.includes('free') && !inUrl(lower.indexOf('free'), lower.indexOf('free') + 4))
+    rejectionReasons.push('"free" in template text is flagged — replace with a variable like {{program_type}}');
+  if (lower.includes('gift')) rejectionReasons.push('Gift language suggests promotional intent — use a variable');
+  if (foundMarketingEmojis.length) rejectionReasons.push('Promotional/hype emojis detected (' + foundMarketingEmojis.slice(0,5).join(' ') + ') — Meta flags celebration/excitement emojis as Marketing. Remove or replace with neutral utility emojis (⏰📄📍🔗✅).');
+  if (lower.includes('fill out form') || lower.includes('sign up')) rejectionReasons.push('Lead generation language triggers Marketing classification');
+  if (hasShortUrl) rejectionReasons.push('Shortened URL (bit.ly etc.) obscures destination — Meta rejects these, use full URL');
+  if (isMixedContent) rejectionReasons.push('Mixed content (transactional + promotional words) — Meta auto-classifies as Marketing');
+  if (lower.includes('invite') && lower.includes('leaderboard')) rejectionReasons.push('Invite/referral leaderboard language is classified as Marketing by Meta — not a transactional trigger');
+  if (safeVariant.trim().startsWith('{{')) rejectionReasons.push('Meta rule: message cannot start with a variable — add static text before the first line (e.g., "Hi {{1}},").');
+  const varCount = (safeVariant.match(/\{\{[^}]+\}\}/g) || []).length;
+  if (varCount > 8) rejectionReasons.push('Too many variables (' + varCount + ') — Meta allows max ~10 body parameters. Consider merging some into one variable.');
+
+  const explanation = category === 'Utility'
+    ? 'Template qualifies as Utility — has transactional/appointment signals with no promotional words. Safe to submit as Utility.'
+    : riskyCount > 0
+    ? 'Contains ' + riskyCount + ' promotional word(s). Wrap them in {{variables}} (see Safe Variant below) to remove from template text, then resubmit as Utility.'
+    : 'Template is promotional/broadcast content. Submit as Marketing category.';
+
+  function buildTemplateName(l, cat) {
+    if (l.includes('otp') || (l.includes('verify') && l.includes('code'))) return 'otp_verification';
+    if (l.includes('order') && (l.includes('confirm') || l.includes('confirmed'))) return 'order_confirmation';
+    if (l.includes('order') && l.includes('ship')) return 'order_shipping_update';
+    if (l.includes('order') && l.includes('deliver')) return 'order_delivery_update';
+    if (l.includes('refund')) return 'refund_confirmation';
+    if (l.includes('payment') && (l.includes('confirm') || l.includes('receipt'))) return 'payment_confirmation';
+    if (l.includes('payment') || l.includes('invoice') || l.includes('billing')) return 'payment_reminder';
+    if (l.includes('appointment') && l.includes('reschedule')) return 'appointment_reschedule';
+    if (l.includes('appointment') || l.includes('booking')) return 'appointment_reminder';
+    if ((l.includes('session') || l.includes('batch') || l.includes('class')) && (l.includes('yoga') || l.includes('wellness') || l.includes('fitness'))) return 'yoga_session_reminder';
+    if (l.includes('session') || l.includes('batch') || l.includes('class')) return 'session_reminder';
+    if (l.includes('leaderboard') && l.includes('invite')) return 'invite_leaderboard_update';
+    if (l.includes('leaderboard') || l.includes('rank')) return 'rank_update';
+    if (l.includes('enrollment') || l.includes('registered') || l.includes('joined')) return 'enrollment_confirmation';
+    if (l.includes('subscription')) return 'subscription_update';
+    if (l.includes('reminder')) return 'reminder_notification';
+    if (l.includes('confirm') || l.includes('confirmed')) return 'confirmation_message';
+    if (l.includes('account') && l.includes('update')) return 'account_update';
+    if (cat === 'Marketing' && (l.includes('offer') || l.includes('discount') || l.includes('sale'))) return 'promotional_offer';
+    if (cat === 'Marketing') return 'engagement_message';
+    return 'notification_message';
+  }
+  const baseTplName = buildTemplateName(lower, category);
+  const templateNameSuggestions = [baseTplName + '_t1', baseTplName + '_a1', baseTplName + '_n1'];
+
+  const UTILITY_CTA_WORDS = ['track','view','confirm','reschedule','verify','access','download','check','manage','update','pay','invoice','receipt','book','attend','join session','view order','view booking','view rank','view schedule','view details','get started','learn more'];
+  const MARKETING_CTA_WORDS = ['claim','get your','buy','shop','win','redeem','grab','avail','explore','offer','deal','discount','prize','reward','unlock','register now','sign up','subscribe'];
+  function classifyCTA(btnText) {
+    const t = btnText.toLowerCase();
+    const mw = MARKETING_CTA_WORDS.find(w => t.includes(w));
+    if (mw) return { text: btnText, type: 'Marketing', reason: '"' + mw + '" is a promotional trigger word' };
+    const uw = UTILITY_CTA_WORDS.find(w => t.includes(w));
+    if (uw) return { text: btnText, type: 'Utility', reason: '"' + uw + '" is a transactional action' };
+    return { text: btnText, type: 'Utility', reason: 'Neutral action word — acceptable for Utility' };
+  }
+
+  const detectedCTAs = [];
+  const seenCTAs = new Set();
+  const bracketRE = /\[([^\]]{1,60})\]/g;
+  let bm;
+  while ((bm = bracketRE.exec(text)) !== null) {
+    const btn = bm[1].trim();
+    if (!seenCTAs.has(btn.toLowerCase())) { seenCTAs.add(btn.toLowerCase()); detectedCTAs.push(classifyCTA(btn)); }
+  }
+  for (const rawLine of text.split('\n')) {
+    const ln = rawLine.trim();
+    if (ln.length < 2 || ln.length > 40 || ln.startsWith('[') || ln.startsWith('*') || ln.startsWith('_')) continue;
+    if (/[a-z]/.test(ln) || !/[A-Z]/.test(ln)) continue;
+    const btn = ln.replace(/[*_~]/g, '').trim();
+    if (!seen.has(btn.toLowerCase()) && btn.length >= 2) { seen.add(btn.toLowerCase()); detectedCTAs.push(classifyCTA(btn)); }
+  }
+
+  const seenSV = new Set();
+  const sampleContent = [];
+  const svRe = /\{\{([^}]+)\}\}/g;
+  const bsi = {};
+  let svm;
+  while ((svm = svRe.exec(safeVariant)) !== null) {
+    const vName = svm[1];
+    if (!seenSV.has(vName)) {
+      seenSV.add(vName);
+      sampleContent.push({ varName: vName, sample: taiGetSample(vName, bsi) });
+    }
+  }
+
+  return { category, rejectionRisk, rejectionRiskPercent: riskPercent, rejectionReasons, riskyWords, safeVariant, explanation, templateNameSuggestions, detectedCTAs, sampleContent };
+}
+
+// ── TemplateAI UI ──────────────────────────────
+let _taiResult = null;
+
+(function() {
+  const inp = document.getElementById('tai-input');
+  if (!inp) return;
+  inp.addEventListener('input', () => {
+    inp.style.height = 'auto';
+    inp.style.height = inp.scrollHeight + 'px';
+    document.getElementById('tai-chars').textContent = inp.value.length + ' characters';
+  });
+})();
+
+async function taiAnalyze() {
+  const inp = document.getElementById('tai-input');
+  const template = inp ? inp.value.trim() : '';
+  const errEl = document.getElementById('tai-error');
+  const btn = document.getElementById('tai-btn');
+  if (!template) { errEl.textContent = 'Please enter a template to analyze.'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = '✨ AI Analyzing…';
+  const overlay = document.getElementById('tai-loading-overlay');
+  if (overlay) overlay.classList.add('active');
+
+  const ruleResult = taiAnalyzeTemplate(template);
+
+  try {
+    const prompt = `You are a Meta WhatsApp Business API template compliance reviewer specializing in fitness and yoga apps like Habuild.
+
+═══ META'S OFFICIAL TEMPLATE CATEGORIES ═══
+
+UTILITY (approved easily, low cost):
+Meta defines Utility as: messages that complete or confirm a transaction a user already initiated, or deliver specific information the user requested.
+Examples: "Your yoga class tomorrow is at 6:00 AM", "Payment of ₹499 received", "Your attendance this week: 5/7 days", "OTP: 123456", "Your slot is confirmed for Monday 7 AM"
+
+MARKETING (higher scrutiny, higher cost, often rejected):
+Meta defines Marketing as: any message that promotes or advertises a product/service, drives engagement, referrals, re-engagement, or commercial action — even if disguised as informational.
+
+═══ META MARKETING RED FLAGS (ANY ONE = Marketing) ═══
+
+1. REFERRAL / INVITE CAMPAIGNS
+   - Words: invite, invites, refer, referral, share with friends, bring a friend
+   - "You are X invites away from winning" = Marketing
+
+2. GAMIFICATION & REWARDS
+   - Words: ranking, leaderboard, rank, points, score, streak, winning, win, prize, reward, badge, trophy, challenge
+   - "Rankings will be finalized soon" = Marketing (urgency + gamification)
+   - "Winning special prize" = Marketing
+
+3. URGENCY / FOMO (Fear Of Missing Out)
+   - Words: soon, last chance, hurry, limited, ending, expires, don't miss, finalized soon, act now
+   - Creates artificial urgency to drive action = Marketing
+
+4. MOTIVATIONAL / INSPIRATIONAL CONTENT
+   - Words: inspiring, inspired, inspire, proud, amazing, transform, transformation, journey, empower, celebrate, achievement, keep going, well done, great job, you can do it, believe
+   - Emotional appeals = Marketing even if no product is being sold
+
+5. PROMOTIONAL OFFERS
+   - Words: offer, discount, free, bonus, unlock, exclusive, special, deal, save, upgrade
+
+6. ENGAGEMENT-DRIVING CTAs
+   - "Start your journey", "Join now", "Invite now", "Claim your reward", "Don't miss out"
+   - CTAs that drive new behavior (not confirm existing) = Marketing
+
+7. FLATTERY / PRAISE
+   - "You're amazing", "You're a winner", "We're proud of you", "You've done great"
+   - Praising user to create emotional engagement = Marketing
+
+8. ALL CAPS FOR EMPHASIS
+   - INVITES, FREE, WIN, NOW, HURRY used in ALL CAPS = Marketing signal
+
+9. VAGUE VARIABLES used for promotional content
+   - {{quote}} used for motivational quotes, {{note}} for "winning special note" = Marketing context
+
+10. EMOJI SIGNALS
+   - Marketing/hype emojis: 🎉 🏆 🎁 💛 ✨ 🚀 🔥 ❤️ 🌟 🥹 💪 🎊 🎈 💖 💯 ⭐ 🥳 😍 🤩
+     These create celebration, emotion, excitement, motivation → treat nearby phrases as Marketing.
+   - Utility-safe emojis: ⏰ 📄 📍 🔗 📊 🧾 📅 ✅ ⚠️ ℹ️ 👇 🙏 📞 📱 🕐 🔔 📋 💬
+     These are informational and acceptable in Utility templates.
+   - 2+ marketing emojis in a template → strong Marketing signal even if words look utility.
+
+═══ HABUILD-SPECIFIC PATTERNS (always Marketing) ═══
+- Yoga challenge rankings/leaderboards
+- Invite-to-win referral campaigns
+- "X days streak" celebration messages (motivational)
+- "You've been selected" or "You're special" messages
+- Morning motivation messages without specific class info
+- Any template where the PURPOSE is engagement, not information delivery
+
+═══ TEMPLATE TO ANALYZE ═══
+---
+${template}
+---
+
+Analyze the INTENT of the PRIMARY content. Focus on whether the template's main purpose is informational (Utility) or promotional (Marketing).
+
+Important: {{variable}} placeholders are already-replaced safe variables — never include them in riskyPhrases. Only flag actual visible words.
+
+Return ONLY valid JSON with no markdown:
+{"category":"Marketing or Utility","rejectionRisk":"Low or Medium or High","rejectionRiskPercent":50,"explanation":"2-3 sentences explaining the intent and why Meta would classify it this way","riskyPhrases":["exact phrase from template that is risky"],"rejectionReasons":["specific Meta policy reason 1","reason 2"]}`;
+
+    let rawText = null;
+
+    // 3 keys × 3 models = 9 quota buckets → 750 req/day free
+    const API_KEYS = [
+      'AIzaSyAbNEVYq_Zwz-_OyG_NI1sSe-_WkWaPfIQ',
+      'AIzaSyBa15olh1WTeowtaWQsrEFUzXwd-wGmEUQ',
+      'AIzaSyBcCP8o_ag2EAMY0hTBvfImYO1l_Vs1HJg',
+    ];
+    const MODELS = ['gemini-2.5-flash'];
+    const reqBody = JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0, maxOutputTokens: 4096 } });
+    let data = null;
+    const DELAYS = [0, 2000, 4000, 7000, 11000, 16000];
+    const exhausted = new Set(); // "keyIndex:model" — tracks quota-exceeded combos
+    let globalAttempt = 0;
+
+    while (!data && globalAttempt < 18) {
+      // Find next non-exhausted key+model combo
+      let found = null;
+      outer: for (let mi = 0; mi < MODELS.length; mi++) {
+        const model = MODELS[(globalAttempt + mi) % MODELS.length];
+        for (let ki = 0; ki < API_KEYS.length; ki++) {
+          const keyIdx = (globalAttempt + ki) % API_KEYS.length;
+          if (!exhausted.has(keyIdx + ':' + model)) { found = { key: API_KEYS[keyIdx], keyIdx, model }; break outer; }
+        }
+      }
+      if (!found) break; // all 9 combos exhausted
+
+      const delay = DELAYS[Math.min(globalAttempt, DELAYS.length - 1)];
+      if (globalAttempt > 0) {
+        btn.textContent = '✨ Connecting to AI' + '.'.repeat((globalAttempt % 3) + 1);
+        await new Promise(function(r) { setTimeout(r, delay); });
+      }
+      globalAttempt++;
+
+      let resp;
+      try { resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + found.model + ':generateContent?key=' + found.key, { method:'POST', headers:{'Content-Type':'application/json'}, body:reqBody }); }
+      catch(fe) { continue; }
+
+      if (resp.status === 429) { exhausted.add(found.keyIdx + ':' + found.model); continue; }
+      if (resp.status === 503) { continue; }
+      if (!resp.ok) { const eb = await resp.json().catch(function(){return {};}); throw new Error('Gemini ' + resp.status + ': ' + (eb.error?.message || resp.statusText)); }
+      data = await resp.json();
+    }
+
+    if (data) {
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      const textPart = parts.find(function(p) { return !p.thought && p.text; }) || parts[parts.length - 1] || {};
+      const t = (textPart.text || '').trim();
+      if (t) rawText = t;
+    }
+
+    if (!rawText) throw new Error('__BUSY__');
+    rawText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const ai = JSON.parse(rawText);
+
+
+    // If rules found no risky words, the template is clean — trust rules, block AI override
+    var noRiskyContent = ruleResult.riskyWords.length === 0;
+    const merged = Object.assign({}, ruleResult, {
+      category: noRiskyContent ? ruleResult.category : (ai.category || ruleResult.category),
+      rejectionRisk: noRiskyContent ? ruleResult.rejectionRisk : (ai.rejectionRisk || ruleResult.rejectionRisk),
+      rejectionRiskPercent: noRiskyContent ? ruleResult.rejectionRiskPercent : (typeof ai.rejectionRiskPercent === 'number' ? ai.rejectionRiskPercent : ruleResult.rejectionRiskPercent),
+      explanation: ai.explanation || ruleResult.explanation,
+      riskyWords: noRiskyContent ? [] : ((ai.riskyPhrases && ai.riskyPhrases.length) ? ai.riskyPhrases.filter(function(p) {
+        if (/\{\{[^}]+\}\}/.test(p)) return false; // remove any phrase containing {{variable}}
+        var templateNoButtons = template.replace(/<[^>]*>/g, ' '); // remove <button labels>
+        return templateNoButtons.toLowerCase().includes(p.toLowerCase().trim());
+      }) : ruleResult.riskyWords),
+      rejectionReasons: noRiskyContent ? ruleResult.rejectionReasons : ((ai.rejectionReasons && ai.rejectionReasons.length) ? ai.rejectionReasons.filter(function(r) {
+        return !(/\{\{[^}]+\}\}/.test(r) && /variable/i.test(r)); // remove "vague variable" reasons
+      }) : ruleResult.rejectionReasons),
+      safeVariant: (function() {
+        var sv = ruleResult.safeVariant;
+        if (!ai.riskyPhrases || !ai.riskyPhrases.length) return sv;
+        var used = new Set((sv.match(/\{\{([^}]+)\}\}/g)||[]).map(function(v){return v.slice(2,-2);}));
+        var POOL = ['info','note','detail','update','reminder','quote','data','msg','text','item'];
+        var _pi = 0;
+        function nextAiVar() {
+          var base = POOL[_pi++ % POOL.length]; var name = base; var n = 2;
+          while (used.has(name)) { name = base + n++; }
+          used.add(name); return name;
+        }
+        var phrases = [];
+        for (var ri = 0; ri < ai.riskyPhrases.length; ri++) {
+          var rp = ai.riskyPhrases[ri];
+          if (/\{\{/.test(rp)) continue;
+          var cp = rp.replace(/^[*_~\s]+|[*_~\s]+$/g,'');
+          if (cp) phrases.push(cp.toLowerCase());
+        }
+        var origVarNames = new Set((template.match(/\{\{([^}]+)\}\}/g)||[]).map(function(v){return v.slice(2,-2).toLowerCase();}));
+        function lineHasOrigVar(line) {
+          return (line.match(/\{\{([^}]+)\}\}/g)||[]).some(function(v){return origVarNames.has(v.slice(2,-2).toLowerCase());});
+        }
+        // Phase 1: phrase-based line replacements
+        if (phrases.length) {
+          sv = sv.split('\n').map(function(line) {
+            var trimmed = line.trim();
+            if (!trimmed || /^\{\{[^}]+\}\}$/.test(trimmed) || /https?:\/\//.test(line)) return line;
+            if (trimmed === 'This is a system generated message.' || trimmed === '_Team Habuild_') return line;
+            var lineNoVars = line.replace(/\{\{[^}]+\}\}/g,' ').toLowerCase();
+            var found = phrases.filter(function(p){ return lineNoVars.includes(p); });
+            if (!found.length) return line;
+            if (found.length >= 2 && !lineHasOrigVar(line)) return '{{' + nextAiVar() + '}}';
+            var vName = nextAiVar();
+            var esc = found[0].replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+            return line.replace(new RegExp(esc,'gi'),'{{'+vName+'}}');
+          }).join('\n');
+        }
+        // Phase 2: absorb marketing emojis from lines that are only variable(s) + emoji(s)
+        // Neutral emojis (🙏😊🧘🌱✅💡) are intentionally excluded and left visible
+        var MKTG_E = Array.from('🎉🎊🥳🎈🎁🎀🏆🥇🥈🥉💰💸💎🔥⚡💥💪🚀👇👆👉👈❤️💛🧡💜💙💚💕💖⭐✨🌟💫🎯👑🤩😍😘🥰');
+        sv = sv.split('\n').map(function(line) {
+          var trimmed = line.trim();
+          if (!trimmed || !/\{\{[^}]+\}\}/.test(trimmed)) return line;
+          var rest = trimmed.replace(/\{\{[^}]+\}\}/g,'');
+          // Real text present → don't touch this line
+          if (/[a-zA-Z0-9]/.test(rest)) return line;
+          // Only whitespace/formatting/emojis — check for marketing emojis
+          if (!MKTG_E.some(function(e){ return rest.includes(e); })) return line;
+          // Strip marketing emojis, keep neutral emojis and variables intact
+          var clean = trimmed;
+          MKTG_E.forEach(function(e){ clean = clean.split(e).join(''); });
+          clean = clean.replace(/^[\s_*~]+|[\s_*~]+$/g,'').trim();
+          return clean || trimmed;
+        }).join('\n');
+        return sv;
+      })(),
+      aiPowered: true
+    });
+
+    // Re-generate sampleContent from AI-modified safeVariant so all variables have samples
+    {
+      const svRe2 = /\{\{([^}]+)\}\}/g;
+      const seenSV2 = new Set();
+      const newSamples = [];
+      const bsi2 = {};
+      let svm2;
+      while ((svm2 = svRe2.exec(merged.safeVariant)) !== null) {
+        const vName = svm2[1];
+        if (!seenSV2.has(vName)) {
+          seenSV2.add(vName);
+          newSamples.push({ varName: vName, sample: taiGetSample(vName, bsi2) });
+        }
+      }
+      merged.sampleContent = newSamples;
+    }
+    _taiResult = merged;
+    taiRender(merged);
+  } catch(e) {
+    console.error('Gemini error:', e.message);
+    _taiResult = ruleResult;
+    taiRender(ruleResult);
+    // Only show error for non-busy failures; busy = silent fallback to rule-based
+    if (e.message !== '__BUSY__') {
+      errEl.innerHTML = '⚠️ AI error: ' + e.message + ' <button onclick="taiAnalyze()" style="margin-left:8px;background:#4f46e5;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:.8rem;cursor:pointer;font-weight:700">Retry</button>';
+      errEl.style.display = 'block';
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Analyze Template';
+    if (overlay) overlay.classList.remove('active');
+  }
+}
+
+function taiRender(r) {
+  const catBadge = document.getElementById('tai-cat-badge');
+  catBadge.textContent = r.category;
+  catBadge.className = 'tai-badge ' + (r.category === 'Utility' ? 'tai-badge-utility' : 'tai-badge-marketing');
+
+  const riskBadge = document.getElementById('tai-risk-badge');
+  riskBadge.textContent = r.rejectionRisk + ' Risk';
+  riskBadge.className = 'tai-badge ' + (r.rejectionRisk === 'Low' ? 'tai-badge-low' : r.rejectionRisk === 'Medium' ? 'tai-badge-medium' : 'tai-badge-high');
+
+  const pct = r.rejectionRiskPercent;
+  const fill = document.getElementById('tai-risk-fill');
+  fill.style.width = pct + '%';
+  fill.style.background = pct >= 55 ? '#f87171' : pct >= 25 ? '#fbbf24' : '#34d399';
+  document.getElementById('tai-risk-pct').textContent = pct + '%';
+
+  document.getElementById('tai-explanation-card').innerHTML =
+    '<div class="tai-label" style="color:' + (r.category === 'Utility' ? '#60a5fa' : '#c084fc') + '">' +
+    (r.category === 'Utility' ? '✅ Utility Template' : '⚠️ Marketing Template') +
+    '</div><div style="font-size:.82rem;color:#94a3b8;line-height:1.5">' + r.explanation + '</div>';
+
+  const risksCard = document.getElementById('tai-risks-card');
+  if (r.rejectionReasons.length) {
+    risksCard.style.display = '';
+    risksCard.innerHTML = '<div class="tai-label tai-label-red">⚠️ Rejection Risks</div>' +
+      r.rejectionReasons.map(x => '<div class="tai-risk-item"><span style="color:#f87171;margin-top:1px">▸</span><span>' + x + '</span></div>').join('');
+  } else { risksCard.style.display = 'none'; }
+
+  const wordsCard = document.getElementById('tai-words-card');
+  if (r.riskyWords.length) {
+    wordsCard.style.display = '';
+    wordsCard.innerHTML = '<div class="tai-label">🚩 Detected Risky Words</div><div>' +
+      r.riskyWords.map(w => '<span class="tai-risky-tag">' + w + '</span>').join('') + '</div>';
+  } else { wordsCard.style.display = 'none'; }
+
+  const ctaCard = document.getElementById('tai-ctas-card');
+  if (r.detectedCTAs.length) {
+    ctaCard.style.display = '';
+    ctaCard.innerHTML = '<div class="tai-label">🔘 Detected CTA Buttons</div>' +
+      r.detectedCTAs.map(c =>
+        '<div class="tai-detected-cta ' + (c.type === 'Utility' ? 'tai-detected-utility' : 'tai-detected-marketing') + '" style="margin-bottom:6px">' +
+        '<span class="tai-badge ' + (c.type === 'Utility' ? 'tai-badge-utility' : 'tai-badge-marketing') + '" style="font-size:.65rem">' + c.type + '</span>' +
+        '<span style="font-weight:600;color:#e2e8f0;flex:1">' + c.text + '</span>' +
+        '<span style="font-size:.72rem;color:#64748b">' + c.reason + '</span></div>'
+      ).join('');
+  } else { ctaCard.style.display = 'none'; }
+
+  document.getElementById('tai-names').innerHTML = r.templateNameSuggestions.map(n =>
+    '<div class="tai-copy-row"><span class="tai-copy-row-label">' + n + '</span>' +
+    '<button class="tai-copy-btn" onclick="taiCopy(\'' + n + '\',this)">Copy</button></div>'
+  ).join('');
+
+  {
+    var svEl = document.getElementById('tai-body-pre');
+    var svText = r.safeVariant;
+    var riskyToHL = (r.riskyWords||[]).filter(function(p){
+      if(/\{\{/.test(p)) return false;
+      var stripped = svText.replace(/\{\{[^}]+\}\}/g,' ').toLowerCase();
+      return stripped.includes(p.toLowerCase());
+    });
+    if (!riskyToHL.length) {
+      svEl.textContent = svText;
+    } else {
+      function _esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+      // split on {{variables}}, process text segments only
+      var parts = svText.split(/(\{\{[^}]+\}\})/);
+      var html = parts.map(function(part){
+        if(/^\{\{[^}]+\}\}$/.test(part)) return '<span class="tai-sv-var">'+_esc(part)+'</span>';
+        var seg = _esc(part);
+        riskyToHL.slice().sort(function(a,b){return b.length-a.length;}).forEach(function(p){
+          seg = seg.replace(new RegExp(_esc(p).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),'<span class="tai-risky-hi">$&</span>');
+        });
+        return seg;
+      }).join('');
+      svEl.innerHTML = html;
+    }
+  }
+
+  const sampleCard = document.getElementById('tai-sample-card');
+  if (r.sampleContent.length) {
+    sampleCard.style.display = '';
+    document.getElementById('tai-samples').innerHTML = r.sampleContent.map(sv => {
+      const safeSample = sv.sample.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return '<div class="tai-sample-row" onclick="taiCopy(\'' + safeSample + '\',this)">' +
+        '<span class="tai-var-name">{{' + sv.varName + '}}</span>' +
+        '<span class="tai-sample-text">' + sv.sample + '</span>' +
+        '<span class="tai-copy-hint">tap to copy</span></div>';
+    }).join('');
+  } else { sampleCard.style.display = 'none'; }
+
+  // Step 5: Similar Variant card — show only for Utility templates with a body
+  const variantCard = document.getElementById('tai-variant-card');
+  if (variantCard) {
+    if (r.category === 'Utility' && (r.safeVariant || '').trim()) {
+      variantCard.style.display = '';
+      // Reset variant state on new analysis
+      document.getElementById('tai-variant-empty').style.display = '';
+      document.getElementById('tai-variant-result').style.display = 'none';
+      document.getElementById('tai-variant-pre').textContent = '';
+    } else {
+      variantCard.style.display = 'none';
+    }
+  }
+
+  const aiBadge = document.getElementById('tai-ai-badge');
+  const ruleBadge = document.getElementById('tai-rule-badge');
+  if (aiBadge) aiBadge.style.display = r.aiPowered ? '' : 'none';
+  if (ruleBadge) ruleBadge.style.display = r.aiPowered ? 'none' : '';
+
+  const res = document.getElementById('tai-results');
+  res.style.display = 'flex';
+  taiTab('analysis', res.querySelector('.tai-tab'));
+}
+
+function taiTab(name, btn) {
+  document.querySelectorAll('.tai-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tai-tab').forEach(b => b.classList.remove('active'));
+  const pane = document.getElementById('tai-pane-' + name);
+  if (pane) pane.classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+function taiCopy(text, btn) {
+  const finish = (ok) => {
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = ok ? 'Copied!' : 'Failed';
+    if (ok) btn.style.color = '#34d399';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => finish(true)).catch(() => finish(false));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); finish(true); } catch(_) { finish(false); }
+    document.body.removeChild(ta);
+  }
+}
+
+function taiCopyBody() {
+  if (_taiResult) taiCopy(_taiResult.safeVariant, document.getElementById('tai-copy-body-btn'));
+}
+
+let _taiVariantText = '';
+function taiCopyVariant() {
+  if (_taiVariantText) taiCopy(_taiVariantText, event && event.target);
+}
+
+async function taiGenerateSimilar() {
+  if (!_taiResult || !(_taiResult.safeVariant || '').trim()) return;
+  const btn = document.getElementById('tai-variant-btn');
+  const emptyEl = document.getElementById('tai-variant-empty');
+  const resEl = document.getElementById('tai-variant-result');
+  const preEl = document.getElementById('tai-variant-pre');
+  const origBtnHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '✨ Generating…';
+
+  const baseBody = _taiResult.safeVariant;
+  const origVars = (baseBody.match(/\{\{([^}]+)\}\}/g) || []);
+  const prompt = `You are a Meta WhatsApp Utility template rewriter. Rephrase the template below using DIFFERENT words but the SAME meaning. The output must be a clean Utility template.
+
+STRICT RULES:
+1. Keep EVERY {{variable}} placeholder EXACTLY as-is. Same names, same order if possible. Do not add new variables. Do not remove any.
+2. Keep the same overall intent (reminder/confirmation/info/status/etc.) — same meaning, different wording.
+3. Stay Utility — no hype words (amazing, inspiring, journey, transform, win, gift, free, hurry, don't miss), no celebration/marketing emojis (🎉🏆🎁✨🚀🔥❤️🌟💪).
+4. Utility-safe emojis are OK if useful: ⏰ 📄 📍 🔗 📊 📅 ✅ ℹ️ 🙏 📞 🔔.
+5. Do NOT start the template with a variable. First line must have static text.
+6. Keep similar length (±20%). Keep line breaks where they make sense.
+7. Output ONLY the rephrased template body. No JSON, no markdown fences, no explanation, no header/footer commentary.
+
+ORIGINAL TEMPLATE:
+---
+${baseBody}
+---
+
+Rephrased Utility variant:`;
+
+  const API_KEYS = [
+    'AIzaSyAbNEVYq_Zwz-_OyG_NI1sSe-_WkWaPfIQ',
+    'AIzaSyBa15olh1WTeowtaWQsrEFUzXwd-wGmEUQ',
+    'AIzaSyBcCP8o_ag2EAMY0hTBvfImYO1l_Vs1HJg',
+  ];
+  const MODEL = 'gemini-2.5-flash';
+  const reqBody = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.9, maxOutputTokens: 1024 }
+  });
+
+  let rawText = null;
+  try {
+    for (let i = 0; i < API_KEYS.length; i++) {
+      let resp;
+      try {
+        resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent?key=' + API_KEYS[i], {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody
+        });
+      } catch(_) { continue; }
+      if (resp.status === 429 || resp.status === 503) continue;
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      const textPart = parts.find(p => !p.thought && p.text) || parts[parts.length - 1] || {};
+      const t = (textPart.text || '').trim();
+      if (t) { rawText = t; break; }
+    }
+    if (!rawText) throw new Error('AI busy — try again');
+
+    // Clean up: strip code fences if any
+    let variant = rawText.replace(/^```[a-zA-Z]*\s*/i, '').replace(/\s*```$/, '').trim();
+    // Strip any leading "Rephrased..." / "Variant:" line the model sometimes adds
+    variant = variant.replace(/^(Rephrased[^\n]*:|Variant[^\n]*:|Output[^\n]*:)\s*/i, '').trim();
+
+    // Validate: every original {{var}} must still be present
+    const missing = origVars.filter(v => !variant.includes(v));
+    if (missing.length) {
+      // Try a simple recovery — append missing variables at end is risky, so just warn
+      throw new Error('AI dropped variables: ' + missing.join(', ') + '. Try Regenerate.');
+    }
+    if (variant.trim().startsWith('{{')) {
+      throw new Error('AI started with a variable. Try Regenerate.');
+    }
+
+    _taiVariantText = variant;
+    preEl.textContent = variant;
+    emptyEl.style.display = 'none';
+    resEl.style.display = '';
+  } catch(e) {
+    preEl.textContent = '';
+    emptyEl.style.display = '';
+    emptyEl.textContent = '⚠ ' + e.message;
+    resEl.style.display = 'none';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origBtnHTML;
+  }
+}
 </script>
+
+<!-- AI Loading Overlay -->
+<div id="tai-loading-overlay">
+  <!-- Twinkling stars -->
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+    <div style="position:absolute;top:9%;left:14%;width:3px;height:3px;border-radius:50%;background:#a78bfa;animation:tai-twinkle 2.1s 0s infinite"></div>
+    <div style="position:absolute;top:14%;right:17%;width:2px;height:2px;border-radius:50%;background:#818cf8;animation:tai-twinkle 1.8s .5s infinite"></div>
+    <div style="position:absolute;top:28%;left:7%;width:2px;height:2px;border-radius:50%;background:#c084fc;animation:tai-twinkle 2.4s 1.0s infinite"></div>
+    <div style="position:absolute;top:22%;right:9%;width:3px;height:3px;border-radius:50%;background:#6366f1;animation:tai-twinkle 1.6s .3s infinite"></div>
+    <div style="position:absolute;bottom:28%;left:11%;width:2px;height:2px;border-radius:50%;background:#a78bfa;animation:tai-twinkle 2.0s .7s infinite"></div>
+    <div style="position:absolute;bottom:22%;right:13%;width:3px;height:3px;border-radius:50%;background:#818cf8;animation:tai-twinkle 1.9s 1.2s infinite"></div>
+    <div style="position:absolute;top:58%;left:4%;width:2px;height:2px;border-radius:50%;background:#c084fc;animation:tai-twinkle 2.3s .2s infinite"></div>
+    <div style="position:absolute;top:52%;right:5%;width:2px;height:2px;border-radius:50%;background:#a78bfa;animation:tai-twinkle 1.7s .9s infinite"></div>
+    <div style="position:absolute;top:40%;left:20%;width:2px;height:2px;border-radius:50%;background:#6366f1;animation:tai-twinkle 2.0s .4s infinite"></div>
+    <div style="position:absolute;top:35%;right:21%;width:2px;height:2px;border-radius:50%;background:#818cf8;animation:tai-twinkle 2.5s 1.4s infinite"></div>
+  </div>
+
+  <!-- Breathing circle -->
+  <div class="tai-breath-wrap">
+    <div class="tai-breath-ring tai-br1"></div>
+    <div class="tai-breath-ring tai-br2"></div>
+    <div class="tai-breath-ring tai-br3"></div>
+    <div class="tai-breath-core" style="background:none;box-shadow:none;overflow:hidden;width:80px;height:80px"><img src="loading.gif" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/></div>
+    <div class="tai-breath-label">Analyzing</div>
+  </div>
+
+  <div class="tai-load-info">
+    <div class="tai-load-text">AI Analyzing your template<span class="tai-dot1">.</span><span class="tai-dot2">.</span><span class="tai-dot3">.</span></div>
+    <div class="tai-load-sub">Checking Meta Compliance</div>
+    <div class="tai-load-bar"><div class="tai-load-bar-fill"></div></div>
+  </div>
+</div>
+
 </body>
 </html>
+
+

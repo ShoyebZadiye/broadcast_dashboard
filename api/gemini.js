@@ -73,9 +73,10 @@ export default async function handler(req, res) {
         const eb = await resp.json();
         errMsg = (eb && eb.error && eb.error.message) || errMsg;
       } catch (_) {}
-      // 403 (leaked key) — skip this key and try next instead of failing immediately
-      if (resp.status === 403) {
-        lastError = 'Gemini 403: ' + errMsg;
+      // Per-key failures (invalid/leaked/forbidden) — skip this key, try next.
+      // Only bubble up errors that are NOT key-specific.
+      if (resp.status === 400 || resp.status === 401 || resp.status === 403) {
+        lastError = 'Gemini ' + resp.status + ': ' + errMsg;
         continue;
       }
       return res.status(resp.status).json({ error: 'Gemini ' + resp.status + ': ' + errMsg });

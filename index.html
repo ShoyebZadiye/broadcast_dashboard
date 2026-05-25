@@ -6789,10 +6789,12 @@ function taiRender(r) {
     }).join('');
   } else { sampleCard.style.display = 'none'; }
 
-  // Step 5: Similar Variant card — show only for Utility templates with a body
+  // Step 5: Similar Variant card — show whenever we have a non-empty safeVariant
+  // (the cleaned output is utility regardless of whether original input was
+  // Marketing or Utility, so variant generation is always available).
   const variantCard = document.getElementById('tai-variant-card');
   if (variantCard) {
-    if (r.category === 'Utility' && (r.safeVariant || '').trim()) {
+    if ((r.safeVariant || '').trim()) {
       variantCard.style.display = '';
       // Reset variant state on new analysis
       document.getElementById('tai-variant-empty').style.display = '';

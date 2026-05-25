@@ -1545,6 +1545,23 @@
           <!-- Error -->
           <div id="tai-error" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:10px 14px;font-size:.82rem;color:#f87171"></div>
 
+          <!-- Tips (shown in empty state, hides when results render) -->
+          <div id="tai-tips-card" class="card" style="padding:14px 16px;background:linear-gradient(135deg,rgba(124,58,237,.06),rgba(124,58,237,.02));border:1px solid rgba(124,58,237,.18);border-radius:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+              <div style="font-size:.72rem;font-weight:800;color:#a78bfa;letter-spacing:.08em">💡 TIPS FOR BEST RESULTS</div>
+              <div style="display:flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(124,58,237,.10);border:1px solid rgba(124,58,237,.25);border-radius:20px;font-size:.68rem;font-weight:700;color:#a78bfa">
+                <span style="width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399"></span>
+                AI trained on 16 templates
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px 18px;font-size:.74rem;color:var(--muted);line-height:1.55">
+              <div>📋 <b style="color:var(--text)">Paste the full template</b> — buttons, links and emojis included</div>
+              <div>🎯 Works on <b style="color:var(--text)">Marketing inputs too</b> — converts them to Utility</div>
+              <div>🎨 AI matches <b style="color:var(--text)">Habuild's writing style</b> from training pairs</div>
+              <div>♻️ Re-clicking Analyze on the same template returns <b style="color:var(--text)">identical results</b></div>
+            </div>
+          </div>
+
           <!-- Results (hidden until analyzed) -->
           <div id="tai-results" style="display:none;flex-direction:column;gap:10px">
 
@@ -6767,6 +6784,9 @@ function taiRender(r) {
 
   const res = document.getElementById('tai-results');
   res.style.display = 'flex';
+  // Hide the empty-state tips card now that results are visible
+  const tipsC = document.getElementById('tai-tips-card');
+  if (tipsC) tipsC.style.display = 'none';
   taiTab('analysis', res.querySelector('.tai-tab'));
 }
 

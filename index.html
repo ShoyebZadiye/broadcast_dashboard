@@ -6026,41 +6026,6 @@ function taiAnalyzeTemplate(text) {
   // Collapse 3+ consecutive blank lines down to 2 after the strip passes
   safeVariant = safeVariant.replace(/\n{3,}/g, '\n\n').trim();
 
-  // Collapse consecutive variable-only lines (possibly separated by blanks)
-  // into a single variable. Brings total variable count down drastically.
-  // e.g. "{{quote1}}\n\n{{quote2}}\n\n{{quote3}}" → "{{quote}}"
-  {
-    const lines = safeVariant.split('\n');
-    const result = [];
-    const isVarOnly = s => /^\{\{[^}]+\}\}$/.test(s.trim());
-    let i = 0;
-    while (i < lines.length) {
-      if (isVarOnly(lines[i])) {
-        // Collect this var-only block (skip blank lines between vars)
-        const block = [];
-        let j = i;
-        while (j < lines.length) {
-          if (isVarOnly(lines[j])) { block.push(lines[j].trim()); j++; }
-          else if (lines[j].trim() === '' && j + 1 < lines.length && isVarOnly(lines[j+1])) j++; // skip blank between vars
-          else break;
-        }
-        if (block.length >= 2) {
-          // Pick a single var name (prefer the first one's "base" without digits)
-          const firstName = block[0].slice(2, -2);
-          const baseName = firstName.replace(/\d+$/, '') || 'line';
-          result.push('{{' + baseName + '}}');
-        } else {
-          result.push(block[0]);
-        }
-        i = j;
-      } else {
-        result.push(lines[i]);
-        i++;
-      }
-    }
-    safeVariant = result.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  }
-
   // Strip outer JSON-style quotes if AI accidentally wrapped output in quotes.
   safeVariant = safeVariant.replace(/^["']+/, '').replace(/["']+$/, '').trim();
 
@@ -6242,7 +6207,7 @@ async function taiAnalyze() {
 
   // Cache lookup — same template input returns identical result, no AI re-roll.
   // Bust by editing the template even by one character.
-  const cacheKey = 'tai_cache_v11::' + template;
+  const cacheKey = 'tai_cache_v10::' + template;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -6354,15 +6319,13 @@ This utilityVariant WILL BE SUBMITTED TO META for Utility template approval. If 
 - Schedule/timestamps/dates/URLs/buttons/section headers — keep AS-IS
 - When in doubt → WRAP IT. Over-wrapping is safe. Under-wrapping is catastrophic.
 
-═══ MINIMIZE VARIABLES — AGGRESSIVELY ═══
-TARGET: 4-7 total variables in utilityVariant. Maximum 8. Never exceed.
-- NEVER produce a line like "{{update}} *₹ 4199* after 67% {{note}}" with 2 vars on one line.
-- Multiple CONSECUTIVE promotional/motivational sentences → wrap them ALL into ONE variable, not one per line.
-  Example: Three lines of motivational content "Believe in yourself.\nYou are strong.\nKeep going." → single {{quote}}, not three.
-- Pricing blocks: an entire 2-line "*12 month* ~(₹12799)~\n💸 *₹ 4199* after 67% DISCOUNT" → ONE {{line1}}, not two.
-- All three pricing tiers (12/6/3 month) can become {{line1}}, {{line2}}, {{line3}} — NOT 6+ variables.
-- Single-line greetings like "Hello {{name}} ji" with just {{name}} are fine.
-- WHEN IN DOUBT: combine related promotional content into a single variable. Fewer = better.
+═══ ONE VARIABLE PER LINE — STRICT ═══
+HABUILD STYLE rule (look at all the EXAMPLE OUTPUTS): each line has AT MOST ONE variable.
+- NEVER produce a line like "{{update}} *₹ 4199* after 67% {{note}}" with 2 vars.
+- If a line has multiple promotional elements, MERGE them into ONE variable: just "{{line1}}" or "{{message}}".
+- Pricing rows like "*12 month* ~(₹12799)~" → entire line becomes {{line1}}; the next row "*₹ 4199* after 67% DISCOUNT" → {{line2}}.
+- Single-line greetings like "Hello {{name}} ji" with just {{name}} are fine (1 var).
+- Output total variable count target: under 10. Definitely under 12. Meta caps body parameters near 10.
 
 ═══ NO OUTER QUOTES ═══
 utilityVariant must be the raw template body. Do NOT wrap it in quotation marks. Do NOT prepend/append " or '.
@@ -6533,36 +6496,6 @@ Return ONLY valid JSON with no markdown:
               if (/^\{\{(image|images|img|pdf|video|videos|doc|document)\d*\}\}$/i.test(t)) return false;
               return true;
             }).join('\n').replace(/\n{3,}/g, '\n\n').trim();
-            // Cleanup pass 4: collapse consecutive variable-only lines into one variable
-            {
-              var aiLines = aiUV.split('\n');
-              var aiResult = [];
-              var isVO = function(s){ return /^\{\{[^}]+\}\}$/.test(s.trim()); };
-              var ii = 0;
-              while (ii < aiLines.length) {
-                if (isVO(aiLines[ii])) {
-                  var blk = [];
-                  var jj = ii;
-                  while (jj < aiLines.length) {
-                    if (isVO(aiLines[jj])) { blk.push(aiLines[jj].trim()); jj++; }
-                    else if (aiLines[jj].trim() === '' && jj + 1 < aiLines.length && isVO(aiLines[jj+1])) jj++;
-                    else break;
-                  }
-                  if (blk.length >= 2) {
-                    var fn = blk[0].slice(2, -2);
-                    var bn = fn.replace(/\d+$/, '') || 'line';
-                    aiResult.push('{{' + bn + '}}');
-                  } else {
-                    aiResult.push(blk[0]);
-                  }
-                  ii = jj;
-                } else {
-                  aiResult.push(aiLines[ii]);
-                  ii++;
-                }
-              }
-              aiUV = aiResult.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-            }
             return aiUV;
           }
         }

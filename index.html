@@ -5847,6 +5847,43 @@ function taiAnalyzeTemplate(text) {
     return line;
   }).join('\n');
 
+  // Strip outer JSON-style quotes if AI accidentally wrapped output in quotes.
+  safeVariant = safeVariant.replace(/^["']+/, '').replace(/["']+$/, '').trim();
+
+  // Merge multi-variable lines into single variables.
+  // Habuild style is one {{var}} per line. Lines with 2+ vars (like
+  // "{{update2}} *₹ 4199* after 67% {{note}}") get collapsed to one var.
+  // Skips URL lines and lines that look like utility flow with {{name}}.
+  {
+    const existingNames = new Set((safeVariant.match(/\{\{([^}]+)\}\}/g) || []).map(v => v.slice(2, -2)));
+    const MERGE_POOL = ['line','message','info','note','detail','item','data','content','update','reminder','quote'];
+    let mergeCounter = 0;
+    function nextMergeVar() {
+      while (mergeCounter < 1000) {
+        const base = MERGE_POOL[mergeCounter % MERGE_POOL.length];
+        const suffix = Math.floor(mergeCounter / MERGE_POOL.length);
+        const candidate = suffix ? base + (suffix + 1) : base;
+        mergeCounter++;
+        if (!existingNames.has(candidate)) {
+          existingNames.add(candidate);
+          return candidate;
+        }
+      }
+      return 'line';
+    }
+    safeVariant = safeVariant.split('\n').map(line => {
+      if (/https?:\/\//.test(line)) return line; // skip URL lines
+      const vars = line.match(/\{\{[^}]+\}\}/g) || [];
+      if (vars.length < 2) return line;
+      // Skip if one of the vars is {{name}} and the other text is short greeting/closing
+      const hasName = vars.some(v => /\{\{name\d*\}\}/i.test(v));
+      const visibleText = line.replace(/\{\{[^}]+\}\}/g, '').trim();
+      if (hasName && visibleText.length < 25) return line;
+      // Otherwise collapse entire line to a single new variable
+      return '{{' + nextMergeVar() + '}}';
+    }).join('\n');
+  }
+
   {
     const lastIsVar = safeVariant.trim().endsWith('}}');
     const varMatches = safeVariant.match(/\{\{[^}]+\}\}/g) || [];
@@ -5991,7 +6028,7 @@ async function taiAnalyze() {
 
   // Cache lookup — same template input returns identical result, no AI re-roll.
   // Bust by editing the template even by one character.
-  const cacheKey = 'tai_cache_v6::' + template;
+  const cacheKey = 'tai_cache_v7::' + template;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -6103,6 +6140,17 @@ This utilityVariant WILL BE SUBMITTED TO META for Utility template approval. If 
 - Schedule/timestamps/dates/URLs/buttons/section headers — keep AS-IS
 - When in doubt → WRAP IT. Over-wrapping is safe. Under-wrapping is catastrophic.
 
+═══ ONE VARIABLE PER LINE — STRICT ═══
+HABUILD STYLE rule (look at all the EXAMPLE OUTPUTS): each line has AT MOST ONE variable.
+- NEVER produce a line like "{{update}} *₹ 4199* after 67% {{note}}" with 2 vars.
+- If a line has multiple promotional elements, MERGE them into ONE variable: just "{{line1}}" or "{{message}}".
+- Pricing rows like "*12 month* ~(₹12799)~" → entire line becomes {{line1}}; the next row "*₹ 4199* after 67% DISCOUNT" → {{line2}}.
+- Single-line greetings like "Hello {{name}} ji" with just {{name}} are fine (1 var).
+- Output total variable count target: under 10. Definitely under 12. Meta caps body parameters near 10.
+
+═══ NO OUTER QUOTES ═══
+utilityVariant must be the raw template body. Do NOT wrap it in quotation marks. Do NOT prepend/append " or '.
+
 ═══ HABUILD STYLE — REAL INPUT → UTILITY OUTPUT EXAMPLES ═══
 These are the team's actual conversions. STUDY THEM and follow the SAME style when producing utilityVariant:
 
@@ -6212,25 +6260,45 @@ Return ONLY valid JSON with no markdown:
             }
           }
           if (validUV) {
-            // Cleanup pass: marketing emojis + orphan formatting markers / lone
-            // punctuation around variable-only lines.
+            // Strip outer JSON-style quotes
+            aiUV = aiUV.replace(/^["']+/, '').replace(/["']+$/, '').trim();
+            // Cleanup pass 1: marketing emojis + orphan formatting markers
             var MKTG_E2 = Array.from('🎉🎊🥳🎈🎁🎀🏆🥇🥈🥉💰💸💎🔥⚡💥💪🚀👇👆👉👈❤️💛🧡💜💙💚💕💖⭐✨🌟💫🎯👑🤩😍😘🥰');
-            return aiUV.split('\n').map(function(line) {
+            aiUV = aiUV.split('\n').map(function(line) {
               var t = line.trim();
               if (!t || !/\{\{[^}]+\}\}/.test(t)) return line;
               var varsOnLine = t.match(/\{\{[^}]+\}\}/g) || [];
               var rest = t.replace(/\{\{[^}]+\}\}/g,'');
-              // If only formatting markers / single punctuation / whitespace remain → keep just vars
-              if (/^[_*~!.,:;?\s]*$/.test(rest)) {
-                return varsOnLine.join(' ');
-              }
-              // Otherwise strip orphan marketing emojis from var-only-plus-emoji lines
+              if (/^[_*~!.,:;?\s]*$/.test(rest)) return varsOnLine.join(' ');
               if (/[a-zA-Z0-9]/.test(rest)) return line;
               if (!MKTG_E2.some(function(e){ return rest.includes(e); })) return line;
               var clean = t;
               MKTG_E2.forEach(function(e){ clean = clean.split(e).join(''); });
               clean = clean.replace(/^[\s_*~!.,:;?]+|[\s_*~!.,:;?]+$/g,'').trim();
               return clean || t;
+            }).join('\n');
+            // Cleanup pass 2: merge 2+ variable lines into a single variable
+            var existingUVNames = new Set((aiUV.match(/\{\{([^}]+)\}\}/g) || []).map(function(v){ return v.slice(2,-2); }));
+            var MERGE_POOL_UV = ['line','message','info','note','detail','item','data','content','update','reminder','quote'];
+            var mc = 0;
+            function nextMergeUV() {
+              while (mc < 1000) {
+                var base = MERGE_POOL_UV[mc % MERGE_POOL_UV.length];
+                var suffix = Math.floor(mc / MERGE_POOL_UV.length);
+                var cand = suffix ? base + (suffix + 1) : base;
+                mc++;
+                if (!existingUVNames.has(cand)) { existingUVNames.add(cand); return cand; }
+              }
+              return 'line';
+            }
+            return aiUV.split('\n').map(function(line) {
+              if (/https?:\/\//.test(line)) return line;
+              var vs = line.match(/\{\{[^}]+\}\}/g) || [];
+              if (vs.length < 2) return line;
+              var hasName = vs.some(function(v){ return /\{\{name\d*\}\}/i.test(v); });
+              var vt = line.replace(/\{\{[^}]+\}\}/g, '').trim();
+              if (hasName && vt.length < 25) return line;
+              return '{{' + nextMergeUV() + '}}';
             }).join('\n');
           }
         }

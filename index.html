@@ -1035,6 +1035,7 @@
       </nav>
       <div class="sidebar-footer">
         <div id="ext-version-bar" style="margin-bottom:8px"></div>
+        <button onclick="clearCacheAndReload()" title="Stuck on old version? Clears cache and force-reloads from server" style="width:100%;background:none;border:1px solid var(--border);color:var(--muted);font-size:.74rem;cursor:pointer;padding:7px 10px;border-radius:7px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s" onmouseover="this.style.background='#fee2e2';this.style.color='#dc2626';this.style.borderColor='#fca5a5'" onmouseout="this.style.background='none';this.style.color='var(--muted)';this.style.borderColor='var(--border)'">🧹 Clear Cache & Reload</button>
         <div class="user-info">
           <div class="user-avatar" id="user-avatar">U</div>
           <div class="user-email" id="user-email-display">user@example.com</div>
@@ -4491,6 +4492,36 @@ function adminAddUser() {
   if (!email) { toast('Enter an email', 'error'); return; }
   adminApprove(email);
   document.getElementById('admin-add-email').value = '';
+}
+
+// Clears all client-side caches and force-reloads from server, bypassing browser cache.
+// Use whenever the dashboard looks stale after a Vercel deploy. Safe — keeps login intact.
+async function clearCacheAndReload() {
+  try { sessionStorage.clear(); } catch (_) {}
+  try {
+    // Clear non-login localStorage entries (keep bcast_user so user stays logged in)
+    const keep = localStorage.getItem('bcast_user');
+    localStorage.clear();
+    if (keep) localStorage.setItem('bcast_user', keep);
+  } catch (_) {}
+  // Unregister any service workers
+  if ('serviceWorker' in navigator) {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    } catch (_) {}
+  }
+  // Clear caches API (used by service workers and some browsers)
+  if (window.caches && caches.keys) {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    } catch (_) {}
+  }
+  // Reload with cache-busting query parameter so HTML/JS is fetched fresh
+  const url = new URL(window.location.href);
+  url.searchParams.set('_cb', Date.now().toString());
+  window.location.replace(url.toString());
 }
 
 // ══════════════════════════════════════════════

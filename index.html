@@ -4495,14 +4495,20 @@ function adminAddUser() {
 }
 
 // Clears all client-side caches and force-reloads from server, bypassing browser cache.
-// Use whenever the dashboard looks stale after a Vercel deploy. Safe — keeps login intact.
+// Use whenever the dashboard looks stale after a Vercel deploy. Safe — keeps login
+// and theme preference intact.
 async function clearCacheAndReload() {
   try { sessionStorage.clear(); } catch (_) {}
   try {
-    // Clear non-login localStorage entries (keep bcast_user so user stays logged in)
-    const keep = localStorage.getItem('bcast_user');
+    // Preserve user preferences across clear — only sessionStorage / app caches
+    // should be wiped, not login or UI settings.
+    const preserved = {};
+    ['bcast_user', 'bcast_dark'].forEach(k => {
+      const v = localStorage.getItem(k);
+      if (v !== null) preserved[k] = v;
+    });
     localStorage.clear();
-    if (keep) localStorage.setItem('bcast_user', keep);
+    Object.keys(preserved).forEach(k => localStorage.setItem(k, preserved[k]));
   } catch (_) {}
   // Unregister any service workers
   if ('serviceWorker' in navigator) {
@@ -6059,7 +6065,7 @@ async function taiAnalyze() {
 
   // Cache lookup — same template input returns identical result, no AI re-roll.
   // Bust by editing the template even by one character.
-  const cacheKey = 'tai_cache_v7::' + template;
+  const cacheKey = 'tai_cache_v8::' + template;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {

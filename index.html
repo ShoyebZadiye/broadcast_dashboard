@@ -5560,6 +5560,99 @@ const TAI_MARKETING_LINE_SIGNALS = [
 const TAI_MARKETING_EMOJIS = ['🎉','🏆','🎁','💛','✨','🚀','🔥','❤️','🌟','🥹','💪','🎊','🎈','💖','💯','⭐','🥳','😍','🤩'];
 const TAI_UTILITY_EMOJIS   = ['⏰','📄','📍','🔗','📊','🧾','📅','✅','⚠️','ℹ️','👇','🙏','📞','📱','🕐','🔔','📋','💬'];
 
+// Habuild WATI training pairs — real input→utility transformations.
+// All 16 pairs from the team's sheet — payment, renewal, gift, invite,
+// session, feedback, tracker etc. AI sees all of these as few-shot
+// examples to match the team's writing style across every use case.
+const TAI_TRAINING_PAIRS = [
+  // 1. FREE yoga registration (marketing hype + button list)
+  {
+    input: "Ever wondered {{Name}} Ji 🙏\n\nHow people manage to do yoga daily? 😄\n_They simply kept showing up...even for 5 mins!_✨\n\nSpecially for you👇\n\n*FREE YOGA* | 21-Day Online \n🗓️_Starts 8th June_\n\nAnd also be a part of  *World Record* 🌏\n\nClick on the button below to register ⬇️\n[CLICK HERE - REGISTER]\n[NOT INTERESTED]",
+    output: "Ever wondered {{name}} Ji 🙏\n\n{{quote1}}\n{{quote2}}\n\n{{line}}\n\n{{message}}\n🗓️ _Starts 8th June_\n\nAnd {{reminder}}\n\nClick on the button below to register ⬇️\n\n_Team Habuild_"
+  },
+  // 2. Return/miss-you reactivation
+  {
+    input: "We are missing you {{Name}} ji 🥹\n\n_Vapas yoga class me milte hain?_...\n\nJoin ⬇️\n\n*FREE YOGA* | 21-Day Online \n🗓️_Starts 8th June_\n\nClick on the button below to join ⬇️\n[CLICK HERE - JOIN]\n[NOT INTERESTED]",
+    output: "{{image}}\n\nUpdate: {{update}} {{name}} ji 🥹\n\n{{reminder}}\n\n{{line}}\n\n{{message}}\n🗓️_Starts 8th June_\n\nClick on the button below to join ⬇️"
+  },
+  // 3. Hinglish reactivation marketing
+  {
+    input: "Bethe bethe kya karein..{{Name}} ji\n\n_Karna hai kuch kaam_...\n\n*FREE YOGA* | 21-Day Online \n🗓️_Starts 8th June_\n\nJoin karo *Good Health* ke naam...\n\nClick on the button below to join ⬇️\n[CLICK HERE - JOIN]\n[NOT INTERESTED]",
+    output: "{{image}}\n\nBethe bethe kya karein..{{name}} ji\n\n_{{info2}}_...\n\n*{{update}} YOGA* | {{note2}} \n🗓️_Starts 8th June_\n\n{{info}}\n\nClick on the button below to join ⬇️"
+  },
+  // 4. Event/World Record reminder
+  {
+    input: "Be a part of World Record*🌏, {{name}} Ji\n\n_Join lakhs of people in an ONLINE YOGA class\nand create a historic moment together_\n\nalso get\n\n*FREE YOGA* | 21-Day Online \n🗓️_Starts 8th June_\n\nClick below to confirm ⬇️\n[YES, CONFIRM]\n[NOT INTERESTED]",
+    output: "Be a {{line}} 🌏, {{name}} Ji\n\n{{reminder}}\n\nalso get\n\n*{{quote}}* | 21-Day Online \n🗓️_Starts {{date}}_\n\nClick below to confirm ⬇️"
+  },
+  // 5. Meet-your-trainer reminder (mostly utility)
+  {
+    input: "Namaste Avantika Ji 🙏🏻\n\nReminder: *Meet Your Trainer* session is today  💙\n\n🗓️ {{session_date}}\n🕣 8:30 - 9:00 PM IST\n\nIn this session, you'll:\n🧘‍♂️ Meet your yoga trainer\n🗓️ Understand your yoga schedule\n😴 Learn simple wellness & sleep tips\n\n🔗 Join here:\n{{personal_link}}\n\nSee you in the session ✨",
+    output: "{{image}}\n\nNamaste {{name}} Ji 🙏🏻\n\nReminder: *{{update}} Trainer* session is today  💙\n\n🗓️ {{session_date}}\n🕣 8:30 - 9:00 PM IST\n\nIn this {{note}}'ll:\n🧘‍♂️ {{update_2}} yoga trainer\n🗓️ Understand your yoga schedule\n{{reminder}}\n\n🔗 Join here:\n{{personal_link}}\n\nSee you in the session ✨"
+  },
+  // 6. Leaderboard introduction
+  {
+    input: "Namaste {{name}} Ji 🙏\n\nThe INVITE LEADERBOARDis officially LIVE 🏆💛\n\nHere, you can: \n💁🏻 Track your invites\n🎖️ See your rank\n🎁 Win special gifts by sharing yoga\n\n👉 Access LEADERBOARDhere: [link]\n\n_Invite more people to begin their wellness journey through yoga_ 🧘‍♀️✨\n\nClick on the button below to proceed: 👇🏻\n<VIEW DASHBOARD>\n<INVITE FRIENDS>",
+    output: "{{image}}\nNamaste {{name}} Ji 🙏\n\n{{reminder}}\n\nHere, you can: \n💁🏻 Track your invites\n🎖️ See your rank\n{{note}}\n\n👉 Access LEADERBOARD here: {{link}}\n\n{{quote}}\n\nClick on the button below to proceed: 👇🏻\n<VIEW DASHBOARD>\n<INVITE FRIENDS>"
+  },
+  // 7. Invite recorded — gift/voucher
+  {
+    input: "Namaste {{Name}} ji 🙏\n\n🏆Your first successful INVITE is recorded 💛\n\n{{Name}} ji has joined FREE YOGA! 🧘🏻‍♀️🙌🏻\n\n_7 Yoga Days Voucher earned 🎫 (*redeem with a paid plan)_\n\n⭐️ Share yoga with more loved ones 💛\n✅ Only 4 more invites to reach Level 1 🏆\n🎁  DOWNLOAD Breathing Exercise PDF 📄\n\n<VIEW DASHBOARD>\n<INVITE FRIENDS>",
+    output: "{{pdf}}\n\nNamaste {{name}} ji 🙏\n\n{{message}}\n\n{{name1}} ji has joined FREE YOGA! 🧘🏻‍♀️🙌🏻\n\n{{quote}}\n\n{{quote1}}\n{{quote2}}\n{{quote3}}\n\nYou can proceed by clicking the button below.\n<VIEW DASHBOARD>\n<INVITE FRIENDS>"
+  },
+  // 8. Leaderboard winner / gift congrats
+  {
+    input: "🎉 Congratulations {{name}} Ji 💛\n\n_INVITE LEADERBOARD ranks are now FINAL!_ 🏆\nand you've secured your place among our top yoga spreaders 🧘‍♀️✨\n\nBecause of your invites,\n🧘🏻‍♂️ more people began their yoga journey 🙂\n\n🎁 Your gift will be shared with you soon\n\nThank you for spreading wellness 💛\n\n[VIEW YOUR RANK]",
+    output: "{{image}}\n\n🎉 {{update}} {{name}} Ji 💛\n\n{{quote}}\n{{quote2}}\n\n{{note}}\n{{note1}}\n\n🎁 Your {{note2}} will be shared with you soon\n\n{{reminder}}\n\n_This is a system generated message._\n_Team Habuild_"
+  },
+  // 9. Payment/subscription pricing (multi-tier with links)
+  {
+    input: "Hello Shoyeb Ji,\n\n _*We want to see you in class tomorrow*_ 🥹\n\nLet's stay connected through this journey together! \n\n👉 To CONTINUE *Strong Everyday with Trishala Bothra*\n\n🔥*Join Now!*🔥\n\n_Click on the link to register:_\n\n🌟 *12 month* ~(₹12799)~\n💸 *₹ 4199* after 67% DISCOUNT\n🔗 LINK - https://strength.habuild.in/membershipplan-new\n\n🌟 *6 month* ~(₹6599)~\n💸 *₹ 3299* after 50% DISCOUNT\n🔗 LINK - https://strength.habuild.in/membershipplan-new\n\n🌟 *3 month* ~(₹3599)~\n💸 *₹ 2399* after 33% DISCOUNT\n🔗 LINK - https://strength.habuild.in/membershipplan-new\n\n🎁 GET A FREE RESISTANCE BAND (WORTH ₹499)\n_Delivered directly to your home as part of your active subscription!_ 💪📦",
+    output: "Hello {{name}} Ji,\n\n{{message}}\n\nLet's stay connected through this journey together! \n\n{{quote}} *Strong Everyday with Trishala Bothra*\n\n{{quote1}}\n\n_{{quote3}}_\n\n{{line1}}\n{{line2}}\n🔗 LINK - {{link1}}\n\n{{line3}}\n{{line4}}\n🔗 LINK - {{link2}}\n\n{{line5}}\n{{line6}}\n🔗 LINK - {{link3}}\n\n{{update}}\n_Delivered directly to your home as part of your active subscription!_ 💪📦\n\n_This message contains program-related information_"
+  },
+  // 10. Bonus session announcement (topic + schedule)
+  {
+    input: "Namaste shoyeb Ji 🙏\n\nBONUS SESSION TODAY 🎁\n\nTopic: Importance of Diet in Building Strength ✨\n\nSUNDAY (Today) @\n\n⏰ 11:00–11:30 AM  \nOR  \n⏰ 6:00–6:30 PM  \n\nSession Details:\n\n✅ Why diet matters 💪\n✅ How to increase protein intake ⚡\n✅ Food for staying energetic & active 🙂\n\n🔗 JOIN & LEARN\n➡️ https://join.habit.yoga/free/b/asdf",
+    output: "Namaste {{name}} Ji,\n\n{{message}}\n\nSession Topic: {{update}}\n\n{{message1}}\n\n⏰ 11:00–11:30 AM\nOR\n⏰ 6:00–6:30 PM\n\nSession Details:\n\n{{quote1}}\n{{quote2}}\n{{quote3}}\n\n{{line}}\n➡️ {{personal_link}}\n\n_Kindly join the session at the scheduled time._\n_Habuild Strong Everyday_"
+  },
+  // 11. Tomorrow's focus / motivational reminder
+  {
+    input: "Namaste Shoyeb ji 🙏🏻\n\nA little effort, every day, is magic. 🪄\n\nTomorrow's Focus: STAMINA AND MEDITATION - Boost Energy & Calm your mind  ✨\n\nAttend any batch (45 mins, IST):\n🌞 Mor (AM) : 6:30 | 7:30 | 8:30 \n🌙 Eve (PM):  5:00 | 6:00 | 7:00 \n\nClick here to join: ➡️ \nhttps://join.habit.yoga/free/y/asd\n\nShare FREE YOGA, to proceed select the button below",
+    output: "Namaste {{name}} ji 🙏🏻\n\n{{quote}}\n\n*Tomorrow's Focus:* {{quote1}}\n\nAttend any batch (45 mins, IST):\n🌞 Mor (AM) : 6:30 | 7:30 | 8:30 \n🌙 Eve (PM):  5:00 | 6:00 | 7:00 \n\nClick here to join: ➡️ \n{{personal_link}}\n\n{{quote2}}, to proceed select the button below:"
+  },
+  // 12. Habit tracker / badge progress
+  {
+    input: "Hello Shoyeb ji,\n\nToday's session is completed.\n\nYou have unlocked *7-Day badge*🎉\n\n✅ 3 Day (Done)\n✅ 7 Day (Done)\n◻️ 14 Days (Next Days)\n\nᴡᴇᴇᴋʟʏ ʜᴀʙɪᴛ ᴛʀᴀᴄᴋᴇʀ \n⬜⬜✅⬜⬜⬜ \n\nClick below to download badge",
+    output: "Hello {{name}} ji,\n\nToday's session is completed.\n\n{{info}}\n\n{{info1}}\n{{info2}}\n{{info3}}\n\nᴡᴇᴇᴋʟʏ ʜᴀʙɪᴛ ᴛʀᴀᴄᴋᴇʀ \n{{tracker}}\n\nClick below to download badge"
+  },
+  // 13. Renewal reminder (short)
+  {
+    input: "IMPORTANT UPDATE 🔔\n\nWe hope YOGA with Saurabh is adding *joy to your life.* 🤩\n\nContinue your regular yoga sessions.\n\nRENEW your yoga subscription before 34 nov 🗓️\n\nPlease click below to *RENEW* 👇:",
+    output: "IMPORTANT {{message}}\n\n{{quote}} YOGA with Saurabh {{quote1}}\n\nContinue your regular yoga sessions.\n\n{{reminder}} before {{end_date}} 🗓️\n\nPlease click below to {{message2}}:"
+  },
+  // 14. Renewal with pricing tiers
+  {
+    input: "{{Name}} ji 💛\n\nYou've put real effort into this.\nThat strength didn't appear overnight.\n\nYour body is getting stronger.\n{{X}} days left, don't reset now.\n\nContinue with:\n⭐️ 12 Months: ~₹12,000~ *₹3,999*\n⭐️ 6 Months: ~₹6,000~ *₹2,999*\n\nLet's keep going.\n\n<CTA: Renew Now>",
+    output: "Hello {{name}} Ji 💛\n\n{{line1}}\n{{line2}}\n\nYour body is getting stronger.\n{{days}} days left, don't reset now.\n\nContinue with:\n{{quote1}}\n{{quote2}}\n\nSee you in the Session!"
+  },
+  // 15. Renewal with feature list (3 days remaining)
+  {
+    input: "{{Name}} ji 💛\n\nQuick question: How does your body feel on days you attend a session versus days you don't?\n\nSee! You know the answer.\nThose small, steady sessions are doing the work.\n\nNote: Your plan is about to end.\nAnd we believe you will continue without a gap.\n\nRenew to keep access to:\n✔ Strength training\n✔ Yoga\n✔ Free Physio help\n✔ Mudra & Marma\n\nJust keep coming. That's enough.",
+    output: "Hello {{name}} ji 💛\n\n{{reminder}}\n\nSee! You know the answer.\n{{message}}\n\nNote: {{note}}\n{{note1}}\n\n{{line}}\n✔ Strength training\n✔ Yoga\n✔ Free Physio help\n✔ Mudra & Marma\n\nJust keep coming. That's enough."
+  },
+  // 16. Post-session feedback request
+  {
+    input: "Hello {{name}} 💚\n\nThank you for joining the session ✨\n\nProgress is in the practice ✨\n\nᴡᴇᴇᴋʟʏ ʜᴀʙɪᴛ ᴛʀᴀᴄᴋᴇʀ\n{{tracker}}\n\nHow was today's session? 🌿\n\nClick here to proceed 👇",
+    output: "{{image}}\n\nHello {{name}} 💚\n\nThank you for joining the session ✨\n\n{{quote}}\n\nᴡᴇᴇᴋʟʏ ʜᴀʙɪᴛ ᴛʀᴀᴄᴋᴇʀ\n{{tracker}}\n\n{{feedback_line}}\n\nClick here to proceed 👇"
+  }
+];
+
+function taiBuildTrainingExamples() {
+  return TAI_TRAINING_PAIRS.map((p, i) =>
+    'EXAMPLE ' + (i+1) + '\nINPUT:\n' + p.input + '\n\nUTILITY OUTPUT:\n' + p.output
+  ).join('\n\n— — —\n\n');
+}
+
 function taiGetUrlRanges(text) {
   const ranges = [];
   const re = /https?:\/\/[^\s]+/g;
@@ -5868,7 +5961,7 @@ async function taiAnalyze() {
 
   // Cache lookup — same template input returns identical result, no AI re-roll.
   // Bust by editing the template even by one character.
-  const cacheKey = 'tai_cache_v1::' + template;
+  const cacheKey = 'tai_cache_v2::' + template;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -5971,8 +6064,26 @@ Only flag phrases that are clearly PROMOTIONAL, EMOTIONAL, GAMIFIED, FOMO-driven
 
 Be MINIMAL with riskyPhrases. Quality over quantity. An empty riskyPhrases array is correct when the template is clean utility.
 
+═══ HABUILD STYLE — REAL INPUT → UTILITY OUTPUT EXAMPLES ═══
+These are the team's actual conversions. STUDY THEM and follow the SAME style when producing utilityVariant:
+
+- Use lowercase short variable names: {{name}}, {{quote}}, {{quote1}}, {{message}}, {{message1}}, {{info}}, {{info1}}, {{note}}, {{reminder}}, {{update}}, {{line}}, {{line1}}, {{tracker}}, {{personal_link}}, {{end_date}}, {{session_date}}, {{image}}, {{pdf}}
+- {{Name}} → {{name}} (always lowercase)
+- Keep structural lines literal: timestamps (⏰ 7:00 AM), schedule lines, dates, URLs in {{personal_link}}, button text, headers like "Session Details:", ASCII art trackers
+- Wrap motivational/emotional/promotional phrases into variables
+- Wrap big marketing labels like "*FREE YOGA*" into {{message}} or {{quote}}
+- Don't over-wrap — short greetings, instruction phrases ("Click on the button below"), polite closings ("See you in the session ✨") STAY AS-IS
+- Add {{image}} or {{pdf}} at top only if the input clearly needs a header media
+- Trailing "_Team Habuild_" is acceptable as a clean closing
+
+${taiBuildTrainingExamples()}
+
+— — —
+
+═══ END HABUILD EXAMPLES ═══
+
 Return ONLY valid JSON with no markdown:
-{"category":"Marketing or Utility","rejectionRisk":"Low or Medium or High","rejectionRiskPercent":50,"explanation":"2-3 sentences explaining the intent and why Meta would classify it this way","riskyPhrases":["exact phrase from template that is risky"],"rejectionReasons":["specific Meta policy reason 1","reason 2"]}`;
+{"category":"Marketing or Utility","rejectionRisk":"Low or Medium or High","rejectionRiskPercent":50,"explanation":"2-3 sentences explaining the intent and why Meta would classify it this way","riskyPhrases":["exact phrase from template that is risky"],"rejectionReasons":["specific Meta policy reason 1","reason 2"],"utilityVariant":"The full template rewritten in Habuild utility style — same structure, marketing phrases wrapped as variables, utility text untouched. Preserve every line break. Match the EXAMPLE OUTPUTS style precisely."}`;
 
     let rawText = null;
     const proxyResp = await fetch('/api/gemini', {
@@ -6005,6 +6116,44 @@ Return ONLY valid JSON with no markdown:
         return !(/\{\{[^}]+\}\}/.test(r) && /variable/i.test(r)); // remove "vague variable" reasons
       }) : ruleResult.rejectionReasons),
       safeVariant: (function() {
+        // Step A: if AI returned a full utilityVariant and it passes validation,
+        // use it as-is. This gives the AI direct control over output style,
+        // guided by the Habuild few-shot examples.
+        var origVarNames = new Set((template.match(/\{\{([^}]+)\}\}/g)||[]).map(function(v){return v.slice(2,-2).toLowerCase();}));
+        var aiUV = (typeof ai.utilityVariant === 'string' ? ai.utilityVariant : '').trim();
+        if (aiUV) {
+          var validUV = true;
+          // Strip code fences if AI wrapped it
+          aiUV = aiUV.replace(/^```[a-zA-Z]*\s*/i,'').replace(/\s*```$/,'').trim();
+          // Reject if starts with a variable (Meta rule)
+          if (aiUV.startsWith('{{')) validUV = false;
+          // Reject if pathologically short
+          if (validUV && aiUV.length < Math.max(20, template.length * 0.25)) validUV = false;
+          // Reject if AI dropped any original {{variables}} from input
+          if (validUV) {
+            for (var v of origVarNames) {
+              // case-insensitive var name check
+              var re = new RegExp('\\{\\{\\s*' + v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\s*\\}\\}', 'i');
+              if (!re.test(aiUV)) { validUV = false; break; }
+            }
+          }
+          if (validUV) {
+            // Apply Phase 2 (orphan marketing emoji cleanup) and return
+            var MKTG_E2 = Array.from('🎉🎊🥳🎈🎁🎀🏆🥇🥈🥉💰💸💎🔥⚡💥💪🚀👇👆👉👈❤️💛🧡💜💙💚💕💖⭐✨🌟💫🎯👑🤩😍😘🥰');
+            return aiUV.split('\n').map(function(line) {
+              var t = line.trim();
+              if (!t || !/\{\{[^}]+\}\}/.test(t)) return line;
+              var rest = t.replace(/\{\{[^}]+\}\}/g,'');
+              if (/[a-zA-Z0-9]/.test(rest)) return line;
+              if (!MKTG_E2.some(function(e){ return rest.includes(e); })) return line;
+              var clean = t;
+              MKTG_E2.forEach(function(e){ clean = clean.split(e).join(''); });
+              clean = clean.replace(/^[\s_*~]+|[\s_*~]+$/g,'').trim();
+              return clean || t;
+            }).join('\n');
+          }
+        }
+        // Step B (fallback): rule-based safeVariant + AI riskyPhrases wrapping
         var sv = ruleResult.safeVariant;
         if (!ai.riskyPhrases || !ai.riskyPhrases.length) return sv;
         var used = new Set((sv.match(/\{\{([^}]+)\}\}/g)||[]).map(function(v){return v.slice(2,-2);}));
@@ -6022,7 +6171,6 @@ Return ONLY valid JSON with no markdown:
           var cp = rp.replace(/^[*_~\s]+|[*_~\s]+$/g,'');
           if (cp) phrases.push(cp.toLowerCase());
         }
-        var origVarNames = new Set((template.match(/\{\{([^}]+)\}\}/g)||[]).map(function(v){return v.slice(2,-2).toLowerCase();}));
         function lineHasOrigVar(line) {
           return (line.match(/\{\{([^}]+)\}\}/g)||[]).some(function(v){return origVarNames.has(v.slice(2,-2).toLowerCase());});
         }
@@ -6259,7 +6407,7 @@ async function taiGenerateSimilar() {
 
   const baseBody = _taiResult.safeVariant;
   const origVars = (baseBody.match(/\{\{([^}]+)\}\}/g) || []);
-  const prompt = `You are a Meta WhatsApp Utility template rewriter. Rephrase the template below using DIFFERENT words but the SAME meaning. The output must be a clean Utility template.
+  const prompt = `You are a Meta WhatsApp Utility template rewriter for Habuild (yoga & wellness app). Rephrase the template below using DIFFERENT words but the SAME meaning. The output must be a clean Utility template matching the Habuild team's writing style.
 
 STRICT RULES:
 1. Keep EVERY {{variable}} placeholder EXACTLY as-is. Same names, same order if possible. Do not add new variables. Do not remove any.
@@ -6269,6 +6417,13 @@ STRICT RULES:
 5. Do NOT start the template with a variable. First line must have static text.
 6. Keep similar length (±20%). Keep line breaks where they make sense.
 7. Output ONLY the rephrased template body. No JSON, no markdown fences, no explanation, no header/footer commentary.
+
+═══ HABUILD STYLE EXAMPLES — these are real input→utility conversions the team has done ═══
+Match this tone, brevity, and structure when rephrasing. Notice how short greetings, schedule/timestamp lines, and instructional phrases are left as-is.
+
+${taiBuildTrainingExamples()}
+
+═══ END EXAMPLES ═══
 
 ORIGINAL TEMPLATE:
 ---

@@ -6068,7 +6068,7 @@ async function taiAnalyze() {
 
   // Cache lookup — same template input returns identical result, no AI re-roll.
   // Bust by editing the template even by one character.
-  const cacheKey = 'tai_cache_v8::' + template;
+  const cacheKey = 'tai_cache_v9::' + template;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {

@@ -322,11 +322,37 @@
   .tai-copy-hint{font-size:.7rem;color:#475569;flex-shrink:0}
   .tai-analyze-btn{padding:8px 20px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;transition:opacity .2s}
   .tai-analyze-btn:disabled{opacity:.4;cursor:not-allowed}
-  .tai-reset-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:transparent;border:1px solid rgba(248,113,113,.35);color:#f87171;font-size:.78rem;font-weight:600;font-family:inherit;cursor:pointer;border-radius:10px;transition:background .2s ease,border-color .2s ease,color .2s ease,transform .15s ease}
-  .tai-reset-btn svg{flex-shrink:0;opacity:.85;transition:transform .35s ease}
-  .tai-reset-btn:hover{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.6);color:#fca5a5;transform:translateY(-1px)}
-  .tai-reset-btn:hover svg{transform:rotate(-8deg) scale(1.05);opacity:1}
-  .tai-reset-btn:active{transform:translateY(0)}
+  .tai-reset-btn{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:8px 16px;border-radius:10px;
+    background:linear-gradient(135deg,rgba(248,113,113,.10),rgba(248,113,113,.03));
+    border:1px solid rgba(248,113,113,.28);
+    color:#ef6e6e;
+    font-size:.78rem;font-weight:600;letter-spacing:.01em;
+    font-family:inherit;cursor:pointer;
+    transition:background .22s ease,border-color .22s ease,color .22s ease,transform .15s ease,box-shadow .22s ease;
+  }
+  .tai-reset-btn svg{flex-shrink:0;opacity:.9;transition:transform .45s ease}
+  .tai-reset-btn:hover{
+    background:linear-gradient(135deg,rgba(248,113,113,.20),rgba(248,113,113,.08));
+    border-color:rgba(248,113,113,.55);
+    color:#fca5a5;
+    transform:translateY(-1px);
+    box-shadow:0 4px 14px rgba(248,113,113,.18);
+  }
+  .tai-reset-btn:hover svg{transform:rotate(-180deg);opacity:1}
+  .tai-reset-btn:active{transform:translateY(0);box-shadow:0 2px 6px rgba(248,113,113,.12)}
+  body.dark .tai-reset-btn{
+    background:linear-gradient(135deg,rgba(248,113,113,.12),rgba(248,113,113,.04));
+    border-color:rgba(248,113,113,.30);
+    color:#fca5a5;
+  }
+  body.dark .tai-reset-btn:hover{
+    background:linear-gradient(135deg,rgba(248,113,113,.22),rgba(248,113,113,.08));
+    border-color:rgba(248,113,113,.60);
+    color:#fecaca;
+    box-shadow:0 4px 16px rgba(248,113,113,.22);
+  }
 
   /* Header media badges + conditional highlight */
   .tai-media-badge{display:inline-flex;align-items:center;gap:5px;font-size:.65rem;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:5px;flex-shrink:0;min-width:62px;justify-content:center;border:1px solid;transition:all .2s ease}
@@ -1544,8 +1570,8 @@
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
               <span id="tai-chars" style="font-size:.75rem;color:#475569">0 characters</span>
               <div style="display:flex;gap:8px">
-                <button class="tai-reset-btn" id="tai-reset-btn" onclick="taiReset()" title="Clear input and results">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                <button class="tai-reset-btn" id="tai-reset-btn" onclick="taiReset()" title="Clear input and results — start fresh">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/></svg>
                   <span>Reset</span>
                 </button>
                 <button class="tai-analyze-btn" id="tai-btn" onclick="taiAnalyze()">Analyze Template</button>

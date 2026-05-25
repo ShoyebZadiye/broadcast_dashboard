@@ -161,6 +161,48 @@
   .btn-logout { background: none; border: none; color: var(--danger); font-size: 0.78rem; cursor: pointer; margin-left: auto; padding: 4px 8px; border-radius: 6px; }
   .btn-logout:hover { background: #fee2e2; }
 
+  /* Sidebar Clear Cache button — modern lavender accent */
+  .btn-cache-reload {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(124,58,237,.08), rgba(124,58,237,.02));
+    border: 1px solid rgba(124,58,237,.22);
+    color: #8b5cf6;
+    font-size: .72rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 9px 12px;
+    border-radius: 9px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    letter-spacing: .01em;
+    transition: background .2s ease, border-color .2s ease, color .2s ease, transform .15s ease, box-shadow .2s ease;
+  }
+  .btn-cache-reload svg { flex-shrink: 0; opacity: .85; transition: transform .4s ease; }
+  .btn-cache-reload:hover {
+    background: linear-gradient(135deg, rgba(124,58,237,.18), rgba(124,58,237,.08));
+    border-color: rgba(124,58,237,.45);
+    color: #a78bfa;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(124,58,237,.15);
+  }
+  .btn-cache-reload:hover svg { transform: rotate(180deg); opacity: 1; }
+  .btn-cache-reload:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(124,58,237,.12); }
+  body.dark .btn-cache-reload {
+    background: linear-gradient(135deg, rgba(167,139,250,.10), rgba(167,139,250,.03));
+    border-color: rgba(167,139,250,.20);
+    color: #c4b5fd;
+  }
+  body.dark .btn-cache-reload:hover {
+    background: linear-gradient(135deg, rgba(167,139,250,.22), rgba(167,139,250,.10));
+    border-color: rgba(167,139,250,.45);
+    color: #ddd6fe;
+    box-shadow: 0 4px 16px rgba(167,139,250,.20);
+  }
+
   /* ── MAIN ── */
   .main { margin-left: 240px; flex: 1; }
   .topbar {
@@ -1038,7 +1080,15 @@
       </nav>
       <div class="sidebar-footer">
         <div id="ext-version-bar" style="margin-bottom:8px"></div>
-        <button onclick="clearCacheAndReload()" title="Stuck on old version? Clears cache and force-reloads from server" style="width:100%;background:none;border:1px solid var(--border);color:var(--muted);font-size:.74rem;cursor:pointer;padding:7px 10px;border-radius:7px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s" onmouseover="this.style.background='#fee2e2';this.style.color='#dc2626';this.style.borderColor='#fca5a5'" onmouseout="this.style.background='none';this.style.color='var(--muted)';this.style.borderColor='var(--border)'">🧹 Clear Cache & Reload</button>
+        <button class="btn-cache-reload" onclick="clearCacheAndReload()" title="Stuck on old version? Clears cache and force-reloads from server">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+            <path d="M3 21v-5h5"/>
+          </svg>
+          <span>Clear Cache &amp; Reload</span>
+        </button>
         <div class="user-info">
           <div class="user-avatar" id="user-avatar">U</div>
           <div class="user-email" id="user-email-display">user@example.com</div>

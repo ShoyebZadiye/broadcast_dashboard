@@ -5961,7 +5961,7 @@ async function taiAnalyze() {
 
   // Cache lookup — same template input returns identical result, no AI re-roll.
   // Bust by editing the template even by one character.
-  const cacheKey = 'tai_cache_v2::' + template;
+  const cacheKey = 'tai_cache_v3::' + template;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -6064,6 +6064,15 @@ Only flag phrases that are clearly PROMOTIONAL, EMOTIONAL, GAMIFIED, FOMO-driven
 
 Be MINIMAL with riskyPhrases. Quality over quantity. An empty riskyPhrases array is correct when the template is clean utility.
 
+═══ CRITICAL: PRODUCTION QUALITY REQUIRED ═══
+This utilityVariant WILL BE SUBMITTED TO META for Utility template approval. If Meta classifies it as Marketing, the business workflow breaks. You MUST be EXTREMELY conservative:
+
+- ZERO marketing/hype emojis in utilityVariant: 🎉🏆🎁✨🚀🔥❤️🌟💪💛🎊🎈💖💯⭐🥳😍🤩 — strip all of them
+- ZERO promotional words left visible: FREE, WIN, GIFT, HURRY, DISCOUNT, OFFER, BONUS, REWARD, PRIZE, EXCLUSIVE, LIMITED, AMAZING, SPECIAL, CELEBRATE, INSPIRE, JOURNEY, TRANSFORM — wrap into variables if present
+- ZERO motivational/emotional sentences left visible — wrap into {{quote}}, {{message}}, {{line}}, {{info}}
+- Schedule/timestamps/dates/URLs/buttons/section headers — keep AS-IS
+- When in doubt → WRAP IT. Over-wrapping is safe. Under-wrapping is catastrophic.
+
 ═══ HABUILD STYLE — REAL INPUT → UTILITY OUTPUT EXAMPLES ═══
 These are the team's actual conversions. STUDY THEM and follow the SAME style when producing utilityVariant:
 
@@ -6135,6 +6144,24 @@ Return ONLY valid JSON with no markdown:
               // case-insensitive var name check
               var re = new RegExp('\\{\\{\\s*' + v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\s*\\}\\}', 'i');
               if (!re.test(aiUV)) { validUV = false; break; }
+            }
+          }
+          // STRICT Meta-safety re-check: AI output must not contain marketing
+          // emojis or known promotional keywords in the visible (non-variable)
+          // text. If anything survived, reject and fall through to rule-based.
+          if (validUV) {
+            var uvNoVars = aiUV.replace(/\{\{[^}]+\}\}/g,' ');
+            var leakedMktgEmojis = TAI_MARKETING_EMOJIS.filter(function(e){ return uvNoVars.includes(e); });
+            if (leakedMktgEmojis.length >= 2) validUV = false;
+            if (validUV) {
+              var uvLower = uvNoVars.toLowerCase();
+              var STRICT_BANNED = ['free','win','prize','reward','gift','hurry','exclusive','limited offer','discount','bonus','amazing','transform','journey','inspire','celebrate'];
+              // Allow words if they appear inside URLs or are part of a longer benign word
+              var hitBanned = STRICT_BANNED.find(function(w){
+                var re2 = new RegExp('(^|[^a-z])' + w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '([^a-z]|$)', 'i');
+                return re2.test(uvLower) && !/https?:\/\/[^\s]*\b/.test(uvNoVars);
+              });
+              if (hitBanned) validUV = false;
             }
           }
           if (validUV) {
@@ -6261,7 +6288,50 @@ function taiRender(r) {
   fill.style.background = pct >= 55 ? '#f87171' : pct >= 25 ? '#fbbf24' : '#34d399';
   document.getElementById('tai-risk-pct').textContent = pct + '%';
 
-  document.getElementById('tai-explanation-card').innerHTML =
+  // Final Meta-safety check on the OUTPUT safeVariant (what user will submit).
+  // Strip variables, then count remaining marketing emojis + banned words.
+  // This is the single signal the user trusts at demo time.
+  var finalBody = (r.safeVariant || '').replace(/\{\{[^}]+\}\}/g, ' ');
+  var finalMktgEmojis = TAI_MARKETING_EMOJIS.filter(function(e){ return finalBody.includes(e); });
+  var STRICT_DEMO_BANNED = ['free','win','prize','gift','hurry','exclusive','discount','bonus','amazing','transform','journey','inspire','celebrate','reward'];
+  var finalBannedHits = STRICT_DEMO_BANNED.filter(function(w){
+    var re3 = new RegExp('(^|[^a-z])' + w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '([^a-z]|$)', 'i');
+    return re3.test(finalBody) && !/https?:\/\//.test(finalBody);
+  });
+  var metaSafe = r.category === 'Utility' && finalMktgEmojis.length === 0 && finalBannedHits.length === 0;
+  var metaWarn = r.category === 'Utility' && (finalMktgEmojis.length > 0 || finalBannedHits.length > 0);
+
+  var metaSafeHTML;
+  if (metaSafe) {
+    metaSafeHTML =
+      '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(52,211,153,.15),rgba(52,211,153,.05));border:1.5px solid rgba(52,211,153,.5);border-radius:10px">' +
+      '<span style="font-size:1.4rem">✅</span>' +
+      '<div style="flex:1">' +
+      '<div style="font-size:.88rem;font-weight:800;color:#34d399;letter-spacing:.02em">READY FOR META · UTILITY APPROVED</div>' +
+      '<div style="font-size:.72rem;color:#86efac;margin-top:2px">All marketing signals removed. Safe to submit on WATI as Utility.</div>' +
+      '</div></div>';
+  } else if (metaWarn) {
+    var warnReasons = [];
+    if (finalMktgEmojis.length) warnReasons.push('marketing emojis: ' + finalMktgEmojis.join(' '));
+    if (finalBannedHits.length) warnReasons.push('promotional words: ' + finalBannedHits.slice(0,3).join(', '));
+    metaSafeHTML =
+      '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(251,191,36,.05));border:1.5px solid rgba(251,191,36,.5);border-radius:10px">' +
+      '<span style="font-size:1.4rem">⚠️</span>' +
+      '<div style="flex:1">' +
+      '<div style="font-size:.88rem;font-weight:800;color:#fbbf24;letter-spacing:.02em">REVIEW BEFORE SUBMITTING</div>' +
+      '<div style="font-size:.72rem;color:#fde68a;margin-top:2px">Still contains: ' + warnReasons.join(' · ') + '. Meta may flag as Marketing.</div>' +
+      '</div></div>';
+  } else {
+    metaSafeHTML =
+      '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(248,113,113,.15),rgba(248,113,113,.05));border:1.5px solid rgba(248,113,113,.5);border-radius:10px">' +
+      '<span style="font-size:1.4rem">🚫</span>' +
+      '<div style="flex:1">' +
+      '<div style="font-size:.88rem;font-weight:800;color:#f87171;letter-spacing:.02em">DO NOT SUBMIT AS UTILITY</div>' +
+      '<div style="font-size:.72rem;color:#fca5a5;margin-top:2px">This template will be classified as Marketing by Meta.</div>' +
+      '</div></div>';
+  }
+
+  document.getElementById('tai-explanation-card').innerHTML = metaSafeHTML +
     '<div class="tai-label" style="color:' + (r.category === 'Utility' ? '#60a5fa' : '#c084fc') + '">' +
     (r.category === 'Utility' ? '✅ Utility Template' : '⚠️ Marketing Template') +
     '</div><div style="font-size:.82rem;color:#94a3b8;line-height:1.5">' + r.explanation + '</div>';

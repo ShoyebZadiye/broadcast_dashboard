@@ -5817,6 +5817,21 @@ function taiAnalyzeTemplate(text) {
     return l;
   }).join('\n');
 
+  // Aggressively strip marketing/hype emojis from visible text (outside {{vars}}
+  // and outside URLs). Habuild utility templates never contain 🎉🏆🎁✨🚀🔥 etc.
+  // This is the safety net when AI fails — rule-based output must still pass
+  // the Meta-safety check.
+  safeVariant = safeVariant.split('\n').map(line => {
+    if (/https?:\/\//.test(line)) return line; // don't touch URL lines
+    // Split on variables to preserve them, only clean text segments
+    return line.split(/(\{\{[^}]+\}\})/).map(seg => {
+      if (/^\{\{[^}]+\}\}$/.test(seg)) return seg; // keep variables intact
+      let s = seg;
+      TAI_MARKETING_EMOJIS.forEach(e => { s = s.split(e).join(''); });
+      return s;
+    }).join('').replace(/[ \t]+$/, '');
+  }).join('\n');
+
   {
     const lastIsVar = safeVariant.trim().endsWith('}}');
     const varMatches = safeVariant.match(/\{\{[^}]+\}\}/g) || [];
@@ -5961,7 +5976,7 @@ async function taiAnalyze() {
 
   // Cache lookup — same template input returns identical result, no AI re-roll.
   // Bust by editing the template even by one character.
-  const cacheKey = 'tai_cache_v4::' + template;
+  const cacheKey = 'tai_cache_v5::' + template;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -6098,7 +6113,7 @@ Return ONLY valid JSON with no markdown:
     const proxyResp = await fetch('/api/gemini', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, temperature: 0, maxOutputTokens: 4096 }),
+      body: JSON.stringify({ prompt, temperature: 0, maxOutputTokens: 8192 }),
     });
     if (proxyResp.status === 503) throw new Error('__BUSY__');
     const proxyData = await proxyResp.json().catch(() => ({}));
@@ -6106,7 +6121,24 @@ Return ONLY valid JSON with no markdown:
     rawText = (proxyData.text || '').trim();
     if (!rawText) throw new Error('__BUSY__');
     rawText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-    const ai = JSON.parse(rawText);
+    // Robust JSON extraction: find outermost { ... } block in case AI adds
+    // surrounding prose or the response was slightly truncated.
+    let ai;
+    try {
+      ai = JSON.parse(rawText);
+    } catch (parseErr) {
+      const firstBrace = rawText.indexOf('{');
+      const lastBrace = rawText.lastIndexOf('}');
+      if (firstBrace >= 0 && lastBrace > firstBrace) {
+        try {
+          ai = JSON.parse(rawText.slice(firstBrace, lastBrace + 1));
+        } catch (e2) {
+          throw new Error('AI returned malformed JSON — try Retry');
+        }
+      } else {
+        throw new Error('AI returned malformed JSON — try Retry');
+      }
+    }
 
 
     // If rules found no risky words, the template is clean — trust rules, block AI override

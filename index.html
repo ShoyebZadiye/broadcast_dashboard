@@ -5832,6 +5832,21 @@ function taiAnalyzeTemplate(text) {
     }).join('').replace(/[ \t]+$/, '');
   }).join('\n');
 
+  // Clean orphan formatting markers / lone punctuation around variable-only lines.
+  // e.g. _*{{info}}*_  →  {{info}}     and     {{update}}!  →  {{update}}
+  // Only triggers when the line, after removing {{vars}}, contains ONLY formatting
+  // markers (_ * ~), single punctuation (! . , : ; ?), and whitespace.
+  safeVariant = safeVariant.split('\n').map(line => {
+    const vars = line.match(/\{\{[^}]+\}\}/g);
+    if (!vars || !vars.length) return line;
+    const noVars = line.replace(/\{\{[^}]+\}\}/g, '');
+    // If only formatting markers / punctuation / whitespace remain → strip them
+    if (/^[_*~!.,:;?\s]*$/.test(noVars)) {
+      return vars.join(' ');
+    }
+    return line;
+  }).join('\n');
+
   {
     const lastIsVar = safeVariant.trim().endsWith('}}');
     const varMatches = safeVariant.match(/\{\{[^}]+\}\}/g) || [];
@@ -5976,7 +5991,7 @@ async function taiAnalyze() {
 
   // Cache lookup — same template input returns identical result, no AI re-roll.
   // Bust by editing the template even by one character.
-  const cacheKey = 'tai_cache_v5::' + template;
+  const cacheKey = 'tai_cache_v6::' + template;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -6197,17 +6212,24 @@ Return ONLY valid JSON with no markdown:
             }
           }
           if (validUV) {
-            // Apply Phase 2 (orphan marketing emoji cleanup) and return
+            // Cleanup pass: marketing emojis + orphan formatting markers / lone
+            // punctuation around variable-only lines.
             var MKTG_E2 = Array.from('🎉🎊🥳🎈🎁🎀🏆🥇🥈🥉💰💸💎🔥⚡💥💪🚀👇👆👉👈❤️💛🧡💜💙💚💕💖⭐✨🌟💫🎯👑🤩😍😘🥰');
             return aiUV.split('\n').map(function(line) {
               var t = line.trim();
               if (!t || !/\{\{[^}]+\}\}/.test(t)) return line;
+              var varsOnLine = t.match(/\{\{[^}]+\}\}/g) || [];
               var rest = t.replace(/\{\{[^}]+\}\}/g,'');
+              // If only formatting markers / single punctuation / whitespace remain → keep just vars
+              if (/^[_*~!.,:;?\s]*$/.test(rest)) {
+                return varsOnLine.join(' ');
+              }
+              // Otherwise strip orphan marketing emojis from var-only-plus-emoji lines
               if (/[a-zA-Z0-9]/.test(rest)) return line;
               if (!MKTG_E2.some(function(e){ return rest.includes(e); })) return line;
               var clean = t;
               MKTG_E2.forEach(function(e){ clean = clean.split(e).join(''); });
-              clean = clean.replace(/^[\s_*~]+|[\s_*~]+$/g,'').trim();
+              clean = clean.replace(/^[\s_*~!.,:;?]+|[\s_*~!.,:;?]+$/g,'').trim();
               return clean || t;
             }).join('\n');
           }

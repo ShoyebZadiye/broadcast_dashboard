@@ -5961,7 +5961,7 @@ async function taiAnalyze() {
 
   // Cache lookup — same template input returns identical result, no AI re-roll.
   // Bust by editing the template even by one character.
-  const cacheKey = 'tai_cache_v3::' + template;
+  const cacheKey = 'tai_cache_v4::' + template;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -6288,18 +6288,26 @@ function taiRender(r) {
   fill.style.background = pct >= 55 ? '#f87171' : pct >= 25 ? '#fbbf24' : '#34d399';
   document.getElementById('tai-risk-pct').textContent = pct + '%';
 
-  // Final Meta-safety check on the OUTPUT safeVariant (what user will submit).
-  // Strip variables, then count remaining marketing emojis + banned words.
-  // This is the single signal the user trusts at demo time.
+  // Final Meta-safety check on the OUTPUT safeVariant (the cleaned version
+  // the user will copy/paste into WATI). Input category is irrelevant — the
+  // user often pastes Marketing input expecting the tool to clean it. What
+  // matters is whether the OUTPUT is Meta-safe.
   var finalBody = (r.safeVariant || '').replace(/\{\{[^}]+\}\}/g, ' ');
   var finalMktgEmojis = TAI_MARKETING_EMOJIS.filter(function(e){ return finalBody.includes(e); });
   var STRICT_DEMO_BANNED = ['free','win','prize','gift','hurry','exclusive','discount','bonus','amazing','transform','journey','inspire','celebrate','reward'];
   var finalBannedHits = STRICT_DEMO_BANNED.filter(function(w){
     var re3 = new RegExp('(^|[^a-z])' + w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '([^a-z]|$)', 'i');
-    return re3.test(finalBody) && !/https?:\/\//.test(finalBody);
+    // Skip matches inside URLs (e.g. "free" in https://join.../free/)
+    var lines = finalBody.split('\n');
+    return lines.some(function(line){
+      if (/https?:\/\//.test(line)) return false;
+      return re3.test(line);
+    });
   });
-  var metaSafe = r.category === 'Utility' && finalMktgEmojis.length === 0 && finalBannedHits.length === 0;
-  var metaWarn = r.category === 'Utility' && (finalMktgEmojis.length > 0 || finalBannedHits.length > 0);
+  var totalLeak = finalMktgEmojis.length + finalBannedHits.length;
+  var metaSafe = totalLeak === 0;
+  var metaWarn = totalLeak >= 1 && totalLeak <= 2;
+  // metaBad => totalLeak >= 3
 
   var metaSafeHTML;
   if (metaSafe) {
@@ -6307,27 +6315,30 @@ function taiRender(r) {
       '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(52,211,153,.15),rgba(52,211,153,.05));border:1.5px solid rgba(52,211,153,.5);border-radius:10px">' +
       '<span style="font-size:1.4rem">✅</span>' +
       '<div style="flex:1">' +
-      '<div style="font-size:.88rem;font-weight:800;color:#34d399;letter-spacing:.02em">READY FOR META · UTILITY APPROVED</div>' +
-      '<div style="font-size:.72rem;color:#86efac;margin-top:2px">All marketing signals removed. Safe to submit on WATI as Utility.</div>' +
+      '<div style="font-size:.88rem;font-weight:800;color:#34d399;letter-spacing:.02em">OUTPUT READY FOR META · UTILITY-SAFE</div>' +
+      '<div style="font-size:.72rem;color:#86efac;margin-top:2px">The cleaned Message Body below has no marketing signals. Safe to submit on WATI as Utility.</div>' +
       '</div></div>';
   } else if (metaWarn) {
     var warnReasons = [];
-    if (finalMktgEmojis.length) warnReasons.push('marketing emojis: ' + finalMktgEmojis.join(' '));
-    if (finalBannedHits.length) warnReasons.push('promotional words: ' + finalBannedHits.slice(0,3).join(', '));
+    if (finalMktgEmojis.length) warnReasons.push('emoji: ' + finalMktgEmojis.join(' '));
+    if (finalBannedHits.length) warnReasons.push('word: ' + finalBannedHits.slice(0,3).join(', '));
     metaSafeHTML =
       '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(251,191,36,.05));border:1.5px solid rgba(251,191,36,.5);border-radius:10px">' +
       '<span style="font-size:1.4rem">⚠️</span>' +
       '<div style="flex:1">' +
-      '<div style="font-size:.88rem;font-weight:800;color:#fbbf24;letter-spacing:.02em">REVIEW BEFORE SUBMITTING</div>' +
-      '<div style="font-size:.72rem;color:#fde68a;margin-top:2px">Still contains: ' + warnReasons.join(' · ') + '. Meta may flag as Marketing.</div>' +
+      '<div style="font-size:.88rem;font-weight:800;color:#fbbf24;letter-spacing:.02em">OUTPUT NEEDS A QUICK FIX</div>' +
+      '<div style="font-size:.72rem;color:#fde68a;margin-top:2px">Cleaned body still has: ' + warnReasons.join(' · ') + '. Wrap these into a variable or remove before submitting.</div>' +
       '</div></div>';
   } else {
+    var badReasons = [];
+    if (finalMktgEmojis.length) badReasons.push(finalMktgEmojis.length + ' marketing emoji(s)');
+    if (finalBannedHits.length) badReasons.push(finalBannedHits.length + ' promotional word(s)');
     metaSafeHTML =
       '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(248,113,113,.15),rgba(248,113,113,.05));border:1.5px solid rgba(248,113,113,.5);border-radius:10px">' +
       '<span style="font-size:1.4rem">🚫</span>' +
       '<div style="flex:1">' +
-      '<div style="font-size:.88rem;font-weight:800;color:#f87171;letter-spacing:.02em">DO NOT SUBMIT AS UTILITY</div>' +
-      '<div style="font-size:.72rem;color:#fca5a5;margin-top:2px">This template will be classified as Marketing by Meta.</div>' +
+      '<div style="font-size:.88rem;font-weight:800;color:#f87171;letter-spacing:.02em">OUTPUT NOT YET META-SAFE</div>' +
+      '<div style="font-size:.72rem;color:#fca5a5;margin-top:2px">Cleaned body still has ' + badReasons.join(' and ') + '. Click Analyze again or edit the body before submitting.</div>' +
       '</div></div>';
   }
 

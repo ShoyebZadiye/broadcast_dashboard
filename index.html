@@ -322,6 +322,40 @@
   .tai-copy-hint{font-size:.7rem;color:#475569;flex-shrink:0}
   .tai-analyze-btn{padding:8px 20px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;transition:opacity .2s}
   .tai-analyze-btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Empty-state examples card */
+  .tai-examples-card{padding:18px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:14px}
+  .tai-example-card{
+    text-align:left;cursor:pointer;padding:12px 13px;border-radius:11px;
+    background:linear-gradient(135deg,rgba(124,58,237,.05),rgba(124,58,237,.01));
+    border:1px solid rgba(124,58,237,.18);font-family:inherit;
+    display:flex;flex-direction:column;gap:5px;position:relative;overflow:hidden;
+    transition:transform .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .tai-example-card::after{
+    content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 60%,rgba(124,58,237,.10));
+    opacity:0;transition:opacity .25s ease;pointer-events:none;
+  }
+  .tai-example-card:hover{
+    transform:translateY(-2px);
+    border-color:rgba(124,58,237,.5);
+    box-shadow:0 6px 18px rgba(124,58,237,.18);
+    background:linear-gradient(135deg,rgba(124,58,237,.10),rgba(124,58,237,.03));
+  }
+  .tai-example-card:hover::after{opacity:1}
+  .tai-example-icon{font-size:1.25rem;line-height:1}
+  .tai-example-title{font-size:.84rem;font-weight:700;color:var(--text);letter-spacing:-.01em}
+  .tai-example-preview{font-size:.7rem;color:var(--muted);line-height:1.45;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-family:ui-monospace,monospace}
+  body.dark .tai-examples-card{background:rgba(167,139,250,.02)}
+  body.dark .tai-example-card{
+    background:linear-gradient(135deg,rgba(167,139,250,.06),rgba(167,139,250,.01));
+    border-color:rgba(167,139,250,.22);
+  }
+  body.dark .tai-example-card:hover{
+    background:linear-gradient(135deg,rgba(167,139,250,.14),rgba(167,139,250,.04));
+    border-color:rgba(167,139,250,.5);
+    box-shadow:0 6px 20px rgba(167,139,250,.22);
+  }
   .tai-header-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}
   .tai-detected-cta{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;border:1px solid;font-size:.78rem}
   .tai-detected-utility{background:rgba(96,165,250,.05);border-color:rgba(96,165,250,.2)}
@@ -1529,6 +1563,32 @@
 
           <!-- Error -->
           <div id="tai-error" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:10px 14px;font-size:.82rem;color:#f87171"></div>
+
+          <!-- Examples + Tips (empty state) -->
+          <div id="tai-examples-card" class="card tai-examples-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+              <div>
+                <div style="font-size:.82rem;font-weight:800;color:var(--accent);letter-spacing:.02em;text-transform:uppercase">⚡ Quick Examples</div>
+                <div style="font-size:.74rem;color:var(--muted);margin-top:3px">Click any template to load and analyze instantly</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;padding:5px 11px;background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(124,58,237,.04));border:1px solid rgba(124,58,237,.22);border-radius:20px;font-size:.7rem;font-weight:700;color:#a78bfa">
+                <span style="width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399"></span>
+                AI trained on 16 templates
+              </div>
+            </div>
+
+            <div id="tai-examples-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px"></div>
+
+            <div style="margin-top:18px;padding:14px 16px;background:linear-gradient(135deg,rgba(124,58,237,.06),rgba(124,58,237,.02));border:1px solid rgba(124,58,237,.15);border-radius:10px">
+              <div style="font-size:.7rem;font-weight:800;color:#a78bfa;letter-spacing:.08em;margin-bottom:8px">💡 TIPS FOR BEST RESULTS</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 18px;font-size:.74rem;color:var(--muted);line-height:1.55">
+                <div>📋 <b style="color:var(--text)">Paste the full template</b> — include buttons, links, emojis</div>
+                <div>🎯 Works on <b style="color:var(--text)">Marketing inputs too</b> — converts them to Utility</div>
+                <div>🎨 AI uses <b style="color:var(--text)">Habuild's writing style</b> from 16 training pairs</div>
+                <div>♻️ Re-clicking Analyze on the same template returns <b style="color:var(--text)">identical results</b></div>
+              </div>
+            </div>
+          </div>
 
           <!-- Results (hidden until analyzed) -->
           <div id="tai-results" style="display:none;flex-direction:column;gap:10px">
@@ -6685,6 +6745,9 @@ function taiRender(r) {
 
   const res = document.getElementById('tai-results');
   res.style.display = 'flex';
+  // Hide the empty-state examples card now that results are visible
+  const exC = document.getElementById('tai-examples-card');
+  if (exC) exC.style.display = 'none';
   taiTab('analysis', res.querySelector('.tai-tab'));
 }
 
@@ -6717,6 +6780,81 @@ function taiCopy(text, btn) {
 
 function taiCopyBody() {
   if (_taiResult) taiCopy(_taiResult.safeVariant, document.getElementById('tai-copy-body-btn'));
+}
+
+// Quick examples shown in the empty state of TemplateAI
+const TAI_QUICK_EXAMPLES = [
+  {
+    icon: '📅',
+    title: 'Session Reminder',
+    preview: 'Namaste {{name}} Ji, Reminder: Meet Your Trainer session is today...',
+    template: "Namaste Avantika Ji 🙏🏻\n\nReminder: *Meet Your Trainer* session is today  💙\n\n🗓️ {{session_date}}\n🕣 8:30 - 9:00 PM IST\n\nIn this session, you'll:\n🧘‍♂️ Meet your yoga trainer\n🗓️ Understand your yoga schedule\n😴 Learn simple wellness & sleep tips\n\n🔗 Join here:\n{{personal_link}}\n\nSee you in the session ✨"
+  },
+  {
+    icon: '💳',
+    title: 'Renewal Reminder',
+    preview: 'IMPORTANT UPDATE 🔔 We hope YOGA with Saurabh is adding joy to your life...',
+    template: "IMPORTANT UPDATE 🔔\n\nWe hope YOGA with Saurabh is adding *joy to your life.* 🤩\n\nContinue your regular yoga sessions.\n\nRENEW your yoga subscription before 34 nov 🗓️\n\nPlease click below to *RENEW* 👇:"
+  },
+  {
+    icon: '🏆',
+    title: 'Habit Tracker',
+    preview: "Today's session is completed. You have unlocked *7-Day badge* 🎉...",
+    template: "Hello Shoyeb ji,\n\nToday's session is completed.\n\nYou have unlocked *7-Day badge*🎉\n\n✅ 3 Day (Done)\n✅ 7 Day (Done)\n◻️ 14 Days (Next Days)\n\nᴡᴇᴇᴋʟʏ ʜᴀʙɪᴛ ᴛʀᴀᴄᴋᴇʀ \n⬜⬜✅⬜⬜⬜ \n\nClick below to download badge"
+  },
+  {
+    icon: '🎁',
+    title: 'Invite Voucher',
+    preview: '🏆 Your first successful INVITE is recorded 💛. Voucher earned...',
+    template: "Namaste {{Name}} ji 🙏\n\n🏆Your first successful INVITE is recorded 💛\n\n{{Name}} ji has joined FREE YOGA! 🧘🏻‍♀️🙌🏻\n\n_7 Yoga Days Voucher earned 🎫 (*redeem with a paid plan)_\n\n⭐️ Share yoga with more loved ones 💛\n✅ Only 4 more invites to reach Level 1 🏆\n🎁  DOWNLOAD Breathing Exercise PDF 📄\n\n<VIEW DASHBOARD>\n<INVITE FRIENDS>"
+  },
+  {
+    icon: '💰',
+    title: 'Payment Plans',
+    preview: 'We want to see you in class tomorrow 🥹. Strong Everyday with...',
+    template: "Hello Shoyeb Ji,\n\n _*We want to see you in class tomorrow*_ 🥹\n\nLet's stay connected through this journey together! \n\n👉 To CONTINUE *Strong Everyday with Trishala Bothra*\n\n🔥*Join Now!*🔥\n\n_Click on the link to register:_\n\n🌟 *12 month* ~(₹12799)~\n💸 *₹ 4199* after 67% DISCOUNT\n🔗 LINK - https://strength.habuild.in/membershipplan-new\n\n🌟 *6 month* ~(₹6599)~\n💸 *₹ 3299* after 50% DISCOUNT\n🔗 LINK - https://strength.habuild.in/membershipplan-new\n\n🌟 *3 month* ~(₹3599)~\n💸 *₹ 2399* after 33% DISCOUNT\n🔗 LINK - https://strength.habuild.in/membershipplan-new"
+  },
+  {
+    icon: '💚',
+    title: 'Post-Session Feedback',
+    preview: 'Thank you for joining the session ✨ Progress is in the practice...',
+    template: "Hello {{name}} 💚\n\nThank you for joining the session ✨\n\nProgress is in the practice ✨\n\nᴡᴇᴇᴋʟʏ ʜᴀʙɪᴛ ᴛʀᴀᴄᴋᴇʀ\n{{tracker}}\n\nHow was today's session? 🌿\n\nClick here to proceed 👇"
+  }
+];
+
+function taiRenderExamples() {
+  const grid = document.getElementById('tai-examples-grid');
+  if (!grid) return;
+  grid.innerHTML = TAI_QUICK_EXAMPLES.map((ex, i) =>
+    '<button class="tai-example-card" onclick="taiLoadExample(' + i + ')">' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+        '<span class="tai-example-icon">' + ex.icon + '</span>' +
+        '<span class="tai-example-title">' + ex.title + '</span>' +
+      '</div>' +
+      '<div class="tai-example-preview">' + ex.preview.replace(/</g, '&lt;') + '</div>' +
+    '</button>'
+  ).join('');
+}
+
+function taiLoadExample(index) {
+  const ex = TAI_QUICK_EXAMPLES[index];
+  if (!ex) return;
+  const inp = document.getElementById('tai-input');
+  if (!inp) return;
+  inp.value = ex.template;
+  inp.style.height = 'auto';
+  inp.style.height = inp.scrollHeight + 'px';
+  document.getElementById('tai-chars').textContent = ex.template.length + ' characters';
+  // Scroll input into view smoothly, then trigger analyze
+  inp.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => taiAnalyze(), 200);
+}
+
+// Populate examples on first paint
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', taiRenderExamples);
+} else {
+  taiRenderExamples();
 }
 
 let _taiVariantText = '';

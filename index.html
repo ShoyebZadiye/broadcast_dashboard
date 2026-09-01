@@ -6738,7 +6738,8 @@ function taiRender(r) {
   // matters is whether the OUTPUT is Meta-safe.
   var finalBody = (r.safeVariant || '').replace(/\{\{[^}]+\}\}/g, ' ');
   var finalMktgEmojis = TAI_MARKETING_EMOJIS.filter(function(e){ return finalBody.includes(e); });
-  var STRICT_DEMO_BANNED = ['free','win','prize','gift','hurry','exclusive','discount','bonus','amazing','transform','journey','inspire','celebrate','reward'];
+  // 'gift'/'reward' are benign transactional nouns (see INTENT GATE) — not flagged in the output check
+  var STRICT_DEMO_BANNED = ['free','win','prize','hurry','exclusive','discount','bonus','amazing','transform','journey','inspire','celebrate'];
   var finalBannedHits = STRICT_DEMO_BANNED.filter(function(w){
     var re3 = new RegExp('(^|[^a-z])' + w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '([^a-z]|$)', 'i');
     // Skip matches inside URLs (e.g. "free" in https://join.../free/)

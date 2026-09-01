@@ -6088,10 +6088,14 @@ function taiAnalyzeTemplate(text) {
       }
       return 'line';
     }
+    const origVarSet = new Set((text.match(/\{\{([^}]+)\}\}/g) || []).map(v => v.slice(2, -2).toLowerCase()));
     safeVariant = safeVariant.split('\n').map(line => {
       if (/https?:\/\//.test(line)) return line; // skip URL lines
       const vars = line.match(/\{\{[^}]+\}\}/g) || [];
       if (vars.length < 2) return line;
+      // NEVER collapse a line carrying an ORIGINAL input variable — it destroys
+      // per-user data like {{LEVEL}}. Keep such lines verbatim.
+      if (vars.some(v => origVarSet.has(v.slice(2, -2).toLowerCase()))) return line;
       // Skip if one of the vars is {{name}} and the other text is short greeting/closing
       const hasName = vars.some(v => /\{\{name\d*\}\}/i.test(v));
       const visibleText = line.replace(/\{\{[^}]+\}\}/g, '').trim();

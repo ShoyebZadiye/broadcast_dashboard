@@ -7004,31 +7004,28 @@ ${baseBody}
 
 Rephrased Utility variant:`;
 
-  let rawText = null;
   try {
-    const proxyResp = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, temperature: 0.9, maxOutputTokens: 1024 }),
-    });
-    const proxyData = await proxyResp.json().catch(() => ({}));
-    if (!proxyResp.ok) throw new Error(proxyData.error || 'AI busy — try again');
-    rawText = (proxyData.text || '').trim();
-    if (!rawText) throw new Error('AI busy — try again');
-
-    // Clean up: strip code fences if any
-    let variant = rawText.replace(/^```[a-zA-Z]*\s*/i, '').replace(/\s*```$/, '').trim();
-    // Strip any leading "Rephrased..." / "Variant:" line the model sometimes adds
-    variant = variant.replace(/^(Rephrased[^\n]*:|Variant[^\n]*:|Output[^\n]*:)\s*/i, '').trim();
-
-    // Validate: every original {{var}} must still be present
-    const missing = origVars.filter(v => !variant.includes(v));
-    if (missing.length) {
-      // Try a simple recovery — append missing variables at end is risky, so just warn
-      throw new Error('AI dropped variables: ' + missing.join(', ') + '. Try Regenerate.');
+    // Auto-retry: the AI occasionally drops a variable or starts with one.
+    // Silently regenerate up to 3x before surfacing an error to the user.
+    let variant = null, lastMiss = [];
+    for (let attempt = 0; attempt < 3 && variant === null; attempt++) {
+      const proxyResp = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, temperature: 0.9, maxOutputTokens: 1024 }),
+      });
+      const proxyData = await proxyResp.json().catch(() => ({}));
+      if (!proxyResp.ok) throw new Error(proxyData.error || 'AI busy — try again');
+      const rawText = (proxyData.text || '').trim();
+      if (!rawText) throw new Error('AI busy — try again');
+      let cand = rawText.replace(/^```[a-zA-Z]*\s*/i, '').replace(/\s*```$/, '').trim();
+      cand = cand.replace(/^(Rephrased[^\n]*:|Variant[^\n]*:|Output[^\n]*:)\s*/i, '').trim();
+      const missing = origVars.filter(v => !cand.includes(v));
+      if (missing.length || cand.startsWith('{{')) { lastMiss = missing; continue; } // retry
+      variant = cand;
     }
-    if (variant.trim().startsWith('{{')) {
-      throw new Error('AI started with a variable. Try Regenerate.');
+    if (variant === null) {
+      throw new Error('Could not keep all variables' + (lastMiss.length ? ' (' + lastMiss.join(', ') + ')' : '') + ' — click Regenerate.');
     }
 
     _taiVariantText = variant;

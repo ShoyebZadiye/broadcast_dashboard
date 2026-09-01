@@ -6445,6 +6445,11 @@ Return ONLY valid JSON with no markdown:
         return !(/\{\{[^}]+\}\}/.test(r) && /variable/i.test(r)); // remove "vague variable" reasons
       }) : ruleResult.rejectionReasons),
       safeVariant: (function() {
+        // Step 0: if the rules found ZERO risky content, the template is ALREADY
+        // Utility — return it VERBATIM. Wrapping a clean template's factual lines
+        // (e.g. "3 Days - Done", "Your Strength Days") into {{info}}/{{note}} is a
+        // destructive bug: it was Utility to begin with, so never touch it.
+        if (noRiskyContent) return template;
         // Step A: if AI returned a full utilityVariant and it passes validation,
         // use it as-is. This gives the AI direct control over output style,
         // guided by the Habuild few-shot examples.

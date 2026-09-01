@@ -6130,7 +6130,20 @@ function taiAnalyzeTemplate(text) {
 
   const isPureMarketing = (riskyCount >= 2 || marketingEmojiCount >= 2) && strongUtilityCount === 0;
   const isMixedContent = (riskyCount >= 1 || marketingEmojiCount >= 2) && strongUtilityCount >= 1;
-  const category = isPureMarketing ? 'Marketing'
+  // ── INTENT GATE ──────────────────────────────────────────────
+  // A message whose only "risky" words are benign transactional nouns
+  // (e.g. "gift", "reward" the user is owed), with NO hard-promo word, NO
+  // marketing emoji, NO strong CTA and NO motivational line, is NOT marketing
+  // — it is an already-Utility message. Detecting this lets the tool leave it
+  // verbatim instead of wrapping factual lines / destroying variables.
+  const BENIGN_NOUNS = ['gift','gifts','reward','rewards'];
+  const allRiskyBenign = riskyWords.every(w => BENIGN_NOUNS.indexOf(w.toLowerCase().trim()) !== -1);
+  const hasMktgLineSignal = TAI_MARKETING_LINE_SIGNALS.some(s => lower.includes(s));
+  const strongCTA = /\b(join now|sign\s?up|book now|register now|enroll now|buy now|shop now|claim (your|now)|hurry|don'?t miss|limited time|last chance|act now|apply now|order now)\b/i.test(text);
+  const borderlineUtility = allRiskyBenign && marketingEmojiCount === 0 && !strongCTA && !hasMktgLineSignal;
+
+  const category = borderlineUtility ? 'Utility'
+    : isPureMarketing ? 'Marketing'
     : isMixedContent ? 'Marketing'
     : strongUtilityCount > 0 ? 'Utility'
     : weakUtilityCount > 0 ? 'Utility'
@@ -6223,6 +6236,21 @@ function taiAnalyzeTemplate(text) {
     }
   }
 
+  // Borderline-Utility templates are returned VERBATIM (no wrapping) and marked
+  // clean, so the AI path (which keys off noRiskyContent) also leaves them alone.
+  if (borderlineUtility) {
+    var _bsi = {}, _seen = new Set(), _sc = [];
+    (text.match(/\{\{([^}]+)\}\}/g) || []).forEach(function(v){
+      var nm = v.slice(2, -2);
+      if (!_seen.has(nm)) { _seen.add(nm); _sc.push({ varName: nm, sample: taiGetSample(nm, _bsi) }); }
+    });
+    return {
+      category: 'Utility', rejectionRisk: 'Low', rejectionRiskPercent: Math.min(riskPercent, 8),
+      rejectionReasons: [], riskyWords: [], safeVariant: text.trim(),
+      explanation: "Template qualifies as Utility — informational content about the user's own account with no promotional intent. Safe to submit as Utility.",
+      templateNameSuggestions, detectedCTAs, sampleContent: _sc
+    };
+  }
   return { category, rejectionRisk, rejectionRiskPercent: riskPercent, rejectionReasons, riskyWords, safeVariant, explanation, templateNameSuggestions, detectedCTAs, sampleContent };
 }
 

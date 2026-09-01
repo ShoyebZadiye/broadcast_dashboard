@@ -6373,6 +6373,9 @@ Do NOT include button text in utilityVariant. Button labels like <VIEW DASHBOARD
 ═══ NO HEADER MEDIA PLACEHOLDERS IN BODY ═══
 Do NOT add {{image}}, {{pdf}}, or {{video}} to the top (or anywhere) of utilityVariant. Header media (image / video / PDF) is configured separately in WATI's Header section. Body should start with the greeting/first content line.
 
+═══ MANDATORY ANCHOR LINE — ALWAYS ═══
+utilityVariant MUST contain the exact line "This is an update for your account." — placed right AFTER the greeting line (e.g. after "Hello {{name}} Ji"), or as the FIRST line if there is no greeting. Separate it with a blank line above and below. This is Habuild's approved utility opener and must appear in EVERY utilityVariant, no exceptions. Do NOT translate or reword it.
+
 ═══ HABUILD STYLE — REAL INPUT → UTILITY OUTPUT EXAMPLES ═══
 These are the team's actual conversions. STUDY THEM and follow the SAME style when producing utilityVariant:
 
@@ -6646,7 +6649,34 @@ function taiDetectMediaMentions(text) {
   return out;
 }
 
+// Guarantee Habuild's approved opener "This is an update for your account."
+// appears in EVERY utility output — after the greeting, else at the top.
+// Idempotent: safe to call multiple times (re-render, cached results).
+function taiEnsureAnchor(body) {
+  const ANCHOR = 'This is an update for your account.';
+  if (typeof body !== 'string' || !body.trim()) return body;
+  if (/update\s+(?:for|to)\s+your\s+account/i.test(body)) return body; // already there
+  const lines = body.split('\n');
+  let i = 0;
+  while (i < lines.length && lines[i].trim() === '') i++;      // first non-empty line
+  if (i >= lines.length) return ANCHOR;
+  const first = lines[i].trim();
+  const isGreeting = /\{\{\s*name\d*\s*\}\}/i.test(first) ||
+    /^(hello|hi|hey|namaste|namaskar|good\s*(morning|afternoon|evening)|dear|welcome)\b/i.test(first);
+  let out;
+  if (isGreeting) {
+    const before = lines.slice(0, i + 1);
+    const after = lines.slice(i + 1);
+    while (after.length && after[0].trim() === '') after.shift();
+    out = before.concat(['', ANCHOR, ''], after).join('\n');
+  } else {
+    out = [ANCHOR, '', body].join('\n');
+  }
+  return out.replace(/\n{3,}/g, '\n\n').trim();
+}
+
 function taiRender(r) {
+  if (r && typeof r.safeVariant === 'string') r.safeVariant = taiEnsureAnchor(r.safeVariant);
   const catBadge = document.getElementById('tai-cat-badge');
   catBadge.textContent = r.category;
   catBadge.className = 'tai-badge ' + (r.category === 'Utility' ? 'tai-badge-utility' : 'tai-badge-marketing');

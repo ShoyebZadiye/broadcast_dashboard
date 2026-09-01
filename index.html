@@ -5984,6 +5984,7 @@ function taiAnalyzeTemplate(text) {
     const trimmed = line.trim();
     if (!trimmed || /^\{\{[^}]+\}\}$/.test(trimmed) || /https?:\/\//.test(line) || /^\[.+\]$/.test(trimmed) || /^<[^>]+>$/.test(trimmed)) return line;
     if (!line.replace(/\{\{[^}]+\}\}/g, '').toLowerCase().trim()) return line;
+    if (/\{\{[^}]+\}\}/.test(line)) return line; // keep any line that already carries a variable — never collapse it
     if (TAI_MARKETING_LINE_SIGNALS.some(s => line.toLowerCase().includes(s))) return '{{' + nextVarName() + '}}';
     return line;
   }).join('\n');
@@ -6525,6 +6526,9 @@ Return ONLY valid JSON with no markdown:
               if (/https?:\/\//.test(line)) return line;
               var vs = line.match(/\{\{[^}]+\}\}/g) || [];
               if (vs.length < 2) return line;
+              // NEVER collapse a line that carries an ORIGINAL input variable —
+              // doing so destroys per-user data like {{LEVEL}}. Keep it verbatim.
+              if (vs.some(function(v){ return origVarNames.has(v.slice(2,-2).toLowerCase()); })) return line;
               var hasName = vs.some(function(v){ return /\{\{name\d*\}\}/i.test(v); });
               var vt = line.replace(/\{\{[^}]+\}\}/g, '').trim();
               if (hasName && vt.length < 25) return line;

@@ -6435,7 +6435,7 @@ Return ONLY valid JSON with no markdown:
       category: noRiskyContent ? ruleResult.category : (ai.category || ruleResult.category),
       rejectionRisk: noRiskyContent ? ruleResult.rejectionRisk : (ai.rejectionRisk || ruleResult.rejectionRisk),
       rejectionRiskPercent: noRiskyContent ? ruleResult.rejectionRiskPercent : (typeof ai.rejectionRiskPercent === 'number' ? ai.rejectionRiskPercent : ruleResult.rejectionRiskPercent),
-      explanation: ai.explanation || ruleResult.explanation,
+      explanation: noRiskyContent ? ruleResult.explanation : (ai.explanation || ruleResult.explanation),
       riskyWords: noRiskyContent ? [] : ((ai.riskyPhrases && ai.riskyPhrases.length) ? ai.riskyPhrases.filter(function(p) {
         if (/\{\{[^}]+\}\}/.test(p)) return false; // remove any phrase containing {{variable}}
         var templateNoButtons = template.replace(/<[^>]*>/g, ' '); // remove <button labels>
